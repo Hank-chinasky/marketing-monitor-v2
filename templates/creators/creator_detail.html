@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ creator.display_name }}</h1>
+
+<p>Legal name: {{ creator.legal_name }}</p>
+<p>Status: {{ creator.status }}</p>
+<p>Consent status: {{ creator.consent_status }}</p>
+<p>Primary operator: {{ creator.primary_operator|default:"-" }}</p>
+<p>Notes: {{ creator.notes|default:"-" }}</p>
+
+<h2>Channels</h2>
+<ul>
+    {% for channel in channels %}
+        <li>{{ channel.platform }} / {{ channel.handle }} / {{ channel.status }}</li>
+    {% empty %}
+        <li>Geen channels.</li>
+    {% endfor %}
+</ul>
+
+<h2>Assignments</h2>
+<ul>
+    {% for assignment in assignments %}
+        <li>
+            {{ assignment.operator }} / {{ assignment.scope }} /
+            {{ assignment.starts_at }} - {{ assignment.ends_at|default:"open" }}
+        </li>
+    {% empty %}
+        <li>Geen assignments.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

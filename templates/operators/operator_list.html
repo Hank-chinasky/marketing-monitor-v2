@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Operators</h1>
+
+<ul>
+    {% for operator in operators %}
+        <li>{{ operator }} ({{ operator.user.username }})</li>
+    {% empty %}
+        <li>Geen operators.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

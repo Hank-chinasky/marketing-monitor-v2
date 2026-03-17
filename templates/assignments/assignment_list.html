@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Assignments</h1>
+
+<ul>
+    {% for assignment in assignments %}
+        <li>
+            {{ assignment.operator }} / {{ assignment.creator.display_name }} /
+            {{ assignment.scope }} / {{ assignment.starts_at }} -
+            {{ assignment.ends_at|default:"open" }}
+        </li>
+    {% empty %}
+        <li>Geen assignments.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

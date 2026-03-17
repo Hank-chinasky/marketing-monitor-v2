@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Channels</h1>
+
+<ul>
+    {% for channel in channels %}
+        <li>
+            {{ channel.creator.display_name }} / {{ channel.platform }} / {{ channel.handle }}
+            / {{ channel.status }} / {{ channel.access_mode }}
+        </li>
+    {% empty %}
+        <li>Geen channels.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

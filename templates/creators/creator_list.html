@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Creators</h1>
+
+<ul>
+    {% for creator in creators %}
+        <li>
+            <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+            — {{ creator.status }} / {{ creator.consent_status }}
+        </li>
+    {% empty %}
+        <li>Geen creators.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
