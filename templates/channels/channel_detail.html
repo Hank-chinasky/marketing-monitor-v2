@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ channel.platform|title }} / {{ channel.handle }}</h1>
+
+<div style="margin-bottom: 1rem;">
+    {% if channel.profile_url %}
+        <a class="quick-link" href="{{ channel.profile_url }}" target="_blank">Open platform</a>
+    {% endif %}
+    <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Terug naar creator</a>
+    <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
+    {% if request.user.is_staff or request.user.is_superuser %}
+        <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
+    {% endif %}
+</div>
+
+<div class="cards">
+    <div class="card">
+        <div>Status</div>
+        <div style="margin-top:0.35rem;">
+            {% if channel.status == "active" %}
+                <span class="badge badge-green">active</span>
+            {% else %}
+                <span class="badge badge-yellow">{{ channel.status }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div>Credential</div>
+        <div style="margin-top:0.35rem;">
+            {% if channel.credential_status == "needs_reset" %}
+                <span class="badge badge-red">needs reset</span>
+            {% elif channel.credential_status %}
+                <span class="badge badge-blue">{{ channel.credential_status }}</span>
+            {% else %}
+                <span class="badge badge-yellow">onbekend</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div>2FA</div>
+        <div style="margin-top:0.35rem;">
+            {% if channel.two_factor_enabled %}
+                <span class="badge badge-green">2FA ok</span>
+            {% else %}
+                <span class="badge badge-yellow">geen 2FA</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div>VPN</div>
+        <div style="margin-top:0.35rem;">
+            {% if channel.vpn_required %}
+                <span class="badge badge-blue">verplicht</span>
+            {% else %}
+                <span class="badge badge-green">niet verplicht</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div>Creator</div>
+        <div style="margin-top:0.35rem;">
+            <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+        </div>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h3>Alerts</h3>
+        <ul class="clean">
+            {% if channel.credential_status == "needs_reset" %}
+                <li><span class="badge badge-red">needs reset</span> Credentials vragen aandacht.</li>
+            {% endif %}
+            {% if not channel.two_factor_enabled %}
+                <li><span class="badge badge-yellow">geen 2FA</span> 2FA is niet ingeschakeld.</li>
+            {% endif %}
+            {% if channel.vpn_required %}
+                <li><span class="badge badge-blue">VPN verplicht</span> Gebruik alleen goedgekeurde access route.</li>
+            {% endif %}
+            {% if policy_gap %}
+                <li><span class="badge badge-yellow">policy gap</span> VPN verplicht maar IP-label/IP ontbreekt.</li>
+            {% endif %}
+            {% if channel.status != "active" %}
+                <li><span class="badge badge-yellow">{{ channel.status }}</span> Channel is niet actief.</li>
+            {% endif %}
+            {% if channel.credential_status != "needs_reset" and channel.two_factor_enabled and not policy_gap and channel.status == "active" %}
+                <li>Geen directe alerts.</li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h3>Creator context</h3>
+        <ul class="clean">
+            <li><strong>Creator:</strong> <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a></li>
+            <li><strong>Creator status:</strong> {{ creator.status }}</li>
+            <li><strong>Consent status:</strong> {{ creator.consent_status }}</li>
+            <li><strong>Primary operator:</strong> {{ creator.primary_operator|default:"-" }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h2>Account Access</h2>
+        <ul class="clean">
+            <li><strong>Profile URL:</strong>
+                {% if channel.profile_url %}
+                    <a href="{{ channel.profile_url }}" target="_blank">{{ channel.profile_url }}</a>
+                {% else %}
+                    -
+                {% endif %}
+            </li>
+            <li><strong>Access mode:</strong> {{ channel.access_mode }}</li>
+            <li><strong>Recovery owner:</strong> {{ channel.recovery_owner }}</li>
+            <li><strong>Login identifier:</strong> {{ channel.login_identifier|default:"-" }}</li>
+            <li><strong>Credential status:</strong> {{ channel.credential_status|default:"-" }}</li>
+            <li><strong>2FA enabled:</strong> {{ channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
+            <li><strong>Last access check:</strong> {{ channel.last_access_check_at|default:"-" }}</li>
+            <li><strong>Access notes:</strong> {{ channel.access_notes|default:"-"|linebreaksbr }}</li>
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h2>Access Policy</h2>
+        <ul class="clean">
+            <li><strong>VPN required:</strong> {{ channel.vpn_required|yesno:"Ja,Nee" }}</li>
+            <li><strong>Approved region:</strong> {{ channel.approved_access_region|default:"-" }}</li>
+            <li><strong>IP label:</strong> {{ channel.approved_ip_label|default:"-" }}</li>
+            <li><strong>Egress IP:</strong> {{ channel.approved_egress_ip|default:"-" }}</li>
+            <li><strong>Last IP check:</strong> {{ channel.last_ip_check_at|default:"-" }}</li>
+            <li><strong>Notes:</strong> {{ channel.access_profile_notes|default:"-"|linebreaksbr }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Active assignments for creator</h2>
+    <ul class="clean">
+        {% for assignment in assignments %}
+            <li>
+                <strong>{{ assignment.operator }}</strong>
+                — {{ assignment.scope }}
+                — {{ assignment.starts_at }} t/m {{ assignment.ends_at|default:"open" }}
+            </li>
+        {% empty %}
+            <li>Geen zichtbare assignments.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

@@ -11,23 +11,8 @@ class OperatorAdmin(admin.ModelAdmin):
 
 @admin.register(Creator)
 class CreatorAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "display_name",
-        "status",
-        "consent_status",
-        "primary_operator",
-        "content_source_type",
-        "content_ready_status",
-    )
-    search_fields = (
-        "display_name",
-        "legal_name",
-        "notes",
-        "content_source_url",
-        "content_source_notes",
-    )
-
+    list_display = ("id", "display_name", "status", "consent_status", "primary_operator")
+    search_fields = ("display_name", "legal_name", "notes")
 
 @admin.register(CreatorChannel)
 class CreatorChannelAdmin(admin.ModelAdmin):
@@ -41,20 +26,8 @@ class CreatorChannelAdmin(admin.ModelAdmin):
         "recovery_owner",
         "credential_status",
         "two_factor_enabled",
-        "vpn_required",
-        "approved_ip_label",
     )
-    search_fields = (
-        "handle",
-        "creator__display_name",
-        "login_identifier",
-        "access_notes",
-        "approved_egress_ip",
-        "approved_ip_label",
-        "approved_access_region",
-        "access_profile_notes",
-        "last_operator_update",
-    )
+    search_fields = ("handle", "creator__display_name", "login_identifier", "access_notes")
 
 
 @admin.register(OperatorAssignment)

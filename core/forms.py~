@@ -13,10 +13,6 @@ class CreatorForm(forms.ModelForm):
             "consent_status",
             "primary_operator",
             "notes",
-            "content_source_type",
-            "content_source_url",
-            "content_source_notes",
-            "content_ready_status",
         ]
 
     def clean(self):
@@ -31,7 +27,6 @@ class CreatorForm(forms.ModelForm):
             )
 
         return cleaned
-
 
 class CreatorChannelForm(forms.ModelForm):
     class Meta:
@@ -49,19 +44,9 @@ class CreatorChannelForm(forms.ModelForm):
             "access_notes",
             "last_access_check_at",
             "two_factor_enabled",
-            "vpn_required",
-            "approved_egress_ip",
-            "approved_ip_label",
-            "approved_access_region",
-            "access_profile_notes",
-            "last_ip_check_at",
-            "last_operator_update",
-            "last_operator_update_at",
         ]
         widgets = {
             "last_access_check_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "last_ip_check_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "last_operator_update_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 
 

@@ -282,34 +282,6 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
     context_object_name = "channels"
 
 
-class ChannelDetailView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailView):
-    model = CreatorChannel
-    template_name = "channels/channel_detail.html"
-    context_object_name = "channel"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        channel = self.object
-        creator = channel.creator
-
-        assignments = list(
-            scope_assignments_queryset(
-                self.request.user,
-                qs=OperatorAssignment.objects.select_related("operator", "operator__user", "creator"),
-            ).filter(creator=creator)
-        )
-
-        policy_gap = channel.vpn_required and not (
-            channel.approved_ip_label or channel.approved_egress_ip
-        )
-
-        context["creator"] = creator
-        context["assignments"] = assignments
-        context["policy_gap"] = policy_gap
-
-        return context
-
-
 class CreatorChannelCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateView):
     model = CreatorChannel
     form_class = CreatorChannelForm
@@ -349,3 +321,4 @@ class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
     template_name = "operators/operator_list.html"
     context_object_name = "operators"
     queryset = Operator.objects.select_related("user")
+ 

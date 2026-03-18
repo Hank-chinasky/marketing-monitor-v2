@@ -16,15 +16,9 @@
 
             <div style="margin-bottom: 0.5rem;">
                 {% if channel.profile_url %}
-                    <a class="quick-link" href="{{ channel.profile_url }}" target="_blank">Open platform</a>
+                    <a href="{{ channel.profile_url }}" target="_blank">Open platform</a>
                 {% else %}
                     <span>Geen profiel-URL</span>
-                {% endif %}
-                <a class="quick-link" href="{% url 'channel-detail' channel.pk %}">Channel detail</a>
-                <a class="quick-link" href="{% url 'creator-detail' channel.creator.pk %}">Creator detail</a>
-                <a class="quick-link" href="{% url 'creator-network' channel.creator.pk %}">Netwerk</a>
-                {% if request.user.is_staff or request.user.is_superuser %}
-                    <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
                 {% endif %}
             </div>
 

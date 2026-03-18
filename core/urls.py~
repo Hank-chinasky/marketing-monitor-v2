@@ -2,7 +2,6 @@ from django.urls import path
 
 from core.views import (
     AssignmentListView,
-    ChannelDetailView,
     ChannelListView,
     CreatorChannelCreateView,
     CreatorChannelUpdateView,
@@ -26,7 +25,6 @@ urlpatterns = [
     path("creators/<int:pk>/network/", CreatorNetworkView.as_view(), name="creator-network"),
     path("channels/", ChannelListView.as_view(), name="channel-list"),
     path("channels/create/", CreatorChannelCreateView.as_view(), name="channel-create"),
-    path("channels/<int:pk>/", ChannelDetailView.as_view(), name="channel-detail"),
     path("channels/<int:pk>/edit/", CreatorChannelUpdateView.as_view(), name="channel-update"),
     path("assignments/", AssignmentListView.as_view(), name="assignment-list"),
     path("assignments/create/", OperatorAssignmentCreateView.as_view(), name="assignment-create"),

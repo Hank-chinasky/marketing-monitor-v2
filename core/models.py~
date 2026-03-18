@@ -31,23 +31,6 @@ class Creator(models.Model):
         ACTIVE = "active", "Active"
         REVOKED = "revoked", "Revoked"
 
-    class ContentSourceType(models.TextChoices):
-        SHARED_DRIVE = "shared_drive", "Shared drive"
-        DROPBOX = "dropbox", "Dropbox"
-        ONEDRIVE = "onedrive", "OneDrive"
-        TELEGRAM = "telegram", "Telegram"
-        EMAIL = "email", "Email"
-        INTERNAL_STORAGE = "internal_storage", "Internal storage"
-        MIXED = "mixed", "Mixed"
-        OTHER = "other", "Other"
-
-    class ContentReadyStatus(models.TextChoices):
-        WAITING_FOR_CREATOR = "waiting_for_creator", "Waiting for creator"
-        UPLOADED = "uploaded", "Uploaded"
-        READY_TO_POST = "ready_to_post", "Ready to post"
-        POSTED = "posted", "Posted"
-        BLOCKED = "blocked", "Blocked"
-
     display_name = models.CharField(max_length=160)
     legal_name = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices)
@@ -60,19 +43,6 @@ class Creator(models.Model):
         related_name="primary_creators",
     )
     notes = models.TextField(blank=True)
-
-    content_source_type = models.CharField(
-        max_length=30,
-        choices=ContentSourceType.choices,
-        blank=True,
-    )
-    content_source_url = models.URLField(blank=True)
-    content_source_notes = models.TextField(blank=True)
-    content_ready_status = models.CharField(
-        max_length=30,
-        choices=ContentReadyStatus.choices,
-        blank=True,
-    )
 
     def clean(self):
         validate_active_creator_requires_active_consent(self)
@@ -138,9 +108,6 @@ class CreatorChannel(models.Model):
     approved_access_region = models.CharField(max_length=64, blank=True)
     access_profile_notes = models.TextField(blank=True)
     last_ip_check_at = models.DateTimeField(null=True, blank=True)
-
-    last_operator_update = models.TextField(blank=True)
-    last_operator_update_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [

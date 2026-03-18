@@ -90,23 +90,6 @@
     </div>
 </div>
 
-<h2>Content Intake</h2>
-<div class="panel">
-    <ul class="clean">
-        <li><strong>Source type:</strong> {{ creator.content_source_type|default:"-" }}</li>
-        <li><strong>Ready status:</strong> {{ creator.content_ready_status|default:"-" }}</li>
-        <li>
-            <strong>Source URL:</strong>
-            {% if creator.content_source_url %}
-                <a href="{{ creator.content_source_url }}" target="_blank">Open shared folder</a>
-            {% else %}
-                -
-            {% endif %}
-        </li>
-        <li><strong>Source notes:</strong> {{ creator.content_source_notes|default:"-"|linebreaksbr }}</li>
-    </ul>
-</div>
-
 <h2>Notes</h2>
 <div class="panel">
     {{ creator.notes|default:"Geen notities."|linebreaksbr }}

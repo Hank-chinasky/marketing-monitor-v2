@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Operations Dashboard</h1>
+<p class="muted">Overzicht van aandachtspunten, snelle toegang en operationele status.</p>
+
+<div class="cards">
+    <div class="card">
+        <div>Creators</div>
+        <div class="card-number">{{ summary.creator_count }}</div>
+    </div>
+    <div class="card">
+        <div>Channels</div>
+        <div class="card-number">{{ summary.channel_count }}</div>
+    </div>
+    <div class="card">
+        <div>Assignments</div>
+        <div class="card-number">{{ summary.assignment_count }}</div>
+    </div>
+    <div class="card" style="background:#fff7ed;">
+        <div>Needs reset</div>
+        <div class="card-number">{{ summary.needs_reset_count }}</div>
+    </div>
+    <div class="card" style="background:#fffbeb;">
+        <div>Geen 2FA</div>
+        <div class="card-number">{{ summary.without_2fa_count }}</div>
+    </div>
+    <div class="card" style="background:#fffbeb;">
+        <div>VPN/IP gaps</div>
+        <div class="card-number">{{ summary.vpn_gap_count }}</div>
+    </div>
+    <div class="card" style="background:#fff7ed;">
+        <div>Consent issues</div>
+        <div class="card-number">{{ summary.consent_issue_count }}</div>
+    </div>
+</div>
+
+<h2>Aandacht vereist</h2>
+<div class="grid">
+    <div class="panel">
+        <h3>Credential reset nodig</h3>
+        <ul class="clean">
+            {% for channel in channels_needing_reset %}
+                <li>
+                    <span class="badge badge-red">needs reset</span>
+                    <a href="{% url 'creator-detail' channel.creator.pk %}">{{ channel.creator.display_name }}</a>
+                    — {{ channel.platform }} / {{ channel.handle }}
+                    {% if channel.profile_url %}
+                        <div class="quick-link"><a href="{{ channel.profile_url }}" target="_blank">Open platform</a></div>
+                    {% endif %}
+                </li>
+            {% empty %}
+                <li>Geen directe reset issues.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h3>Channels zonder 2FA</h3>
+        <ul class="clean">
+            {% for channel in channels_without_2fa %}
+                <li>
+                    <span class="badge badge-yellow">2FA ontbreekt</span>
+                    <a href="{% url 'creator-detail' channel.creator.pk %}">{{ channel.creator.display_name }}</a>
+                    — {{ channel.platform }} / {{ channel.handle }}
+                </li>
+            {% empty %}
+                <li>Geen 2FA issues.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h3>VPN/IP policy mist info</h3>
+        <ul class="clean">
+            {% for channel in vpn_policy_gaps %}
+                <li>
+                    <span class="badge badge-yellow">policy gap</span>
+                    <a href="{% url 'creator-detail' channel.creator.pk %}">{{ channel.creator.display_name }}</a>
+                    — {{ channel.platform }} / {{ channel.handle }}
+                </li>
+            {% empty %}
+                <li>Geen VPN/IP gaps.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h3>Consent issues</h3>
+        <ul class="clean">
+            {% for creator in consent_issues %}
+                <li>
+                    <span class="badge badge-yellow">consent</span>
+                    <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+                    — {{ creator.consent_status }}
+                </li>
+            {% empty %}
+                <li>Geen consent issues.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h3>Niet-actieve creators</h3>
+        <ul class="clean">
+            {% for creator in paused_or_offboarded %}
+                <li>
+                    <span class="badge badge-yellow">{{ creator.status }}</span>
+                    <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+                </li>
+            {% empty %}
+                <li>Geen paused/offboarded creators.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h3>Zonder actieve assignment</h3>
+        <ul class="clean">
+            {% for creator in creators_without_active_assignment %}
+                <li>
+                    <span class="badge badge-red">geen assignment</span>
+                    <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+                </li>
+            {% empty %}
+                <li>Geen assignment-gaps.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<h2>Quick access</h2>
+<div class="panel">
+    <ul class="clean">
+        {% for channel in quick_channels %}
+            <li style="margin-bottom:0.75rem;">
+                <strong>{{ channel.creator.display_name }}</strong>
+                — {{ channel.platform }} / {{ channel.handle }}
+
+                {% if channel.credential_status == "needs_reset" %}
+                    <span class="badge badge-red">needs reset</span>
+                {% endif %}
+
+                {% if not channel.two_factor_enabled %}
+                    <span class="badge badge-yellow">geen 2FA</span>
+                {% else %}
+                    <span class="badge badge-green">2FA ok</span>
+                {% endif %}
+
+                {% if channel.vpn_required %}
+                    <span class="badge badge-blue">VPN verplicht</span>
+                {% endif %}
+
+                {% if channel.profile_url %}
+                    <div class="quick-link"><a href="{{ channel.profile_url }}" target="_blank">Open platform</a></div>
+                {% endif %}
+                <div class="quick-link"><a href="{% url 'creator-detail' channel.creator.pk %}">Creator detail</a></div>
+                <div class="quick-link"><a href="{% url 'creator-network' channel.creator.pk %}">Netwerk</a></div>
+
+                <div class="muted" style="margin-top:0.25rem;">
+                    Region: {{ channel.approved_access_region|default:"-" }} |
+                    IP label: {{ channel.approved_ip_label|default:"-" }} |
+                    Egress IP: {{ channel.approved_egress_ip|default:"-" }}
+                </div>
+            </li>
+        {% empty %}
+            <li>Geen channels beschikbaar.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<h2>Mijn creators</h2>
+<div class="panel">
+    <ul class="clean">
+        {% for creator in my_creators %}
+            <li>
+                <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+
+                {% if creator.status == "active" %}
+                    <span class="badge badge-green">active</span>
+                {% else %}
+                    <span class="badge badge-yellow">{{ creator.status }}</span>
+                {% endif %}
+
+                {% if creator.consent_status == "active" %}
+                    <span class="badge badge-green">consent ok</span>
+                {% else %}
+                    <span class="badge badge-yellow">consent {{ creator.consent_status }}</span>
+                {% endif %}
+
+                <div class="quick-link"><a href="{% url 'creator-network' creator.pk %}">Netwerk</a></div>
+            </li>
+        {% empty %}
+            <li>Geen creators zichtbaar.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

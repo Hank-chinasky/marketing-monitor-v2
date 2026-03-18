@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Netwerk — {{ creator.display_name }}</h1>
+
+<p>
+    <a href="{% url 'creator-detail' creator.pk %}">← Terug naar creator detail</a>
+</p>
+
+<div style="margin-bottom: 1rem;">
+    <strong>Status:</strong> {{ creator.status }} |
+    <strong>Consent:</strong> {{ creator.consent_status }} |
+    <strong>Primary operator:</strong> {{ creator.primary_operator|default:"-" }}
+</div>
+
+<div id="network" style="height: 700px; border: 1px solid #ccc; background: #fafafa;"></div>
+
+<div style="margin-top: 1rem;">
+    <strong>Legenda:</strong>
+    <ul>
+        <li>Blauw = creator</li>
+        <li>Groen = operator</li>
+        <li>Paars = channel ok</li>
+        <li>Oranje = aandacht nodig</li>
+        <li>Rood = access issue / reset nodig</li>
+    </ul>
+</div>
+
+{{ network_nodes|json_script:"network-nodes" }}
+{{ network_edges|json_script:"network-edges" }}
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+    const nodes = new vis.DataSet(JSON.parse(document.getElementById("network-nodes").textContent));
+    const edges = new vis.DataSet(JSON.parse(document.getElementById("network-edges").textContent));
+
+    const container = document.getElementById("network");
+    const data = { nodes, edges };
+    const options = {
+        physics: {
+            stabilization: true,
+            barnesHut: {
+                gravitationalConstant: -8000,
+                springLength: 180,
+                springConstant: 0.03,
+            }
+        },
+        edges: {
+            arrows: { to: false },
+            font: { align: "middle" },
+            color: "#888",
+        },
+        nodes: {
+            font: {
+                multi: "html",
+                size: 14,
+            },
+            borderWidth: 2,
+        },
+        interaction: {
+            hover: true,
+            navigationButtons: true,
+            keyboard: true,
+        }
+    };
+
+    new vis.Network(container, data, options);
+</script>
+{% endblock %}
