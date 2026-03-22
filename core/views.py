@@ -17,6 +17,8 @@ from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
 
 
 class HealthzView(View):
+    http_method_names = ["get"]
+
     def get(self, request, *args, **kwargs):
         return JsonResponse({"status": "ok"})
 
