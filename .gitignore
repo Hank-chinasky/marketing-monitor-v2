@@ -12,3 +12,4 @@ staticfiles/
 .idea/
 .env
 .env.*
+!.env.example
