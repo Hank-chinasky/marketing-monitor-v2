@@ -26,11 +26,14 @@ services:
       - "traefik.http.routers.creatorworkboard-ops.middlewares=traefik-auth@docker,security-headers@file"
       - "traefik.http.services.creatorworkboard-ops.loadbalancer.server.port=8000"
     networks:
+      - app_net
       - cc_public
 
 volumes:
   creatorworkboard_data:
 
 networks:
+  app_net:
+    driver: bridge
   cc_public:
     external: true
