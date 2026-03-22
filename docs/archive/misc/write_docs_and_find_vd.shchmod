@@ -1,0 +1,625 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MM_REPO="${MM_REPO:-$HOME/projects/marketing-monitor-v2}"
+VD_REPO="${VD_REPO:-$HOME/projects/virtual-development}"
+
+echo "Using:"
+echo "  MM_REPO=$MM_REPO"
+echo "  VD_REPO=$VD_REPO"
+
+mkdir -p "$MM_REPO/docs"
+mkdir -p "$VD_REPO/docs"
+mkdir -p "$VD_REPO/scripts"
+
+cat > "$MM_REPO/docs/creatorworkboard_app_architecture.md" <<'EOF'
+# Creator Workboard — App Architecture
+
+Status: active internal build  
+Date: 2026-03-20
+
+## 1. Product definition
+
+Creator Workboard is an internal Django operations cockpit for creator/channel management.
+
+It is built to support:
+- manual operator workflow
+- access policy visibility
+- scoped access by assignment
+- creator and channel work pages
+- content intake / source tracking
+- handoff and operational context
+- fast navigation and decision support
+
+It is not built as:
+- public SaaS
+- automation-first publication engine
+- embedded social login broker
+- plain text credential vault
+- external customer portal in this phase
+
+## 2. Current application state
+
+The current runtime app already includes:
+- login/logout
+- admin
+- operations dashboard as root
+- creators list
+- creator detail as operator work page
+- creator network view
+- channels list
+- channel detail as channel work page
+- assignments list
+- scoped operator visibility
+- admin-only writes
+- VPN/IP access policy per channel
+- content intake source fields on creator
+
+## 3. Architecture rules
+
+Core rules:
+- Django monolith
+- server-rendered templates
+- standard Django auth
+- standard Django admin
+- no SPA as primary route
+- no API-first architecture as primary route
+- SQLite allowed locally, portable toward PostgreSQL later
+
+Permission rules:
+- `User` is not `Operator`
+- scope comes only from `OperatorAssignment`
+- `primary_operator` is never a permission source
+- operators are scoped read-focused
+- admin handles writes
+- scope must be enforced server-side
+
+Security rules:
+- no plain text passwords in normal operational views
+- dashboard is a control layer, not a login broker
+- open-platform flow is allowed
+- real credentials stay outside normal operational UI
+
+## 4. Main domain objects
+
+### Creator
+Examples of relevant fields:
+- display_name
+- legal_name
+- status
+- consent_status
+- primary_operator
+- notes
+- content_source_type
+- content_source_url
+- content_source_notes
+- content_ready_status
+
+### CreatorChannel
+Examples of relevant fields:
+- platform
+- handle
+- profile_url
+- status
+- access_mode
+- recovery_owner
+- login_identifier
+- account_email
+- account_phone_number
+- credential_status
+- access_notes
+- last_access_check_at
+- two_factor_enabled
+- vpn_required
+- approved_egress_ip
+- approved_ip_label
+- approved_access_region
+- access_profile_notes
+- last_ip_check_at
+- last_operator_update
+- last_operator_update_at
+
+### OperatorAssignment
+Examples of relevant fields:
+- operator
+- creator
+- scope
+- starts_at
+- ends_at
+- active
+
+## 5. Current UX surfaces
+
+Current key surfaces:
+- `/` → operations dashboard
+- `/creators/` → creators list
+- `/creators/<id>/` → creator work page
+- `/creators/<id>/network/` → creator network
+- `/channels/` → channels queue/list
+- `/channels/<id>/` → channel work page
+- `/assignments/` → assignments list
+
+## 6. Current product priority
+
+Do not broaden scope unnecessarily.
+
+Current focus:
+1. stable operator flow
+2. deployment readiness
+3. queue + handoff polish
+4. internal pilot usage
+5. only then broader expansion
+
+## 7. Domain direction
+
+Recommended domain structure:
+- `creatorworkboard.com` → root / brand shell
+- `www.creatorworkboard.com` → alias/redirect
+- `ops.creatorworkboard.com` → internal ops app
+- `portal.creatorworkboard.com` → later customer/backoffice surface
+- `account.creatorworkboard.com` → only later if central auth becomes necessary
+
+## 8. Deployment stance
+
+For current development phase:
+- same VPS is acceptable
+- separate app stack required
+- separate env required
+- separate DB boundary required
+- separate domain routing required
+
+Do not let Creator Workboard become just “another page” inside Virtual Development.
+EOF
+
+cat > "$VD_REPO/docs/server_and_project_architecture.md" <<'EOF'
+# Server and Project Architecture
+
+Status: working architecture draft  
+Date: 2026-03-20
+
+## 1. Purpose
+
+This server currently acts as a shared development host for multiple projects.
+
+That is acceptable in this phase, but only if each project is treated as a separate stack.
+
+This is not:
+- one giant mixed control center
+- one shared app soup
+- one shared database without boundaries
+
+This is:
+- one shared host
+- one shared ingress layer
+- multiple separate product stacks
+
+## 2. Current portfolio
+
+### 2.1 Virtual-development.nl
+Role:
+- personal AI cockpit
+- monitoring/control center
+- experimental workspace
+- internal utility surface
+
+Important:
+Virtual Development should not become the runtime dependency or product shell for the other projects.
+
+### 2.2 Creator Workboard
+Role:
+- internal operations system
+- creator/channel management
+- manual operator workflow
+- access policy and handoff support
+- likely first serious business-critical internal tool
+
+Important:
+This is the current main product priority.
+
+### 2.3 NinfraEU / ECO Intel
+Role:
+- intelligence and planning layer
+- starts as intelligence core + report engine
+- grows into explicit program layer
+- later potentially adds execution/capital interfaces
+
+Important:
+This is not “just another dashboard”.
+It is a structured intelligence system with layers.
+
+### 2.4 Manuscript Engine / BookLab
+Role:
+- private writing engine
+- book/essay/article/paper projects
+- AI-assisted outline + draft + rewrite + export
+
+Important:
+This is not a publishing ERP in phase 1.
+It starts as a writing engine.
+
+## 3. Current host stance
+
+Recommended host model:
+- one VPS
+- Traefik as shared ingress
+- Docker host as shared runtime substrate
+- each product as its own stack
+
+Per project, require:
+- own directory
+- own compose project
+- own env file
+- own persistent volumes
+- own secrets
+- own database or DB boundary
+- own domain routing
+- own logs
+- own backup thinking
+
+## 4. Recommended physical layout
+
+Suggested host directories:
+
+/srv/
+  traefik/
+  virtual-development/
+  creatorworkboard/
+  ninfraeu/
+  booklab/
+
+## 5. Recommended domain layout
+
+### Virtual Development
+- `virtual-development.nl`
+
+### Creator Workboard
+- `creatorworkboard.com`
+- `www.creatorworkboard.com`
+- `ops.creatorworkboard.com`
+- later `portal.creatorworkboard.com`
+- later `account.creatorworkboard.com`
+
+### NinfraEU
+- own root domain when ready
+- operator surface first
+- external/report surface later
+
+### BookLab
+- internal only at first
+- no public domain required yet
+
+## 6. Hard rule
+
+A separate IP is not the same as a separate environment.
+
+A project is only really separated when it has:
+- own runtime
+- own secrets
+- own data
+- own deploy path
+- own routing
+- own failure boundary
+
+## 7. When to move a project to its own VPS
+
+Move a project when at least one becomes true:
+- daily team use becomes critical
+- another project’s deploy risk becomes unacceptable
+- stronger security boundary is needed
+- performance pressure rises
+- external/customer use becomes serious
+
+Likely order:
+1. Creator Workboard first
+2. NinfraEU second
+3. BookLab later if it becomes a serious publishing product
+4. Virtual Development stays personal longest
+
+## 8. Immediate recommendation
+
+### Creator Workboard
+Deploy as a separate stack behind shared ingress.
+
+### NinfraEU
+Keep narrow:
+- intelligence core
+- report machine
+- zone → cluster → corridor logic
+- program-layer documentation
+
+### BookLab
+Build as small internal writing engine.
+
+## 9. Final rule
+
+One shared host is fine.
+
+But only under this discipline:
+
+one shared ingress, multiple separate stacks, zero product soup.
+EOF
+
+cat > "$VD_REPO/docs/manuscript_engine_structure.md" <<'EOF'
+# Manuscript Engine — Structure
+
+Status: proposed v1 architecture  
+Date: 2026-03-20
+
+## 1. Goal
+
+Build a private manuscript engine where each work can:
+- store a long-form brief
+- generate an outline
+- generate chapters
+- rewrite/expand/compress drafts
+- preserve version history
+- allow later editing
+- export working manuscript text
+
+Supported work types:
+- book
+- essay
+- article
+- paper
+
+## 2. Product rule
+
+Do not build a full publishing platform first.
+
+Build a writing engine first.
+
+That is the leverage layer.
+
+## 3. Stack recommendation
+
+Recommended:
+- Django monolith
+- server-rendered templates
+- standard Django auth
+- SQLite in local development
+- PostgreSQL later
+- AI calls isolated in services layer
+
+## 4. Suggested repo layout
+
+booklab/
+  manage.py
+  booklab/
+    settings.py
+    urls.py
+  manuscripts/
+    models.py
+    views.py
+    forms.py
+    admin.py
+    services.py
+    prompts.py
+    exports.py
+    urls.py
+    tests/
+  templates/
+    base.html
+    manuscripts/
+      project_list.html
+      project_detail.html
+      chapter_detail.html
+      chapter_editor.html
+      draft_history.html
+
+## 5. Core models
+
+### BookProject
+Fields:
+- title
+- slug
+- work_type
+- status
+- language
+- audience
+- positioning_notes
+- style_guide
+- core_brief
+- created_at
+- updated_at
+
+### BookInstruction
+Fields:
+- project
+- instruction_type
+- title
+- instruction_text
+- active
+- created_at
+
+### BookOutline
+Fields:
+- project
+- outline_text
+- version
+- created_at
+
+### Chapter
+Fields:
+- project
+- order
+- title
+- purpose
+- notes
+- working_text
+- status
+- created_at
+- updated_at
+
+### DraftVersion
+Fields:
+- chapter
+- action_type
+- instruction_text
+- output_text
+- model_name
+- created_at
+
+### ExportJob
+Fields:
+- project
+- export_type
+- status
+- file_path or payload
+- created_at
+
+## 6. Services layer
+
+### services.py
+Responsibilities:
+- collect context
+- build prompts
+- call model provider
+- store outputs as draft versions
+
+Core service actions:
+- generate_outline(project_id)
+- generate_chapter_draft(chapter_id, instruction=None)
+- rewrite_chapter(chapter_id, instruction)
+- expand_chapter(chapter_id, instruction)
+- compress_chapter(chapter_id, instruction)
+
+### prompts.py
+Responsibilities:
+- prompt templates
+- style continuity
+- chapter context framing
+- tone consistency
+
+### exports.py
+Responsibilities:
+- collect chapters in order
+- output markdown/html/txt
+- later docx
+
+## 7. Core v1 flow
+
+1. create project
+2. write project brief
+3. generate outline
+4. edit outline
+5. create chapter records
+6. generate first chapter drafts
+7. review draft history
+8. promote a draft to working text
+9. edit later whenever desired
+10. export manuscript
+
+## 8. What v1 does NOT include
+
+Not phase 1:
+- webshop
+- invoices
+- KDP automation
+- catalog/commerce
+- public portal
+- customer accounts
+- royalties
+- fulfillment
+
+## 9. Estimated initial build
+
+Approximate first serious version:
+- ~35 hours
+
+## 10. Easy later modules
+
+Once core is stable, later modules can be added:
+- works library
+- publication targets
+- webshop
+- invoice module
+- article/paper mode
+- metadata helper
+- commerce and downloads
+
+## 11. Final rule
+
+This starts as a private writing engine.
+
+Not as a publishing ERP.
+EOF
+
+cat > "$VD_REPO/scripts/find_virtual_development_entrypoint.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOMAIN="${1:-virtual-development.nl}"
+
+echo "=== Searching Traefik labels for $DOMAIN ==="
+docker ps -q | while read -r cid; do
+  name="$(docker inspect --format '{{.Name}}' "$cid" | sed 's#^/##')"
+  labels="$(docker inspect --format '{{json .Config.Labels}}' "$cid" 2>/dev/null || true)"
+  if echo "$labels" | grep -q "$DOMAIN"; then
+    echo
+    echo ">>> MATCHING CONTAINER: $name"
+    echo "$labels" | sed 's/,/\n/g'
+  fi
+done
+
+echo
+echo "=== Showing mounts for matching containers ==="
+docker ps -q | while read -r cid; do
+  name="$(docker inspect --format '{{.Name}}' "$cid" | sed 's#^/##')"
+  labels="$(docker inspect --format '{{json .Config.Labels}}' "$cid" 2>/dev/null || true)"
+  if echo "$labels" | grep -q "$DOMAIN"; then
+    echo
+    echo ">>> MOUNTS for $name"
+    docker inspect --format '{{json .Mounts}}' "$cid"
+  fi
+done
+
+echo
+echo "=== Grep likely source files under /srv ==="
+sudo grep -R "$DOMAIN" /srv /opt "$HOME" 2>/dev/null || true
+
+echo
+echo "=== Find likely frontend entry files ==="
+sudo find /srv /opt "$HOME" \
+  \( -name 'index.html' -o -name 'App.jsx' -o -name 'App.tsx' -o -name 'app.py' -o -name 'server.js' -o -name 'docker-compose.yml' -o -name 'compose.yml' -o -name 'compose.yaml' -o -name 'conf.yml' -o -name 'config.yml' \) \
+  2>/dev/null | sort
+
+echo
+echo "=== Interpretation help ==="
+echo "1. If Traefik labels point to one container, that container is the real entry surface."
+echo "2. If mounts show a host path like /srv/virtual-development/app, that is the source location."
+echo "3. If this is a React/Vite static build, source is often App.jsx/App.tsx and build output is often dist/index.html."
+echo "4. If this is Streamlit, main entry is often app.py."
+echo "5. If this is Dashy, the config file is often the real source of the dashboard, not index.html."
+EOF
+
+chmod +x "$VD_REPO/scripts/find_virtual_development_entrypoint.sh"
+
+cat > "$VD_REPO/docs/README_docs_locations.md" <<EOF
+# Docs created by write_docs_and_find_vd.sh
+
+Created files:
+
+- $MM_REPO/docs/creatorworkboard_app_architecture.md
+- $VD_REPO/docs/server_and_project_architecture.md
+- $VD_REPO/docs/manuscript_engine_structure.md
+- $VD_REPO/scripts/find_virtual_development_entrypoint.sh
+
+Run the helper for virtual-development.nl with:
+
+bash $VD_REPO/scripts/find_virtual_development_entrypoint.sh
+
+Or for another host:
+
+bash $VD_REPO/scripts/find_virtual_development_entrypoint.sh example.com
+EOF
+
+echo
+echo "Done."
+echo "Created:"
+echo "  $MM_REPO/docs/creatorworkboard_app_architecture.md"
+echo "  $VD_REPO/docs/server_and_project_architecture.md"
+echo "  $VD_REPO/docs/manuscript_engine_structure.md"
+echo "  $VD_REPO/scripts/find_virtual_development_entrypoint.sh"
+echo
+echo "To locate the real virtual-development.nl entrypoint, run:"
+echo "  bash $VD_REPO/scripts/find_virtual_development_entrypoint.sh"
