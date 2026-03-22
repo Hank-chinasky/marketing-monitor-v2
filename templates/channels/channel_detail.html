@@ -3,15 +3,43 @@
 {% block content %}
 <h1>{{ channel.platform|title }} / {{ channel.handle }}</h1>
 
-<div style="margin-bottom: 1rem;">
+<div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <a class="quick-link" href="{{ back_to_queue_url }}">
+        {% if next_url %}
+            Terug naar queue
+        {% else %}
+            Terug naar channels
+        {% endif %}
+    </a>
+
     {% if channel.profile_url %}
-        <a class="quick-link" href="{{ channel.profile_url }}" target="_blank">Open platform</a>
+        <a class="quick-link" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open platform</a>
     {% endif %}
+
     <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Terug naar creator</a>
     <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
+
     {% if request.user.is_staff or request.user.is_superuser %}
-        <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
+        <a class="quick-link" href="{% url 'channel-update' channel.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
+            Edit channel
+        </a>
     {% endif %}
+</div>
+
+<div class="panel" style="margin-bottom: 1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+        <h2 style="margin:0;">Laatste operator update</h2>
+        {% if request.user.is_staff or request.user.is_superuser %}
+            <a class="quick-link" href="{% url 'channel-update' channel.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
+                Werk context bij
+            </a>
+        {% endif %}
+    </div>
+
+    <ul class="clean" style="margin-top:1rem;">
+        <li><strong>Laatste context:</strong> {{ channel.last_operator_update|default:"-"|linebreaksbr }}</li>
+        <li><strong>Updated at:</strong> {{ channel.last_operator_update_at|default:"-" }}</li>
+    </ul>
 </div>
 
 <div class="cards">
@@ -73,6 +101,9 @@
     <div class="panel">
         <h3>Alerts</h3>
         <ul class="clean">
+            {% if handoff_missing %}
+                <li><span class="badge badge-yellow">update mist</span> Laatste operator context ontbreekt.</li>
+            {% endif %}
             {% if channel.credential_status == "needs_reset" %}
                 <li><span class="badge badge-red">needs reset</span> Credentials vragen aandacht.</li>
             {% endif %}
@@ -88,7 +119,7 @@
             {% if channel.status != "active" %}
                 <li><span class="badge badge-yellow">{{ channel.status }}</span> Channel is niet actief.</li>
             {% endif %}
-            {% if channel.credential_status != "needs_reset" and channel.two_factor_enabled and not policy_gap and channel.status == "active" %}
+            {% if not handoff_missing and channel.credential_status != "needs_reset" and channel.two_factor_enabled and not policy_gap and channel.status == "active" %}
                 <li>Geen directe alerts.</li>
             {% endif %}
         </ul>
@@ -111,7 +142,7 @@
         <ul class="clean">
             <li><strong>Profile URL:</strong>
                 {% if channel.profile_url %}
-                    <a href="{{ channel.profile_url }}" target="_blank">{{ channel.profile_url }}</a>
+                    <a href="{{ channel.profile_url }}" target="_blank" rel="noopener">{{ channel.profile_url }}</a>
                 {% else %}
                     -
                 {% endif %}
@@ -119,6 +150,8 @@
             <li><strong>Access mode:</strong> {{ channel.access_mode }}</li>
             <li><strong>Recovery owner:</strong> {{ channel.recovery_owner }}</li>
             <li><strong>Login identifier:</strong> {{ channel.login_identifier|default:"-" }}</li>
+            <li><strong>Account email:</strong> {{ channel.account_email|default:"-" }}</li>
+            <li><strong>Account phone number:</strong> {{ channel.account_phone_number|default:"-" }}</li>
             <li><strong>Credential status:</strong> {{ channel.credential_status|default:"-" }}</li>
             <li><strong>2FA enabled:</strong> {{ channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
             <li><strong>Last access check:</strong> {{ channel.last_access_check_at|default:"-" }}</li>

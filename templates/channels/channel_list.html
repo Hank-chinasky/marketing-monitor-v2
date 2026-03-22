@@ -3,56 +3,458 @@
 {% block content %}
 <h1>Channels</h1>
 
-<ul>
-    {% for channel in channels %}
-        <li style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ccc; background: #fafafa;">
-            <div style="margin-bottom: 0.5rem;">
-                <strong>{{ channel.creator.display_name }}</strong>
-            </div>
+<div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    {% if request.user.is_staff or request.user.is_superuser %}
+        <a class="quick-link" href="{% url 'channel-create' %}">Nieuw channel</a>
+    {% endif %}
+    <a class="quick-link" href="/channels/">Reset filters</a>
+</div>
 
-            <div style="margin-bottom: 0.5rem;">
-                {{ channel.platform|title }} / {{ channel.handle }} — {{ channel.status }}
-            </div>
+<div class="panel" style="margin-bottom: 1rem;">
+    <h2 style="margin-top: 0;">Triage presets</h2>
 
-            <div style="margin-bottom: 0.5rem;">
-                {% if channel.profile_url %}
-                    <a class="quick-link" href="{{ channel.profile_url }}" target="_blank">Open platform</a>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a
+            href="/channels/"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'all' %}
+                    background: #1d4ed8;
+                    color: white;
                 {% else %}
-                    <span>Geen profiel-URL</span>
+                    background: #e5e7eb;
+                    color: #111827;
                 {% endif %}
-                <a class="quick-link" href="{% url 'channel-detail' channel.pk %}">Channel detail</a>
-                <a class="quick-link" href="{% url 'creator-detail' channel.creator.pk %}">Creator detail</a>
-                <a class="quick-link" href="{% url 'creator-network' channel.creator.pk %}">Netwerk</a>
-                {% if request.user.is_staff or request.user.is_superuser %}
-                    <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
+            "
+        >
+            Alle channels ({{ preset_counts.all }})
+        </a>
+
+        <a
+            href="/channels/?preset=issues"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'issues' %}
+                    background: #b91c1c;
+                    color: white;
+                {% else %}
+                    background: #fee2e2;
+                    color: #991b1b;
                 {% endif %}
-            </div>
+            "
+        >
+            Alle issues ({{ preset_counts.issues }})
+        </a>
 
-            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-                <div style="min-width: 260px; flex: 1;">
-                    <strong>Account Access</strong>
-                    <ul>
-                        <li>Access mode: {{ channel.access_mode }}</li>
-                        <li>Credential status: {{ channel.credential_status|default:"-" }}</li>
-                        <li>2FA: {{ channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
-                        <li>Last access check: {{ channel.last_access_check_at|default:"-" }}</li>
-                    </ul>
-                </div>
+        <a
+            href="/channels/?preset=needs_reset"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'needs_reset' %}
+                    background: #b91c1c;
+                    color: white;
+                {% else %}
+                    background: #fee2e2;
+                    color: #991b1b;
+                {% endif %}
+            "
+        >
+            Needs reset ({{ preset_counts.needs_reset }})
+        </a>
 
-                <div style="min-width: 260px; flex: 1;">
-                    <strong>Access Policy</strong>
-                    <ul>
-                        <li>VPN required: {{ channel.vpn_required|yesno:"Ja,Nee" }}</li>
-                        <li>Approved region: {{ channel.approved_access_region|default:"-" }}</li>
-                        <li>IP label: {{ channel.approved_ip_label|default:"-" }}</li>
-                        <li>Egress IP: {{ channel.approved_egress_ip|default:"-" }}</li>
-                        <li>Last IP check: {{ channel.last_ip_check_at|default:"-" }}</li>
-                    </ul>
-                </div>
-            </div>
-        </li>
-    {% empty %}
-        <li>Geen channels.</li>
-    {% endfor %}
-</ul>
+        <a
+            href="/channels/?preset=no_2fa"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'no_2fa' %}
+                    background: #d97706;
+                    color: white;
+                {% else %}
+                    background: #fef3c7;
+                    color: #92400e;
+                {% endif %}
+            "
+        >
+            Geen 2FA ({{ preset_counts.no_2fa }})
+        </a>
+
+        <a
+            href="/channels/?preset=vpn_gap"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'vpn_gap' %}
+                    background: #d97706;
+                    color: white;
+                {% else %}
+                    background: #fef3c7;
+                    color: #92400e;
+                {% endif %}
+            "
+        >
+            VPN gaps ({{ preset_counts.vpn_gap }})
+        </a>
+
+        <a
+            href="/channels/?preset=no_identifier"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'no_identifier' %}
+                    background: #d97706;
+                    color: white;
+                {% else %}
+                    background: #fef3c7;
+                    color: #92400e;
+                {% endif %}
+            "
+        >
+            Geen identifier ({{ preset_counts.no_identifier }})
+        </a>
+
+        <a
+            href="/channels/?preset=no_update"
+            style="
+                display: inline-block;
+                padding: 0.6rem 0.9rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                {% if current_preset == 'no_update' %}
+                    background: #d97706;
+                    color: white;
+                {% else %}
+                    background: #fef3c7;
+                    color: #92400e;
+                {% endif %}
+            "
+        >
+            Geen update ({{ preset_counts.no_update }})
+        </a>
+    </div>
+</div>
+
+{% if current_updated == "1" %}
+    <div
+        class="panel"
+        style="
+            margin-bottom: 1rem;
+            padding: 0.85rem 1rem;
+            border-radius: 8px;
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        "
+    >
+        Channel bijgewerkt. Je zit nog steeds in dezelfde queue.
+    </div>
+{% endif %}
+
+<div class="panel" style="margin-bottom: 1rem;">
+    <h2 style="margin-top: 0;">Filters</h2>
+
+    <form method="get" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: end;">
+        <input type="hidden" name="preset" value="{% if current_preset != 'all' %}{{ current_preset }}{% endif %}">
+
+        <div>
+            <label for="id_q"><strong>Zoeken</strong></label>
+            <input
+                id="id_q"
+                type="text"
+                name="q"
+                value="{{ current_q }}"
+                placeholder="Creator, handle, login, email, telefoon"
+                style="width: 100%;"
+            >
+        </div>
+
+        <div>
+            <label for="id_status"><strong>Status</strong></label>
+            <select id="id_status" name="status" style="width: 100%;">
+                <option value="">Alle statussen</option>
+                {% for value, label in channel_status_choices %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="id_credential_status"><strong>Credential status</strong></label>
+            <select id="id_credential_status" name="credential_status" style="width: 100%;">
+                <option value="">Alle credential statussen</option>
+                {% for value, label in credential_status_choices %}
+                    <option value="{{ value }}" {% if current_credential_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="id_two_factor_enabled"><strong>2FA</strong></label>
+            <select id="id_two_factor_enabled" name="two_factor_enabled" style="width: 100%;">
+                <option value="">Alles</option>
+                <option value="yes" {% if current_two_factor_enabled == "yes" %}selected{% endif %}>Alleen aan</option>
+                <option value="no" {% if current_two_factor_enabled == "no" %}selected{% endif %}>Alleen uit</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="id_vpn_required"><strong>VPN required</strong></label>
+            <select id="id_vpn_required" name="vpn_required" style="width: 100%;">
+                <option value="">Alles</option>
+                <option value="yes" {% if current_vpn_required == "yes" %}selected{% endif %}>Alleen ja</option>
+                <option value="no" {% if current_vpn_required == "no" %}selected{% endif %}>Alleen nee</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button
+                type="submit"
+                style="
+                    padding: 0.7rem 1rem;
+                    border: 0;
+                    border-radius: 8px;
+                    background: #1d4ed8;
+                    color: white;
+                    font-weight: 600;
+                    cursor: pointer;
+                "
+            >
+                Filter
+            </button>
+
+            <a
+                href="/channels/"
+                style="
+                    display: inline-block;
+                    padding: 0.7rem 1rem;
+                    border-radius: 8px;
+                    background: #e5e7eb;
+                    color: #111827;
+                    text-decoration: none;
+                    font-weight: 600;
+                "
+            >
+                Reset
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <div style="margin-bottom: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; color: #555;">
+        <div><strong>{{ issue_count }}</strong> channels met issues in deze selectie</div>
+        <div><strong>{{ visible_count }}</strong> totaal zichtbaar</div>
+        <div>
+            <strong>Preset:</strong>
+            {% if current_preset == "all" %}
+                Alle channels
+            {% elif current_preset == "issues" %}
+                Alle issues
+            {% elif current_preset == "needs_reset" %}
+                Needs reset
+            {% elif current_preset == "no_2fa" %}
+                Geen 2FA
+            {% elif current_preset == "vpn_gap" %}
+                VPN gaps
+            {% elif current_preset == "no_identifier" %}
+                Geen identifier
+            {% elif current_preset == "no_update" %}
+                Geen update
+            {% else %}
+                Alle channels
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                    <th style="padding: 0.75rem 0.5rem;">Creator</th>
+                    <th style="padding: 0.75rem 0.5rem;">Platform</th>
+                    <th style="padding: 0.75rem 0.5rem;">Handle</th>
+                    <th style="padding: 0.75rem 0.5rem;">Email</th>
+                    <th style="padding: 0.75rem 0.5rem;">Telefoon</th>
+                    <th style="padding: 0.75rem 0.5rem;">Status</th>
+                    <th style="padding: 0.75rem 0.5rem;">Credential</th>
+                    <th style="padding: 0.75rem 0.5rem;">2FA</th>
+                    <th style="padding: 0.75rem 0.5rem;">VPN</th>
+                    <th style="padding: 0.75rem 0.5rem;">IP / Label</th>
+                    <th style="padding: 0.75rem 0.5rem;">Issues</th>
+                    <th style="padding: 0.75rem 0.5rem;">Laatste update</th>
+                    <th style="padding: 0.75rem 0.5rem;">Acties</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for channel in channels %}
+                    <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <a href="{% url 'creator-detail' channel.creator.pk %}">
+                                {{ channel.creator.display_name }}
+                            </a>
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {{ channel.platform|title }}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <a href="{% url 'channel-detail' channel.pk %}?next={{ current_full_path|urlencode }}">
+                                {{ channel.handle }}
+                            </a>
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.account_email %}
+                                {{ channel.account_email }}
+                            {% else %}
+                                <span style="color: #777;">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.account_phone_number %}
+                                {{ channel.account_phone_number }}
+                            {% else %}
+                                <span style="color: #777;">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.status == "active" %}
+                                <span class="badge badge-green">active</span>
+                            {% else %}
+                                <span class="badge badge-yellow">{{ channel.status }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.credential_status == "needs_reset" %}
+                                <span class="badge badge-red">needs reset</span>
+                            {% elif channel.credential_status %}
+                                <span class="badge badge-blue">{{ channel.credential_status }}</span>
+                            {% else %}
+                                <span class="badge badge-yellow">onbekend</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.two_factor_enabled %}
+                                <span class="badge badge-green">ok</span>
+                            {% else %}
+                                <span class="badge badge-yellow">uit</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.vpn_required %}
+                                <span class="badge badge-blue">verplicht</span>
+                            {% else %}
+                                <span class="badge badge-green">nee</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.approved_ip_label %}
+                                <div><strong>{{ channel.approved_ip_label }}</strong></div>
+                            {% endif %}
+                            {% if channel.approved_egress_ip %}
+                                <div>{{ channel.approved_egress_ip }}</div>
+                            {% endif %}
+                            {% if not channel.approved_ip_label and not channel.approved_egress_ip %}
+                                <span style="color: #777;">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start;">
+                                {% if channel.credential_status == "needs_reset" %}
+                                    <span class="badge badge-red">reset</span>
+                                {% endif %}
+
+                                {% if not channel.two_factor_enabled %}
+                                    <span class="badge badge-yellow">geen 2FA</span>
+                                {% endif %}
+
+                                {% if channel.policy_gap %}
+                                    <span class="badge badge-yellow">VPN gap</span>
+                                {% endif %}
+
+                                {% if channel.missing_identifier %}
+                                    <span class="badge badge-yellow">geen identifier</span>
+                                {% endif %}
+
+                                {% if channel.missing_update %}
+                                    <span class="badge badge-yellow">geen update</span>
+                                {% endif %}
+
+                                {% if not channel.has_issue %}
+                                    <span style="color: #777;">-</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if channel.last_operator_update_at %}
+                                <div>{{ channel.last_operator_update_at }}</div>
+                            {% else %}
+                                <span style="color: #777;">-</span>
+                            {% endif %}
+
+                            {% if channel.last_operator_update %}
+                                <div style="margin-top: 0.35rem; color: #555; max-width: 280px;">
+                                    {{ channel.last_operator_update|truncatechars:80 }}
+                                </div>
+                            {% endif %}
+                        </td>
+
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-start;">
+                                <a class="quick-link" href="{% url 'channel-detail' channel.pk %}?next={{ current_full_path|urlencode }}">Open</a>
+                                {% if request.user.is_staff or request.user.is_superuser %}
+                                    <a class="quick-link" href="{% url 'channel-update' channel.pk %}?next={{ current_full_path|urlencode }}">Edit</a>
+                                {% endif %}
+                                {% if channel.profile_url %}
+                                    <a class="quick-link" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Platform</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="13" style="padding: 1rem 0.5rem; color: #777;">
+                            Geen channels zichtbaar voor deze filters.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}
