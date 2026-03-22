@@ -25,7 +25,7 @@ services:
       - "traefik.http.routers.creatorworkboard-ops.entrypoints=websecure"
       - "traefik.http.routers.creatorworkboard-ops.tls=true"
       - "traefik.http.routers.creatorworkboard-ops.tls.certresolver=le"
-      - "traefik.http.routers.creatorworkboard-ops.middlewares=security-headers@file"
+      - "traefik.http.routers.creatorworkboard-ops.middlewares=traefik-auth@docker,security-headers@file"
       - "traefik.http.services.creatorworkboard-ops.loadbalancer.server.port=8000"
     networks:
       - app_net
