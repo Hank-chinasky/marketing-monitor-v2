@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="panel">
+    <h1>Update handoff</h1>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="button button--primary">Save</button>
+      <a href="{% url 'channel-detail' object.pk %}" class="button button--secondary">Cancel</a>
+    </form>
+  </section>
+{% endblock %}

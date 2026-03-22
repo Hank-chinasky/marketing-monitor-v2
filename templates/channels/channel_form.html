@@ -1,12 +1,356 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Channel</h1>
+<h1>
+    {% if object %}
+        Edit channel
+    {% else %}
+        Nieuw channel
+    {% endif %}
+</h1>
 
-<form method="post">
+<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+    <a class="quick-link" href="{{ back_to_queue_url }}">
+        {% if next_url %}
+            Terug naar queue
+        {% else %}
+            Terug naar channels
+        {% endif %}
+    </a>
+
+    {% if object %}
+        <a class="quick-link" href="{% url 'channel-detail' object.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
+            Open channel detail
+        </a>
+    {% endif %}
+
+    {% if not next_url %}
+        {% if request.GET.saved == "1" and object %}
+            <a
+                href="/"
+                style="
+                    display: inline-block;
+                    padding: 0.6rem 0.9rem;
+                    border-radius: 8px;
+                    background: #15803d;
+                    color: white;
+                    text-decoration: none;
+                    font-weight: 600;
+                "
+            >
+                Terug naar dashboard
+            </a>
+        {% else %}
+            <span
+                style="
+                    display: inline-block;
+                    padding: 0.6rem 0.9rem;
+                    border-radius: 8px;
+                    background: #b91c1c;
+                    color: white;
+                    font-weight: 600;
+                    cursor: not-allowed;
+                    opacity: 0.9;
+                "
+                aria-disabled="true"
+                title="Sla eerst het formulier op"
+            >
+                Eerst opslaan
+            </span>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div class="panel" style="margin-bottom: 1rem;">
+    {% if next_url %}
+        <div
+            style="
+                padding: 0.85rem 1rem;
+                border-radius: 8px;
+                background: #eff6ff;
+                color: #1d4ed8;
+                border: 1px solid #93c5fd;
+            "
+        >
+            Deze editpagina hoort bij een queue-flow. Na save ga je terug naar exact dezelfde channel queue.
+        </div>
+    {% elif request.GET.saved == "1" and object %}
+        <div
+            style="
+                padding: 0.85rem 1rem;
+                border-radius: 8px;
+                background: #dcfce7;
+                color: #166534;
+                border: 1px solid #86efac;
+            "
+        >
+            Channel succesvol opgeslagen. De dashboardknop is nu actief.
+        </div>
+    {% else %}
+        <div
+            style="
+                padding: 0.85rem 1rem;
+                border-radius: 8px;
+                background: #fef2f2;
+                color: #991b1b;
+                border: 1px solid #fca5a5;
+            "
+        >
+            Dashboardknop blijft geblokkeerd totdat je succesvol op save hebt geklikt.
+        </div>
+    {% endif %}
+</div>
+
+<form method="post" novalidate>
     {% csrf_token %}
-    {{ form.non_field_errors }}
-    {{ form.as_p }}
-    <button type="submit">Opslaan</button>
+    {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="panel" style="margin-bottom: 1rem; border: 1px solid #fca5a5; background: #fef2f2;">
+            <h2 style="margin-top: 0;">Controleer het formulier</h2>
+            <ul class="clean">
+                {% for error in form.non_field_errors %}
+                    <li style="color: #991b1b;">{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="grid">
+        <div class="panel">
+            <h2>Basis</h2>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.creator.id_for_label }}"><strong>{{ form.creator.label }}</strong></label>
+                {{ form.creator }}
+                {% if form.creator.help_text %}
+                    <div style="color: #666; margin-top: 0.25rem;">{{ form.creator.help_text }}</div>
+                {% endif %}
+                {% for error in form.creator.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.platform.id_for_label }}"><strong>{{ form.platform.label }}</strong></label>
+                {{ form.platform }}
+                {% for error in form.platform.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.handle.id_for_label }}"><strong>{{ form.handle.label }}</strong></label>
+                {{ form.handle }}
+                {% for error in form.handle.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.profile_url.id_for_label }}"><strong>{{ form.profile_url.label }}</strong></label>
+                {{ form.profile_url }}
+                {% for error in form.profile_url.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.status.id_for_label }}"><strong>{{ form.status.label }}</strong></label>
+                {{ form.status }}
+                {% for error in form.status.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Access setup</h2>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.access_mode.id_for_label }}"><strong>{{ form.access_mode.label }}</strong></label>
+                {{ form.access_mode }}
+                {% for error in form.access_mode.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.recovery_owner.id_for_label }}"><strong>{{ form.recovery_owner.label }}</strong></label>
+                {{ form.recovery_owner }}
+                {% for error in form.recovery_owner.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.login_identifier.id_for_label }}"><strong>{{ form.login_identifier.label }}</strong></label>
+                {{ form.login_identifier }}
+                {% if form.login_identifier.help_text %}
+                    <div style="color: #666; margin-top: 0.25rem;">{{ form.login_identifier.help_text }}</div>
+                {% endif %}
+                {% for error in form.login_identifier.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.account_email.id_for_label }}"><strong>{{ form.account_email.label }}</strong></label>
+                {{ form.account_email }}
+                {% if form.account_email.help_text %}
+                    <div style="color: #666; margin-top: 0.25rem;">{{ form.account_email.help_text }}</div>
+                {% endif %}
+                {% for error in form.account_email.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.account_phone_number.id_for_label }}"><strong>{{ form.account_phone_number.label }}</strong></label>
+                {{ form.account_phone_number }}
+                {% if form.account_phone_number.help_text %}
+                    <div style="color: #666; margin-top: 0.25rem;">{{ form.account_phone_number.help_text }}</div>
+                {% endif %}
+                {% for error in form.account_phone_number.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.credential_status.id_for_label }}"><strong>{{ form.credential_status.label }}</strong></label>
+                {{ form.credential_status }}
+                {% for error in form.credential_status.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.last_access_check_at.id_for_label }}"><strong>{{ form.last_access_check_at.label }}</strong></label>
+                {{ form.last_access_check_at }}
+                {% for error in form.last_access_check_at.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.two_factor_enabled.id_for_label }}"><strong>{{ form.two_factor_enabled.label }}</strong></label>
+                {{ form.two_factor_enabled }}
+                {% for error in form.two_factor_enabled.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 0;">
+                <label for="{{ form.access_notes.id_for_label }}"><strong>{{ form.access_notes.label }}</strong></label>
+                {{ form.access_notes }}
+                {% for error in form.access_notes.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="margin-top: 1rem;">
+        <div class="panel">
+            <h2>Access policy</h2>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.vpn_required.id_for_label }}"><strong>{{ form.vpn_required.label }}</strong></label>
+                {{ form.vpn_required }}
+                {% if form.vpn_required.help_text %}
+                    <div style="color: #666; margin-top: 0.25rem;">{{ form.vpn_required.help_text }}</div>
+                {% endif %}
+                {% for error in form.vpn_required.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.approved_ip_label.id_for_label }}"><strong>{{ form.approved_ip_label.label }}</strong></label>
+                {{ form.approved_ip_label }}
+                {% for error in form.approved_ip_label.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.approved_egress_ip.id_for_label }}"><strong>{{ form.approved_egress_ip.label }}</strong></label>
+                {{ form.approved_egress_ip }}
+                {% for error in form.approved_egress_ip.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.approved_access_region.id_for_label }}"><strong>{{ form.approved_access_region.label }}</strong></label>
+                {{ form.approved_access_region }}
+                {% for error in form.approved_access_region.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="{{ form.last_ip_check_at.id_for_label }}"><strong>{{ form.last_ip_check_at.label }}</strong></label>
+                {{ form.last_ip_check_at }}
+                {% for error in form.last_ip_check_at.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-bottom: 0;">
+                <label for="{{ form.access_profile_notes.id_for_label }}"><strong>{{ form.access_profile_notes.label }}</strong></label>
+                {{ form.access_profile_notes }}
+                {% for error in form.access_profile_notes.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Operator context</h2>
+
+            <div style="margin-bottom: 0;">
+                <label for="{{ form.last_operator_update.id_for_label }}"><strong>{{ form.last_operator_update.label }}</strong></label>
+                {{ form.last_operator_update }}
+                {% for error in form.last_operator_update.errors %}
+                    <div style="color: #b91c1c; margin-top: 0.25rem;">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button
+            type="submit"
+            style="
+                padding: 0.7rem 1rem;
+                border: 0;
+                border-radius: 8px;
+                background: #1d4ed8;
+                color: white;
+                font-weight: 600;
+                cursor: pointer;
+            "
+        >
+            Save
+        </button>
+
+        <a
+            href="{{ back_to_queue_url }}"
+            style="
+                display: inline-block;
+                padding: 0.7rem 1rem;
+                border-radius: 8px;
+                background: #e5e7eb;
+                color: #111827;
+                text-decoration: none;
+                font-weight: 600;
+            "
+        >
+            Annuleren
+        </a>
+    </div>
 </form>
 {% endblock %}

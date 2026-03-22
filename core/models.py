@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from core.validators import (
@@ -122,7 +123,11 @@ class CreatorChannel(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices)
     access_mode = models.CharField(max_length=40, choices=AccessMode.choices)
     recovery_owner = models.CharField(max_length=20, choices=RecoveryOwner.choices)
+
     login_identifier = models.CharField(max_length=255, blank=True)
+    account_email = models.EmailField(blank=True)
+    account_phone_number = models.CharField(max_length=64, blank=True)
+
     credential_status = models.CharField(
         max_length=30,
         choices=CredentialStatus.choices,
@@ -152,6 +157,16 @@ class CreatorChannel(models.Model):
 
     def clean(self):
         validate_platform_handle_unique_ci(self)
+
+        if self.vpn_required and not (
+            (self.approved_ip_label or "").strip() or (self.approved_egress_ip or "").strip()
+        ):
+            raise ValidationError(
+                {
+                    "approved_ip_label": "Set an approved IP label or approved egress IP when VPN is required.",
+                    "approved_egress_ip": "Set an approved IP label or approved egress IP when VPN is required.",
+                }
+            )
 
     def __str__(self) -> str:
         return f"{self.creator.display_name} / {self.platform} / {self.handle}"

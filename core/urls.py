@@ -11,6 +11,7 @@ from core.views import (
     CreatorListView,
     CreatorNetworkView,
     CreatorUpdateView,
+    HealthzView,
     OperationsDashboardView,
     OperatorAssignmentCreateView,
     OperatorAssignmentUpdateView,
@@ -18,6 +19,7 @@ from core.views import (
 )
 
 urlpatterns = [
+    path("healthz/", HealthzView.as_view(), name="healthz"),
     path("", OperationsDashboardView.as_view(), name="operations-dashboard"),
     path("creators/", CreatorListView.as_view(), name="creator-list"),
     path("creators/create/", CreatorCreateView.as_view(), name="creator-create"),

@@ -11,5 +11,3 @@ Creator now stores:
 - `content_source_url`
 - `content_source_notes`
 - `content_ready_status`
-## 2026-03-18
-- documented decision: content intake modeled as source-based metadata on `Creator`
