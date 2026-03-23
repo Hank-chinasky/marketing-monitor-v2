@@ -2,15 +2,19 @@
 
 {% block content %}
 <h1>Nieuwe operator</h1>
-<p class="muted">Maak hier een nieuwe operator-user aan. Dit maakt zowel de Django user als het gekoppelde Operator record aan.</p>
+<p class="muted">
+    Dit scherm maakt tegelijk een Django user en het gekoppelde Operator record aan.
+</p>
 
 <div class="panel">
     <form method="post">
         {% csrf_token %}
+        {{ form.non_field_errors }}
         {{ form.as_p }}
 
         <div class="form-actions">
             <button class="primary-button" type="submit">Operator aanmaken</button>
+            <a class="quick-link" href="{% url 'operator-list' %}">Terug naar operators</a>
         </div>
     </form>
 </div>

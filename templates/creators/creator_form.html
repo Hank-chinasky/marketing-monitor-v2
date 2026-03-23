@@ -1,12 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Creator</h1>
+<h1>{% if form.instance.pk %}Creator bewerken{% else %}Nieuwe creator{% endif %}</h1>
+<p class="muted">
+    Leg hier de basis vast: status, consent, primary operator en content intake.
+</p>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {{ form.as_p }}
-    <button type="submit">Opslaan</button>
-</form>
+<div class="panel">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="primary-button" type="submit">Opslaan</button>
+            <a class="quick-link" href="{% url 'creator-list' %}">Terug naar creators</a>
+        </div>
+    </form>
+</div>
 {% endblock %}

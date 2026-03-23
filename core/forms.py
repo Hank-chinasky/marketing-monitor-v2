@@ -1,6 +1,9 @@
+from datetime import datetime, time
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.utils import timezone
 
 from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
 
@@ -119,6 +122,18 @@ class CreatorChannelForm(forms.ModelForm):
 
 
 class OperatorAssignmentForm(forms.ModelForm):
+    starts_at = forms.DateField(
+        label="Startdatum",
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+    ends_at = forms.DateField(
+        label="Einddatum",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+
     class Meta:
         model = OperatorAssignment
         fields = [
@@ -129,7 +144,16 @@ class OperatorAssignmentForm(forms.ModelForm):
             "ends_at",
             "active",
         ]
-        widgets = {
-            "starts_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "ends_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-        }
+
+    def clean_starts_at(self):
+        start_date = self.cleaned_data["starts_at"]
+        start_dt = datetime.combine(start_date, time.min)
+        return timezone.make_aware(start_dt, timezone.get_current_timezone())
+
+    def clean_ends_at(self):
+        end_date = self.cleaned_data.get("ends_at")
+        if not end_date:
+            return None
+
+        end_dt = datetime.combine(end_date, time.min)
+        return timezone.make_aware(end_dt, timezone.get_current_timezone())

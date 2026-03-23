@@ -580,4 +580,64 @@ class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
     model = Operator
     template_name = "operators/operator_list.html"
     context_object_name = "operators"
-    queryset = Operator.objects.select_related("user")
+
+    def get_queryset(self):
+        qs = (
+            Operator.objects.select_related("user")
+            .prefetch_related("primary_creators", "assignments__creator")
+            .order_by("user__first_name", "user__last_name", "user__username")
+        )
+
+        q = (self.request.GET.get("q") or "").strip()
+        if q:
+            qs = qs.filter(
+                Q(user__username__icontains=q)
+                | Q(user__email__icontains=q)
+                | Q(user__first_name__icontains=q)
+                | Q(user__last_name__icontains=q)
+            )
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        operators = list(context["operators"])
+
+        operator_rows = []
+        total_active_assignments = 0
+        operators_with_assignments = 0
+        operators_with_primary_creators = 0
+
+        for operator in operators:
+            active_assignments = [a for a in operator.assignments.all() if a.active]
+            active_creator_ids = {a.creator_id for a in active_assignments}
+            primary_creators = list(operator.primary_creators.all())
+
+            if active_assignments:
+                operators_with_assignments += 1
+            if primary_creators:
+                operators_with_primary_creators += 1
+
+            total_active_assignments += len(active_assignments)
+
+            operator_rows.append(
+                {
+                    "operator": operator,
+                    "user": operator.user,
+                    "active_assignment_count": len(active_assignments),
+                    "active_creator_count": len(active_creator_ids),
+                    "primary_creator_count": len(primary_creators),
+                    "primary_creators": primary_creators[:5],
+                }
+            )
+
+        context["operator_rows"] = operator_rows
+        context["search_query"] = (self.request.GET.get("q") or "").strip()
+        context["summary"] = {
+            "operator_count": len(operators),
+            "active_assignment_count": total_active_assignments,
+            "operators_with_assignments": operators_with_assignments,
+            "operators_with_primary_creators": operators_with_primary_creators,
+        }
+
+        return context

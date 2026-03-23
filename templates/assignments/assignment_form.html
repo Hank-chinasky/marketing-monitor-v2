@@ -1,12 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Assignment</h1>
+<h1>{% if form.instance.pk %}Assignment bewerken{% else %}Nieuwe assignment{% endif %}</h1>
+<p class="muted">
+    Koppel hier een operator aan een creator met scope en geldigheidsperiode.
+</p>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {{ form.as_p }}
-    <button type="submit">Opslaan</button>
-</form>
+<div class="panel">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {{ form.as_p }}
+
+        <div class="form-actions">
+            <button class="primary-button" type="submit">Opslaan</button>
+            <a class="quick-link" href="{% url 'assignment-list' %}">Terug naar assignments</a>
+        </div>
+    </form>
+</div>
 {% endblock %}
