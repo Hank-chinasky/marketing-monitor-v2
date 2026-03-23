@@ -511,7 +511,18 @@ class CreatorChannelCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateView):
     model = CreatorChannel
     form_class = CreatorChannelForm
     template_name = "channels/channel_form.html"
-    success_url = reverse_lazy("channel-list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["next_url"] = get_safe_next_url(self.request)
+        context["saved"] = self.request.GET.get("saved") == "1"
+        return context
+
+    def get_success_url(self):
+        next_url = get_safe_next_url(self.request)
+        if next_url:
+            return append_query_parameter(next_url, "updated", "1")
+        return append_query_parameter(reverse("channel-create"), "saved", "1")
 
 
 class CreatorChannelUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
@@ -523,7 +534,11 @@ class CreatorChannelUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
         if "last_operator_update" in form.cleaned_data:
             last_update = (form.cleaned_data.get("last_operator_update") or "").strip()
             form.instance.last_operator_update = last_update
-            form.instance.last_operator_update_at = timezone.now() if last_update else None
+            if last_update:
+                existing_ts = form.cleaned_data.get("last_operator_update_at")
+                form.instance.last_operator_update_at = existing_ts or timezone.now()
+            else:
+                form.instance.last_operator_update_at = None
 
         return super().form_valid(form)
 
@@ -556,14 +571,32 @@ class OperatorAssignmentCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateVie
     model = OperatorAssignment
     form_class = OperatorAssignmentForm
     template_name = "assignments/assignment_form.html"
-    success_url = reverse_lazy("assignment-list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["saved"] = self.request.GET.get("saved") == "1"
+        return context
+
+    def get_success_url(self):
+        return append_query_parameter(reverse("assignment-create"), "saved", "1")
 
 
 class OperatorAssignmentUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
     model = OperatorAssignment
     form_class = OperatorAssignmentForm
     template_name = "assignments/assignment_form.html"
-    success_url = reverse_lazy("assignment-list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["saved"] = self.request.GET.get("saved") == "1"
+        return context
+
+    def get_success_url(self):
+        return append_query_parameter(
+            reverse("assignment-update", kwargs={"pk": self.object.pk}),
+            "saved",
+            "1",
+        )
 
 
 class OperatorCreateView(LoginRequiredMixin, AdminOnlyMixin, FormView):

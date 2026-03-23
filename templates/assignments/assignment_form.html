@@ -6,6 +6,12 @@
     Koppel hier een operator aan een creator met scope en geldigheidsperiode.
 </p>
 
+{% if saved %}
+    <div class="success-panel">
+        Assignment is opgeslagen.
+    </div>
+{% endif %}
+
 <div class="panel">
     <form method="post">
         {% csrf_token %}
@@ -14,7 +20,7 @@
 
         <div class="form-actions">
             <button class="primary-button" type="submit">Opslaan</button>
-            <a class="quick-link" href="{% url 'assignment-list' %}">Terug naar assignments</a>
+            <a class="secondary-button" href="{% url 'assignment-list' %}">Terug naar assignments</a>
         </div>
     </form>
 </div>

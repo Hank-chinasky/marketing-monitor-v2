@@ -90,6 +90,25 @@ class CreatorForm(forms.ModelForm):
 
 
 class CreatorChannelForm(forms.ModelForm):
+    last_access_check_at = forms.DateField(
+        label="Laatste access check",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+    last_ip_check_at = forms.DateField(
+        label="Laatste IP check",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+    last_operator_update_at = forms.DateField(
+        label="Laatste operator update datum",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+
     class Meta:
         model = CreatorChannel
         fields = [
@@ -114,11 +133,43 @@ class CreatorChannelForm(forms.ModelForm):
             "last_operator_update",
             "last_operator_update_at",
         ]
-        widgets = {
-            "last_access_check_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "last_ip_check_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "last_operator_update_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        instance = getattr(self, "instance", None)
+        if not instance or not instance.pk:
+            return
+
+        if instance.last_access_check_at:
+            self.initial["last_access_check_at"] = timezone.localtime(
+                instance.last_access_check_at
+            ).date()
+
+        if instance.last_ip_check_at:
+            self.initial["last_ip_check_at"] = timezone.localtime(
+                instance.last_ip_check_at
+            ).date()
+
+        if instance.last_operator_update_at:
+            self.initial["last_operator_update_at"] = timezone.localtime(
+                instance.last_operator_update_at
+            ).date()
+
+    def _date_to_aware_datetime(self, value):
+        if not value:
+            return None
+        dt = datetime.combine(value, time.min)
+        return timezone.make_aware(dt, timezone.get_current_timezone())
+
+    def clean_last_access_check_at(self):
+        return self._date_to_aware_datetime(self.cleaned_data.get("last_access_check_at"))
+
+    def clean_last_ip_check_at(self):
+        return self._date_to_aware_datetime(self.cleaned_data.get("last_ip_check_at"))
+
+    def clean_last_operator_update_at(self):
+        return self._date_to_aware_datetime(self.cleaned_data.get("last_operator_update_at"))
 
 
 class OperatorAssignmentForm(forms.ModelForm):
@@ -144,6 +195,18 @@ class OperatorAssignmentForm(forms.ModelForm):
             "ends_at",
             "active",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        instance = getattr(self, "instance", None)
+        if not instance or not instance.pk:
+            return
+
+        if instance.starts_at:
+            self.initial["starts_at"] = timezone.localtime(instance.starts_at).date()
+        if instance.ends_at:
+            self.initial["ends_at"] = timezone.localtime(instance.ends_at).date()
 
     def clean_starts_at(self):
         start_date = self.cleaned_data["starts_at"]

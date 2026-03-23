@@ -6,6 +6,12 @@
     Vul hier account access, 2FA-status, VPN/IP policy en operator-update in.
 </p>
 
+{% if saved %}
+    <div class="success-panel">
+        Channel is opgeslagen.
+    </div>
+{% endif %}
+
 <div class="panel">
     <form method="post">
         {% csrf_token %}
@@ -18,15 +24,8 @@
 
         <div class="form-actions">
             <button class="primary-button" type="submit">Opslaan</button>
-            <a class="quick-link" href="{% url 'channel-list' %}">Terug naar channels</a>
+            <a class="secondary-button" href="{% url 'channel-list' %}">Terug naar channels</a>
         </div>
     </form>
-
-    {% if saved %}
-        <p style="margin-top:1rem;">
-            <span class="badge badge-green">Opgeslagen</span>
-            Het channel is bijgewerkt.
-        </p>
-    {% endif %}
 </div>
 {% endblock %}
