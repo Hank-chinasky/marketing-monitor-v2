@@ -15,6 +15,7 @@ from core.views import (
     OperationsDashboardView,
     OperatorAssignmentCreateView,
     OperatorAssignmentUpdateView,
+    OperatorCreateView,
     OperatorListView,
 )
 
@@ -34,4 +35,5 @@ urlpatterns = [
     path("assignments/create/", OperatorAssignmentCreateView.as_view(), name="assignment-create"),
     path("assignments/<int:pk>/edit/", OperatorAssignmentUpdateView.as_view(), name="assignment-update"),
     path("operators/", OperatorListView.as_view(), name="operator-list"),
+    path("operators/create/", OperatorCreateView.as_view(), name="operator-create"),
 ]

@@ -7,10 +7,22 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
-from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    FormView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
 
 from core.authz import scope_assignments_queryset, scope_channels_queryset
-from core.forms import CreatorChannelForm, CreatorForm, OperatorAssignmentForm
+from core.forms import (
+    CreatorChannelForm,
+    CreatorForm,
+    OperatorAssignmentForm,
+    OperatorCreateForm,
+)
 from core.mixins import (
     AdminOnlyMixin,
     ScopedAssignmentQuerysetMixin,
@@ -341,8 +353,6 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
             | Q(creator__legal_name__icontains=q)
             | Q(handle__icontains=q)
             | Q(login_identifier__icontains=q)
-            | Q(account_email__icontains=q)
-            | Q(account_phone_number__icontains=q)
             | Q(profile_url__icontains=q)
         )
 
@@ -379,12 +389,7 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
                     & Q(approved_ip_label__exact="")
                     & Q(approved_egress_ip__exact="")
                 )
-                & Q(vpn_required=True)
-                | (
-                    Q(login_identifier__exact="")
-                    & Q(account_email__exact="")
-                    & Q(account_phone_number__exact="")
-                )
+                | Q(login_identifier__exact="")
                 | Q(last_operator_update__exact="")
             )
 
@@ -402,11 +407,7 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
             )
 
         if preset == "no_identifier":
-            return qs.filter(
-                login_identifier__exact="",
-                account_email__exact="",
-                account_phone_number__exact="",
-            )
+            return qs.filter(login_identifier__exact="")
 
         if preset == "no_update":
             return qs.filter(last_operator_update__exact="")
@@ -454,11 +455,7 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
                     channel.vpn_required
                     and not (channel.approved_ip_label or channel.approved_egress_ip)
                 )
-                or not (
-                    (channel.login_identifier or "").strip()
-                    or (channel.account_email or "").strip()
-                    or (channel.account_phone_number or "").strip()
-                )
+                or not ((channel.login_identifier or "").strip())
                 or not (channel.last_operator_update or "").strip()
             )
         )
@@ -467,7 +464,9 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
         context["preset_counts"] = preset_counts
         context["active_preset"] = preset
         context["current_preset"] = preset
-        context["current_preset_label"] = self.PRESET_LABELS.get(preset, self.PRESET_LABELS["all"])
+        context["current_preset_label"] = self.PRESET_LABELS.get(
+            preset, self.PRESET_LABELS["all"]
+        )
         context["issue_count"] = issue_count
         context["visible_count"] = len(channels)
         context["status_options"] = CreatorChannel.Status.choices
@@ -565,6 +564,16 @@ class OperatorAssignmentUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateVie
     form_class = OperatorAssignmentForm
     template_name = "assignments/assignment_form.html"
     success_url = reverse_lazy("assignment-list")
+
+
+class OperatorCreateView(LoginRequiredMixin, AdminOnlyMixin, FormView):
+    template_name = "operators/operator_form.html"
+    form_class = OperatorCreateForm
+    success_url = reverse_lazy("operator-list")
+
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
 
 
 class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):

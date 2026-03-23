@@ -4,6 +4,16 @@
 <h1>Operations Dashboard</h1>
 <p class="muted">Overzicht van aandachtspunten, snelle toegang en operationele status.</p>
 
+{% if request.user.is_staff or request.user.is_superuser %}
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <h2>Snelle acties</h2>
+    <a class="primary-button" href="{% url 'creator-create' %}">Nieuwe creator</a>
+    <a class="primary-button" href="{% url 'channel-create' %}">Nieuw channel</a>
+    <a class="primary-button" href="{% url 'operator-create' %}">Nieuwe operator</a>
+    <a class="primary-button" href="{% url 'assignment-create' %}">Nieuwe assignment</a>
+</div>
+{% endif %}
+
 <div class="cards">
     <div class="card">
         <div>Creators</div>
@@ -154,6 +164,7 @@
                 {% if channel.profile_url %}
                     <div class="quick-link"><a href="{{ channel.profile_url }}" target="_blank">Open platform</a></div>
                 {% endif %}
+                <div class="quick-link"><a href="{% url 'channel-detail' channel.pk %}">Channel detail</a></div>
                 <div class="quick-link"><a href="{% url 'creator-detail' channel.creator.pk %}">Creator detail</a></div>
                 <div class="quick-link"><a href="{% url 'creator-network' channel.creator.pk %}">Netwerk</a></div>
 
