@@ -14,7 +14,11 @@
 
         <div class="form-actions">
             <button class="primary-button" type="submit">Opslaan</button>
-            <a class="quick-link" href="{% url 'creator-list' %}">Terug naar creators</a>
+            {% if form.instance.pk %}
+                <a class="secondary-button" href="{% url 'creator-detail' form.instance.pk %}">Terug naar creator</a>
+            {% else %}
+                <a class="secondary-button" href="{% url 'creator-list' %}">Terug naar creators</a>
+            {% endif %}
         </div>
     </form>
 </div>

@@ -2,7 +2,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -21,6 +22,8 @@ from core.forms import (
     CreatorForm,
     OperatorAssignmentForm,
     OperatorCreateForm,
+    OperatorPasswordResetForm,
+    OperatorUpdateForm,
 )
 from core.mixins import (
     AdminOnlyMixin,
@@ -624,11 +627,125 @@ class OperatorAssignmentUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateVie
 class OperatorCreateView(LoginRequiredMixin, AdminOnlyMixin, FormView):
     template_name = "operators/operator_form.html"
     form_class = OperatorCreateForm
-    success_url = reverse_lazy("operator-list")
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        url = reverse("operator-update", kwargs={"pk": self.object.pk})
+        return append_query_parameter(url, "created", "1")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Nieuwe operator"
+        context["page_description"] = (
+            "Dit scherm maakt tegelijk een Django user en het gekoppelde Operator record aan."
+        )
+        context["submit_label"] = "Operator aanmaken"
+        context["back_url"] = reverse("operator-list")
+        context["back_label"] = "Terug naar operators"
+        context["saved"] = False
+        context["created"] = False
+        context["operator"] = None
+        return context
+
+
+class OperatorUpdateView(LoginRequiredMixin, AdminOnlyMixin, FormView):
+    template_name = "operators/operator_form.html"
+    form_class = OperatorUpdateForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.operator = get_object_or_404(
+            Operator.objects.select_related("user"),
+            pk=kwargs["pk"],
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["operator"] = self.operator
+        return kwargs
 
     def form_valid(self, form):
         form.save()
-        return super().form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        url = reverse("operator-update", kwargs={"pk": self.operator.pk})
+        return append_query_parameter(url, "saved", "1")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Operator bewerken"
+        context["page_description"] = (
+            "Beheer hier accountgegevens en blokkeer of deblokkeer de operator via accountstatus."
+        )
+        context["submit_label"] = "Opslaan"
+        context["back_url"] = reverse("operator-list")
+        context["back_label"] = "Terug naar operators"
+        context["saved"] = self.request.GET.get("saved") == "1"
+        context["created"] = self.request.GET.get("created") == "1"
+        context["operator"] = self.operator
+        return context
+
+
+class OperatorPasswordResetView(LoginRequiredMixin, AdminOnlyMixin, FormView):
+    template_name = "operators/operator_form.html"
+    form_class = OperatorPasswordResetForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.operator = get_object_or_404(
+            Operator.objects.select_related("user"),
+            pk=kwargs["pk"],
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["operator"] = self.operator
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        url = reverse("operator-reset-password", kwargs={"pk": self.operator.pk})
+        return append_query_parameter(url, "saved", "1")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Operator wachtwoord resetten"
+        context["page_description"] = (
+            "Stel hier direct een nieuw wachtwoord in voor deze operator."
+        )
+        context["submit_label"] = "Wachtwoord opslaan"
+        context["back_url"] = reverse("operator-list")
+        context["back_label"] = "Terug naar operators"
+        context["saved"] = self.request.GET.get("saved") == "1"
+        context["created"] = False
+        context["operator"] = self.operator
+        return context
+
+
+class OperatorToggleActiveView(LoginRequiredMixin, AdminOnlyMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        operator = get_object_or_404(
+            Operator.objects.select_related("user"),
+            pk=kwargs["pk"],
+        )
+
+        user = operator.user
+        user.is_active = not user.is_active
+        user.save(update_fields=["is_active"])
+
+        next_url = get_safe_next_url(request) or reverse("operator-list")
+        next_url = append_query_parameter(next_url, "status_changed", "1")
+        next_url = append_query_parameter(next_url, "operator", user.username)
+        return HttpResponseRedirect(next_url)
 
 
 class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
@@ -662,12 +779,15 @@ class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
         total_active_assignments = 0
         operators_with_assignments = 0
         operators_with_primary_creators = 0
+        active_operator_count = 0
 
         for operator in operators:
             active_assignments = list(get_active_assignments_for_operator(operator))
             active_creator_ids = {a.creator_id for a in active_assignments}
             primary_creators = list(operator.primary_creators.all())
 
+            if operator.user.is_active:
+                active_operator_count += 1
             if active_assignments:
                 operators_with_assignments += 1
             if primary_creators:
@@ -688,8 +808,12 @@ class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
 
         context["operator_rows"] = operator_rows
         context["search_query"] = (self.request.GET.get("q") or "").strip()
+        context["current_full_path"] = self.request.get_full_path()
+        context["status_changed"] = self.request.GET.get("status_changed") == "1"
+        context["changed_operator"] = (self.request.GET.get("operator") or "").strip()
         context["summary"] = {
             "operator_count": len(operators),
+            "active_operator_count": active_operator_count,
             "active_assignment_count": total_active_assignments,
             "operators_with_assignments": operators_with_assignments,
             "operators_with_primary_creators": operators_with_primary_creators,

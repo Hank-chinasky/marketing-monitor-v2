@@ -2,12 +2,143 @@
 
 {% block content %}
 <h1>Operators</h1>
+<p class="muted">
+    Beheer hier operators, accountstatus, assignments en wachtwoordreset.
+</p>
 
-<ul>
-    {% for operator in operators %}
-        <li>{{ operator }} ({{ operator.user.username }})</li>
-    {% empty %}
-        <li>Geen operators.</li>
-    {% endfor %}
-</ul>
+<div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <a class="primary-button" href="{% url 'operator-create' %}">Nieuwe operator</a>
+</div>
+
+{% if status_changed %}
+    <div class="success-panel">
+        Accountstatus bijgewerkt{% if changed_operator %}: {{ changed_operator }}{% endif %}.
+    </div>
+{% endif %}
+
+<div class="cards">
+    <div class="card">
+        <div>Operators</div>
+        <div class="card-number">{{ summary.operator_count }}</div>
+    </div>
+    <div class="card">
+        <div>Actieve operators</div>
+        <div class="card-number">{{ summary.active_operator_count }}</div>
+    </div>
+    <div class="card">
+        <div>Actieve assignments</div>
+        <div class="card-number">{{ summary.active_assignment_count }}</div>
+    </div>
+    <div class="card">
+        <div>Met assignments</div>
+        <div class="card-number">{{ summary.operators_with_assignments }}</div>
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom: 1rem;">
+    <form method="get" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end;">
+        <div style="min-width: 280px;">
+            <label for="id_q"><strong>Zoeken</strong></label>
+            <input
+                id="id_q"
+                type="text"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Naam, username of e-mail"
+                style="width: 100%;"
+            >
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="primary-button" type="submit">Filter</button>
+            <a class="secondary-button" href="{% url 'operator-list' %}">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                    <th style="padding: 0.8rem 0.5rem;">Operator</th>
+                    <th style="padding: 0.8rem 0.5rem;">Username</th>
+                    <th style="padding: 0.8rem 0.5rem;">E-mail</th>
+                    <th style="padding: 0.8rem 0.5rem;">Status</th>
+                    <th style="padding: 0.8rem 0.5rem;">Actieve assignments</th>
+                    <th style="padding: 0.8rem 0.5rem;">Primary creators</th>
+                    <th style="padding: 0.8rem 0.5rem;">Acties</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in operator_rows %}
+                    <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+                        <td style="padding: 0.9rem 0.5rem; font-size: 1rem; font-weight: 700;">
+                            <a href="{% url 'operator-update' row.operator.pk %}">
+                                {{ row.operator }}
+                            </a>
+                        </td>
+                        <td style="padding: 0.9rem 0.5rem;">
+                            {{ row.user.username }}
+                        </td>
+                        <td style="padding: 0.9rem 0.5rem;">
+                            {% if row.user.email %}
+                                {{ row.user.email }}
+                            {% else %}
+                                <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.9rem 0.5rem;">
+                            {% if row.user.is_active %}
+                                <span class="badge badge-green">actief</span>
+                            {% else %}
+                                <span class="badge badge-red">geblokkeerd</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.9rem 0.5rem;">
+                            <div><strong>{{ row.active_assignment_count }}</strong></div>
+                            <div class="muted">{{ row.active_creator_count }} creators</div>
+                        </td>
+                        <td style="padding: 0.9rem 0.5rem;">
+                            {% if row.primary_creators %}
+                                {% for creator in row.primary_creators %}
+                                    <div style="margin-bottom: 0.2rem;">
+                                        <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
+                                    </div>
+                                {% endfor %}
+                                {% if row.primary_creator_count > 5 %}
+                                    <div class="muted">+ {{ row.primary_creator_count|add:"-5" }} meer</div>
+                                {% endif %}
+                            {% else %}
+                                <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.9rem 0.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start;">
+                                <a class="quick-link" href="{% url 'operator-update' row.operator.pk %}">Bewerk</a>
+                                <a class="quick-link" href="{% url 'operator-reset-password' row.operator.pk %}">Reset wachtwoord</a>
+                                <form method="post" action="{% url 'operator-toggle-active' row.operator.pk %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ current_full_path }}">
+                                    <button
+                                        type="submit"
+                                        class="secondary-button"
+                                        style="padding: 0.45rem 0.75rem;"
+                                    >
+                                        {% if row.user.is_active %}Blokkeer{% else %}Deblokkeer{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding: 1rem 0.5rem;" class="muted">
+                            Geen operators.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

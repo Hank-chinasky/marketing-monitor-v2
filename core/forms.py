@@ -59,6 +59,79 @@ class OperatorCreateForm(forms.Form):
         return operator
 
 
+class OperatorUpdateForm(forms.Form):
+    username = forms.CharField(max_length=150, label="Username")
+    email = forms.EmailField(required=False, label="E-mail")
+    first_name = forms.CharField(max_length=150, required=False, label="Voornaam")
+    last_name = forms.CharField(max_length=150, required=False, label="Achternaam")
+    is_active = forms.BooleanField(
+        required=False,
+        label="Account actief",
+        help_text="Zet uit om deze operator te blokkeren voor inloggen.",
+    )
+
+    def __init__(self, *args, operator, **kwargs):
+        self.operator = operator
+        super().__init__(*args, **kwargs)
+
+        user = self.operator.user
+        self.fields["username"].initial = user.username
+        self.fields["email"].initial = user.email
+        self.fields["first_name"].initial = user.first_name
+        self.fields["last_name"].initial = user.last_name
+        self.fields["is_active"].initial = user.is_active
+
+    def clean_username(self):
+        username = (self.cleaned_data.get("username") or "").strip()
+        qs = UserModel.objects.filter(username=username).exclude(pk=self.operator.user.pk)
+        if qs.exists():
+            raise forms.ValidationError("Deze username bestaat al.")
+        return username
+
+    @transaction.atomic
+    def save(self):
+        user = self.operator.user
+        user.username = self.cleaned_data["username"]
+        user.email = (self.cleaned_data.get("email") or "").strip()
+        user.first_name = (self.cleaned_data.get("first_name") or "").strip()
+        user.last_name = (self.cleaned_data.get("last_name") or "").strip()
+        user.is_active = bool(self.cleaned_data.get("is_active"))
+        user.save()
+        return self.operator
+
+
+class OperatorPasswordResetForm(forms.Form):
+    password1 = forms.CharField(
+        label="Nieuw wachtwoord",
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+    password2 = forms.CharField(
+        label="Herhaal nieuw wachtwoord",
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+    )
+
+    def __init__(self, *args, operator, **kwargs):
+        self.operator = operator
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        password1 = cleaned.get("password1")
+        password2 = cleaned.get("password2")
+
+        if password1 and password2 and password1 != password2:
+            self.add_error("password2", "De wachtwoorden komen niet overeen.")
+
+        return cleaned
+
+    @transaction.atomic
+    def save(self):
+        user = self.operator.user
+        user.set_password(self.cleaned_data["password1"])
+        user.save()
+        return self.operator
+
+
 class CreatorForm(forms.ModelForm):
     class Meta:
         model = Creator

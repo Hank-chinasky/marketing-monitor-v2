@@ -1,20 +1,44 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Nieuwe operator</h1>
+<h1>{{ page_title }}</h1>
 <p class="muted">
-    Dit scherm maakt tegelijk een Django user en het gekoppelde Operator record aan.
+    {{ page_description }}
 </p>
 
+{% if created %}
+    <div class="success-panel">
+        Operator is aangemaakt.
+    </div>
+{% endif %}
+
+{% if saved %}
+    <div class="success-panel">
+        Operatorgegevens zijn opgeslagen.
+    </div>
+{% endif %}
+
 <div class="panel">
+    {% if operator %}
+        <div style="margin-bottom: 1rem;">
+            <strong>{{ operator }}</strong>
+            <span class="muted">({{ operator.user.username }})</span>
+            {% if operator.user.is_active %}
+                <span class="badge badge-green">actief</span>
+            {% else %}
+                <span class="badge badge-red">geblokkeerd</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
         {{ form.non_field_errors }}
         {{ form.as_p }}
 
         <div class="form-actions">
-            <button class="primary-button" type="submit">Operator aanmaken</button>
-            <a class="quick-link" href="{% url 'operator-list' %}">Terug naar operators</a>
+            <button class="primary-button" type="submit">{{ submit_label }}</button>
+            <a class="secondary-button" href="{{ back_url }}">{{ back_label }}</a>
         </div>
     </form>
 </div>
