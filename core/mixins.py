@@ -3,43 +3,53 @@ from __future__ import annotations
 from django.contrib.auth.mixins import AccessMixin
 from django.core.exceptions import PermissionDenied
 
-from core.authz import (
-    is_active_internal_user,
-    is_admin,
-    require_creator_in_scope,
-    scope_assignments_queryset,
-    scope_channels_queryset,
-    scope_creators_queryset,
+from core.services.scope import (
+    get_active_assignments_for_operator,
+    get_channel_queryset_for_user,
+    get_creator_queryset_for_user,
+    get_operator_for_user,
+    is_admin_user,
 )
 
 
 class AdminOnlyMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
-        user = request.user
-        if not is_active_internal_user(user):
-            return self.handle_no_permission()
-        if not is_admin(user):
+        if not is_admin_user(request.user):
+            raise PermissionDenied("Admin access required.")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class AdminDeleteOnlyMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not is_admin_user(request.user):
             raise PermissionDenied("Admin access required.")
         return super().dispatch(request, *args, **kwargs)
 
 
 class ScopedCreatorQuerysetMixin(AccessMixin):
     def get_queryset(self):
-        return scope_creators_queryset(self.request.user, qs=super().get_queryset())
+        base_qs = super().get_queryset()
+        scoped_qs = get_creator_queryset_for_user(self.request.user)
+        return base_qs.filter(pk__in=scoped_qs.values("pk"))
 
 
 class ScopedChannelQuerysetMixin(AccessMixin):
     def get_queryset(self):
-        return scope_channels_queryset(self.request.user, qs=super().get_queryset())
+        base_qs = super().get_queryset()
+        scoped_qs = get_channel_queryset_for_user(self.request.user)
+        return base_qs.filter(pk__in=scoped_qs.values("pk"))
 
 
 class ScopedAssignmentQuerysetMixin(AccessMixin):
     def get_queryset(self):
-        return scope_assignments_queryset(self.request.user, qs=super().get_queryset())
+        base_qs = super().get_queryset()
 
+        if is_admin_user(self.request.user):
+            return base_qs
 
-class ScopedCreatorObjectMixin(AccessMixin):
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset=queryset)
-        require_creator_in_scope(self.request.user, obj)
-        return obj
+        operator = get_operator_for_user(self.request.user)
+        if operator is None:
+            return base_qs.none()
+
+        scoped_qs = get_active_assignments_for_operator(operator)
+        return base_qs.filter(pk__in=scoped_qs.values("pk"))

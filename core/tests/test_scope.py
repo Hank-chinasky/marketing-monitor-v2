@@ -1,138 +1,243 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import HttpResponse
+from django.test import RequestFactory, TestCase
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
+from django.views import View
 
-from core.authz import (
-    can_view_creator,
-    is_active_internal_user,
-    is_admin,
-    scope_assignments_queryset,
-    scope_channels_queryset,
-    scope_creators_queryset,
-)
+from core.mixins import AdminDeleteOnlyMixin
 from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.services.scope import (
+    get_channel_queryset_for_user,
+    get_creator_queryset_for_user,
+    user_can_access_channel,
+    user_can_access_creator,
+)
 from core.validators import validate_no_overlapping_assignments
 
 
-class ScopeAuthTests(TestCase):
+class BaseScopeTestCase(TestCase):
     def setUp(self):
         User = get_user_model()
 
-        self.admin = User.objects.create_user(username="admin", password="x")
-        self.admin.is_staff = True
-        self.admin.is_active = True
-        self.admin.save()
+        self.admin = User.objects.create_user(
+            username="admin",
+            password="x",
+            is_active=True,
+            is_staff=True,
+        )
 
-        self.operator_user = User.objects.create_user(username="op", password="x")
-        self.operator_user.is_active = True
-        self.operator_user.save()
+        self.operator_user = User.objects.create_user(
+            username="operator",
+            password="x",
+            is_active=True,
+        )
         self.operator = Operator.objects.create(user=self.operator_user)
 
-        self.other_user = User.objects.create_user(username="other", password="x")
-        self.other_user.is_active = True
-        self.other_user.save()
-
-        self.creator_in = Creator.objects.create(display_name="in-scope", status="active", consent_status="active")
-        self.creator_out = Creator.objects.create(display_name="out-of-scope", status="active", consent_status="active")
-
-        self.channel_in = CreatorChannel.objects.create(
-            creator=self.creator_in,
-            platform="tiktok",
-            handle="InHandle",
-            access_mode="creator_only",
-            recovery_owner="creator",
-            status="active",
+        self.second_operator_user = User.objects.create_user(
+            username="operator2",
+            password="x",
+            is_active=True,
         )
-        self.channel_out = CreatorChannel.objects.create(
-            creator=self.creator_out,
+        self.second_operator = Operator.objects.create(user=self.second_operator_user)
+
+        self.unassigned_operator_user = User.objects.create_user(
+            username="unassigned-operator",
+            password="x",
+            is_active=True,
+        )
+        self.unassigned_operator = Operator.objects.create(user=self.unassigned_operator_user)
+
+        self.plain_user = User.objects.create_user(
+            username="plain-user",
+            password="x",
+            is_active=True,
+        )
+
+        self.creator_a = Creator.objects.create(
+            display_name="Creator A",
+            legal_name="Creator A BV",
+            status="active",
+            consent_status="active",
+        )
+        self.creator_b = Creator.objects.create(
+            display_name="Creator B",
+            legal_name="Creator B BV",
+            status="active",
+            consent_status="active",
+        )
+        self.creator_c = Creator.objects.create(
+            display_name="Creator C",
+            legal_name="Creator C BV",
+            status="active",
+            consent_status="active",
+        )
+
+        self.channel_a = CreatorChannel.objects.create(
+            creator=self.creator_a,
             platform="tiktok",
-            handle="OutHandle",
+            handle="creator-a",
             access_mode="creator_only",
             recovery_owner="creator",
             status="active",
+            credential_status="known",
+        )
+        self.channel_b = CreatorChannel.objects.create(
+            creator=self.creator_b,
+            platform="instagram",
+            handle="creator-b",
+            access_mode="creator_only",
+            recovery_owner="creator",
+            status="active",
+            credential_status="known",
+        )
+        self.channel_c = CreatorChannel.objects.create(
+            creator=self.creator_c,
+            platform="telegram",
+            handle="creator-c",
+            access_mode="creator_only",
+            recovery_owner="creator",
+            status="active",
+            credential_status="known",
         )
 
         now = timezone.now()
-        self.assignment_active = OperatorAssignment.objects.create(
+        self.assignment_a = OperatorAssignment.objects.create(
             operator=self.operator,
-            creator=self.creator_in,
+            creator=self.creator_a,
+            scope="full_management",
+            starts_at=now - timedelta(days=1),
+            ends_at=None,
+            active=True,
+        )
+        self.assignment_b = OperatorAssignment.objects.create(
+            operator=self.second_operator,
+            creator=self.creator_b,
+            scope="full_management",
             starts_at=now - timedelta(days=1),
             ends_at=None,
             active=True,
         )
 
+
+class ScopeServiceTests(BaseScopeTestCase):
     def test_admin_sees_all_creators(self):
-        qs = scope_creators_queryset(self.admin)
-        self.assertEqual(set(qs), {self.creator_in, self.creator_out})
+        qs = get_creator_queryset_for_user(self.admin)
+        self.assertEqual(set(qs), {self.creator_a, self.creator_b, self.creator_c})
 
-    def test_operator_sees_only_in_scope_creators(self):
-        qs = scope_creators_queryset(self.operator_user)
-        self.assertEqual(set(qs), {self.creator_in})
+    def test_admin_sees_all_channels(self):
+        qs = get_channel_queryset_for_user(self.admin)
+        self.assertEqual(set(qs), {self.channel_a, self.channel_b, self.channel_c})
 
-    def test_operator_cannot_see_out_of_scope_creator(self):
-        self.assertTrue(can_view_creator(self.operator_user, self.creator_in))
-        self.assertFalse(can_view_creator(self.operator_user, self.creator_out))
+    def test_operator_sees_only_assigned_creators(self):
+        qs = get_creator_queryset_for_user(self.operator_user)
+        self.assertEqual(set(qs), {self.creator_a})
 
-    def test_user_without_operator_profile_sees_no_operational_records(self):
-        self.assertEqual(scope_creators_queryset(self.other_user).count(), 0)
-        self.assertEqual(scope_channels_queryset(self.other_user).count(), 0)
-        self.assertEqual(scope_assignments_queryset(self.other_user).count(), 0)
+    def test_operator_sees_only_channels_of_assigned_creators(self):
+        qs = get_channel_queryset_for_user(self.operator_user)
+        self.assertEqual(set(qs), {self.channel_a})
 
-    def test_inactive_user_is_not_active_internal_user(self):
-        User = get_user_model()
-        u = User.objects.create_user(username="inactive", password="x")
-        u.is_active = False
-        u.save()
+    def test_operator_without_assignment_sees_nothing_operationally(self):
+        self.assertEqual(get_creator_queryset_for_user(self.unassigned_operator_user).count(), 0)
+        self.assertEqual(get_channel_queryset_for_user(self.unassigned_operator_user).count(), 0)
 
-        self.assertFalse(is_active_internal_user(u))
-        self.assertEqual(scope_creators_queryset(u).count(), 0)
+    def test_user_without_operator_profile_sees_nothing_operationally(self):
+        self.assertEqual(get_creator_queryset_for_user(self.plain_user).count(), 0)
+        self.assertEqual(get_channel_queryset_for_user(self.plain_user).count(), 0)
 
-    def test_inactive_staff_user_is_not_admin(self):
-        User = get_user_model()
-        u = User.objects.create_user(username="inactive_staff", password="x")
-        u.is_staff = True
-        u.is_active = False
-        u.save()
+    def test_inactive_assignment_gives_no_access(self):
+        self.assignment_a.active = False
+        self.assignment_a.save()
 
-        self.assertFalse(is_active_internal_user(u))
-        self.assertFalse(is_admin(u))
-        self.assertEqual(scope_creators_queryset(u).count(), 0)
+        self.assertEqual(get_creator_queryset_for_user(self.operator_user).count(), 0)
+        self.assertEqual(get_channel_queryset_for_user(self.operator_user).count(), 0)
 
-    def test_expired_assignment_gives_no_visibility(self):
-        self.assignment_active.ends_at = timezone.now() - timedelta(hours=1)
-        self.assignment_active.save()
+    def test_future_assignment_gives_no_access(self):
+        self.assignment_a.starts_at = timezone.now() + timedelta(days=1)
+        self.assignment_a.save()
 
-        self.assertEqual(scope_creators_queryset(self.operator_user).count(), 0)
+        self.assertEqual(get_creator_queryset_for_user(self.operator_user).count(), 0)
+        self.assertEqual(get_channel_queryset_for_user(self.operator_user).count(), 0)
 
-    def test_future_assignment_gives_no_visibility_yet(self):
-        OperatorAssignment.objects.all().delete()
-        now = timezone.now()
+    def test_expired_assignment_gives_no_access(self):
+        self.assignment_a.ends_at = timezone.now() - timedelta(minutes=1)
+        self.assignment_a.save()
+
+        self.assertEqual(get_creator_queryset_for_user(self.operator_user).count(), 0)
+        self.assertEqual(get_channel_queryset_for_user(self.operator_user).count(), 0)
+
+    def test_primary_operator_without_assignment_gives_no_access(self):
+        self.creator_c.primary_operator = self.operator
+        self.creator_c.save()
+
+        self.assertFalse(user_can_access_creator(self.operator_user, self.creator_c))
+        self.assertFalse(user_can_access_channel(self.operator_user, self.channel_c))
+        self.assertEqual(set(get_creator_queryset_for_user(self.operator_user)), {self.creator_a})
+
+    def test_operator_with_two_assignments_sees_both_and_only_those(self):
         OperatorAssignment.objects.create(
             operator=self.operator,
-            creator=self.creator_in,
-            starts_at=now + timedelta(days=1),
+            creator=self.creator_c,
+            scope="posting_only",
+            starts_at=timezone.now() - timedelta(days=1),
             ends_at=None,
             active=True,
         )
-        self.assertEqual(scope_creators_queryset(self.operator_user).count(), 0)
+
+        creator_qs = get_creator_queryset_for_user(self.operator_user)
+        channel_qs = get_channel_queryset_for_user(self.operator_user)
+
+        self.assertEqual(set(creator_qs), {self.creator_a, self.creator_c})
+        self.assertEqual(set(channel_qs), {self.channel_a, self.channel_c})
+
+    def test_assignment_with_end_exactly_now_is_still_active(self):
+        frozen_now = timezone.now()
+
+        exact_creator = Creator.objects.create(
+            display_name="Creator Exact",
+            legal_name="Creator Exact BV",
+            status="active",
+            consent_status="active",
+        )
+        exact_channel = CreatorChannel.objects.create(
+            creator=exact_creator,
+            platform="other",
+            handle="creator-exact",
+            access_mode="creator_only",
+            recovery_owner="creator",
+            status="active",
+            credential_status="known",
+        )
+
+        with patch("core.services.scope.timezone.now", return_value=frozen_now):
+            OperatorAssignment.objects.create(
+                operator=self.operator,
+                creator=exact_creator,
+                scope="full_management",
+                starts_at=frozen_now - timedelta(days=1),
+                ends_at=frozen_now,
+                active=True,
+            )
+
+            self.assertTrue(
+                get_creator_queryset_for_user(self.operator_user).filter(pk=exact_creator.pk).exists()
+            )
+            self.assertTrue(
+                get_channel_queryset_for_user(self.operator_user).filter(pk=exact_channel.pk).exists()
+            )
 
     def test_overlap_rule_blocks_overlaps_for_same_creator_across_operators(self):
-        User = get_user_model()
-        u2 = User.objects.create_user(username="op2", password="x")
-        u2.is_active = True
-        u2.save()
-        op2 = Operator.objects.create(user=u2)
-
-        now = timezone.now()
         new_assignment = OperatorAssignment(
-            operator=op2,
-            creator=self.creator_in,
-            starts_at=now - timedelta(hours=12),
+            operator=self.second_operator,
+            creator=self.creator_a,
+            scope="draft_only",
+            starts_at=timezone.now() - timedelta(hours=12),
             ends_at=None,
             active=True,
         )
@@ -140,17 +245,130 @@ class ScopeAuthTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_no_overlapping_assignments(new_assignment)
 
-    def test_primary_operator_without_assignment_gives_no_scope(self):
-        OperatorAssignment.objects.all().delete()
-        self.creator_out.primary_operator = self.operator
-        self.creator_out.save()
 
-        self.assertEqual(scope_creators_queryset(self.operator_user).count(), 0)
+class ScopeViewTests(BaseScopeTestCase):
+    def test_admin_can_open_creator_detail(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator_a.pk}))
+        self.assertEqual(response.status_code, 200)
 
-    def test_channels_follow_creator_scope(self):
-        qs = scope_channels_queryset(self.operator_user)
-        self.assertEqual(set(qs), {self.channel_in})
+    def test_admin_can_open_creator_edit(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("creator-update", kwargs={"pk": self.creator_a.pk}))
+        self.assertEqual(response.status_code, 200)
 
-    def test_assignments_follow_operator_scope(self):
-        qs = scope_assignments_queryset(self.operator_user)
-        self.assertEqual(set(qs), {self.assignment_active})
+    def test_operator_can_open_assigned_creator_detail(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator_a.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_operator_gets_404_on_unassigned_creator_detail(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator_b.pk}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_operator_can_open_assigned_creator_edit(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("creator-update", kwargs={"pk": self.creator_a.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_operator_gets_404_on_unassigned_creator_edit(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("creator-update", kwargs={"pk": self.creator_b.pk}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_plain_user_gets_404_on_creator_detail(self):
+        self.client.force_login(self.plain_user)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator_a.pk}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_admin_can_open_channel_detail(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("channel-detail", kwargs={"pk": self.channel_a.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_can_open_channel_edit(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("channel-update", kwargs={"pk": self.channel_a.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_operator_can_open_assigned_channel_detail(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("channel-detail", kwargs={"pk": self.channel_a.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_operator_gets_404_on_unassigned_channel_detail(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("channel-detail", kwargs={"pk": self.channel_b.pk}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_operator_can_open_assigned_channel_edit(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("channel-update", kwargs={"pk": self.channel_a.pk}))
+        self.assertEqual(response.status_code, 200)
+
+    def test_operator_gets_404_on_unassigned_channel_edit(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("channel-update", kwargs={"pk": self.channel_b.pk}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_dashboard_for_admin_shows_full_counts(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("operations-dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["summary"]["creator_count"], 3)
+        self.assertEqual(response.context["summary"]["channel_count"], 3)
+        self.assertEqual(response.context["summary"]["assignment_count"], 2)
+
+    def test_dashboard_for_operator_shows_only_scoped_counts(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("operations-dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["summary"]["creator_count"], 1)
+        self.assertEqual(response.context["summary"]["channel_count"], 1)
+        self.assertEqual(response.context["summary"]["assignment_count"], 1)
+        self.assertEqual([creator.pk for creator in response.context["my_creators"]], [self.creator_a.pk])
+        self.assertEqual([channel.pk for channel in response.context["quick_channels"]], [self.channel_a.pk])
+
+    def test_dashboard_for_plain_user_shows_no_operational_data(self):
+        self.client.force_login(self.plain_user)
+        response = self.client.get(reverse("operations-dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["summary"]["creator_count"], 0)
+        self.assertEqual(response.context["summary"]["channel_count"], 0)
+        self.assertEqual(response.context["summary"]["assignment_count"], 0)
+        self.assertEqual(response.context["my_creators"], [])
+        self.assertEqual(response.context["quick_channels"], [])
+
+
+class DummyDeleteView(AdminDeleteOnlyMixin, View):
+    def post(self, request, *args, **kwargs):
+        return HttpResponse("ok")
+
+
+class DeleteScopeTests(BaseScopeTestCase):
+    def setUp(self):
+        super().setUp()
+        self.factory = RequestFactory()
+
+    def test_admin_delete_only_mixin_allows_admin(self):
+        request = self.factory.post("/dummy-delete/")
+        request.user = self.admin
+
+        response = DummyDeleteView.as_view()(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_delete_only_mixin_blocks_operator(self):
+        request = self.factory.post("/dummy-delete/")
+        request.user = self.operator_user
+
+        with self.assertRaises(PermissionDenied):
+            DummyDeleteView.as_view()(request)
+
+    def test_creator_delete_route_does_not_exist_in_current_runtime(self):
+        with self.assertRaises(NoReverseMatch):
+            reverse("creator-delete")
+
+    def test_channel_delete_route_does_not_exist_in_current_runtime(self):
+        with self.assertRaises(NoReverseMatch):
+            reverse("channel-delete")

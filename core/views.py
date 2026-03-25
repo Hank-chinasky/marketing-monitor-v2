@@ -16,7 +16,6 @@ from django.views.generic import (
     UpdateView,
 )
 
-from core.authz import scope_assignments_queryset, scope_channels_queryset
 from core.forms import (
     CreatorChannelForm,
     CreatorForm,
@@ -27,10 +26,17 @@ from core.mixins import (
     AdminOnlyMixin,
     ScopedAssignmentQuerysetMixin,
     ScopedChannelQuerysetMixin,
-    ScopedCreatorObjectMixin,
     ScopedCreatorQuerysetMixin,
 )
 from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.services.scope import (
+    get_active_assignments_for_operator,
+    get_active_assignments_queryset,
+    get_channel_queryset_for_user,
+    get_creator_queryset_for_user,
+    get_operator_for_user,
+    is_admin_user,
+)
 
 
 def append_query_parameter(url, key, value):
@@ -68,20 +74,25 @@ class OperationsDashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         creators = list(
-            CreatorListView.request_scoped_queryset(self.request).select_related("primary_operator")
+            get_creator_queryset_for_user(self.request.user)
+            .select_related("primary_operator")
         )
         channels = list(
-            scope_channels_queryset(
-                self.request.user,
-                qs=CreatorChannel.objects.select_related("creator"),
-            )
+            get_channel_queryset_for_user(self.request.user)
+            .select_related("creator")
         )
-        assignments = list(
-            scope_assignments_queryset(
-                self.request.user,
-                qs=OperatorAssignment.objects.select_related("creator", "operator", "operator__user"),
+
+        if is_admin_user(self.request.user):
+            assignments = list(
+                get_active_assignments_queryset()
+                .select_related("creator", "operator", "operator__user")
             )
-        )
+        else:
+            operator = get_operator_for_user(self.request.user)
+            assignments = list(
+                get_active_assignments_for_operator(operator)
+                .select_related("creator", "operator", "operator__user")
+            ) if operator else []
 
         channels_needing_reset = [c for c in channels if c.credential_status == "needs_reset"]
         channels_without_2fa = [c for c in channels if not c.two_factor_enabled]
@@ -134,12 +145,7 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
         return view.get_queryset()
 
 
-class CreatorDetailView(
-    LoginRequiredMixin,
-    ScopedCreatorQuerysetMixin,
-    ScopedCreatorObjectMixin,
-    DetailView,
-):
+class CreatorDetailView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, DetailView):
     model = Creator
     template_name = "creators/creator_detail.html"
     context_object_name = "creator"
@@ -149,18 +155,24 @@ class CreatorDetailView(
         creator = self.object
 
         channels = list(
-            scope_channels_queryset(
-                self.request.user,
-                qs=CreatorChannel.objects.select_related("creator"),
-            ).filter(creator=creator)
+            get_channel_queryset_for_user(self.request.user)
+            .select_related("creator")
+            .filter(creator=creator)
         )
 
-        assignments = list(
-            scope_assignments_queryset(
-                self.request.user,
-                qs=OperatorAssignment.objects.select_related("operator", "operator__user", "creator"),
-            ).filter(creator=creator)
-        )
+        if is_admin_user(self.request.user):
+            assignments = list(
+                get_active_assignments_queryset()
+                .select_related("operator", "operator__user", "creator")
+                .filter(creator=creator)
+            )
+        else:
+            operator = get_operator_for_user(self.request.user)
+            assignments = list(
+                get_active_assignments_for_operator(operator)
+                .select_related("operator", "operator__user", "creator")
+                .filter(creator=creator)
+            ) if operator else []
 
         needs_reset = [c for c in channels if c.credential_status == "needs_reset"]
         without_2fa = [c for c in channels if not c.two_factor_enabled]
@@ -192,12 +204,7 @@ class CreatorDetailView(
         return context
 
 
-class CreatorNetworkView(
-    LoginRequiredMixin,
-    ScopedCreatorQuerysetMixin,
-    ScopedCreatorObjectMixin,
-    DetailView,
-):
+class CreatorNetworkView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, DetailView):
     model = Creator
     template_name = "creators/creator_network.html"
     context_object_name = "creator"
@@ -206,15 +213,23 @@ class CreatorNetworkView(
         context = super().get_context_data(**kwargs)
         creator = self.object
 
-        channels = scope_channels_queryset(
-            self.request.user,
-            qs=CreatorChannel.objects.select_related("creator"),
-        ).filter(creator=creator)
+        channels = get_channel_queryset_for_user(
+            self.request.user
+        ).select_related("creator").filter(creator=creator)
 
-        assignments = scope_assignments_queryset(
-            self.request.user,
-            qs=OperatorAssignment.objects.select_related("operator", "operator__user", "creator"),
-        ).filter(creator=creator)
+        if is_admin_user(self.request.user):
+            assignments = get_active_assignments_queryset().select_related(
+                "operator",
+                "operator__user",
+                "creator",
+            ).filter(creator=creator)
+        else:
+            operator = get_operator_for_user(self.request.user)
+            assignments = (
+                get_active_assignments_for_operator(operator)
+                .select_related("operator", "operator__user", "creator")
+                .filter(creator=creator)
+            ) if operator else OperatorAssignment.objects.none()
 
         nodes = []
         edges = []
@@ -314,7 +329,7 @@ class CreatorCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateView):
     success_url = reverse_lazy("creator-list")
 
 
-class CreatorUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
+class CreatorUpdateView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, UpdateView):
     model = Creator
     form_class = CreatorForm
     template_name = "creators/creator_form.html"
@@ -485,12 +500,19 @@ class ChannelDetailView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailVi
         channel = self.object
         creator = channel.creator
 
-        assignments = list(
-            scope_assignments_queryset(
-                self.request.user,
-                qs=OperatorAssignment.objects.select_related("operator", "operator__user", "creator"),
-            ).filter(creator=creator)
-        )
+        if is_admin_user(self.request.user):
+            assignments = list(
+                get_active_assignments_queryset()
+                .select_related("operator", "operator__user", "creator")
+                .filter(creator=creator)
+            )
+        else:
+            operator = get_operator_for_user(self.request.user)
+            assignments = list(
+                get_active_assignments_for_operator(operator)
+                .select_related("operator", "operator__user", "creator")
+                .filter(creator=creator)
+            ) if operator else []
 
         policy_gap = channel.vpn_required and not (
             channel.approved_ip_label or channel.approved_egress_ip
@@ -525,7 +547,7 @@ class CreatorChannelCreateView(LoginRequiredMixin, AdminOnlyMixin, CreateView):
         return append_query_parameter(reverse("channel-create"), "saved", "1")
 
 
-class CreatorChannelUpdateView(LoginRequiredMixin, AdminOnlyMixin, UpdateView):
+class CreatorChannelUpdateView(LoginRequiredMixin, ScopedChannelQuerysetMixin, UpdateView):
     model = CreatorChannel
     form_class = CreatorChannelForm
     template_name = "channels/channel_form.html"
@@ -642,7 +664,7 @@ class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
         operators_with_primary_creators = 0
 
         for operator in operators:
-            active_assignments = [a for a in operator.assignments.all() if a.active]
+            active_assignments = list(get_active_assignments_for_operator(operator))
             active_creator_ids = {a.creator_id for a in active_assignments}
             primary_creators = list(operator.primary_creators.all())
 
