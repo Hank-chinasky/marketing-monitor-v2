@@ -1,0 +1,102 @@
+from datetime import timedelta
+
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import timezone
+
+from core.models import Creator, CreatorMaterial, Operator, OperatorAssignment
+
+
+class CreatorMaterialTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_user(
+            username="admin-materials",
+            password="x",
+            is_active=True,
+            is_staff=True,
+        )
+        self.operator_user = User.objects.create_user(
+            username="operator-materials",
+            password="x",
+            is_active=True,
+        )
+        self.operator = Operator.objects.create(user=self.operator_user)
+        self.creator = Creator.objects.create(
+            display_name="Creator Materials",
+            legal_name="Creator Materials BV",
+            status="active",
+            consent_status="active",
+        )
+        OperatorAssignment.objects.create(
+            operator=self.operator,
+            creator=self.creator,
+            scope="full_management",
+            starts_at=timezone.now() - timedelta(days=1),
+            ends_at=None,
+            active=True,
+        )
+
+    def test_material_media_kind_helpers_detect_image_video_and_other(self):
+        image = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            file=SimpleUploadedFile("preview.jpg", b"image-bytes", content_type="image/jpeg"),
+        )
+        video = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            file=SimpleUploadedFile("clip.mp4", b"video-bytes", content_type="video/mp4"),
+        )
+        other = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            file=SimpleUploadedFile("briefing.pdf", b"pdf-bytes", content_type="application/pdf"),
+        )
+
+        self.assertTrue(image.is_image)
+        self.assertFalse(image.is_video)
+        self.assertTrue(image.is_previewable)
+        self.assertEqual(image.media_kind, "image")
+
+        self.assertTrue(video.is_video)
+        self.assertFalse(video.is_image)
+        self.assertTrue(video.is_previewable)
+        self.assertEqual(video.media_kind, "video")
+
+        self.assertFalse(other.is_previewable)
+        self.assertEqual(other.media_kind, "other")
+        self.assertEqual(other.extension, "pdf")
+
+    def test_scoped_operator_sees_image_and_video_preview_markup(self):
+        image = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            label="Image one",
+            file=SimpleUploadedFile("preview.jpg", b"image-bytes", content_type="image/jpeg"),
+        )
+        video = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            label="Video one",
+            file=SimpleUploadedFile("clip.mp4", b"video-bytes", content_type="video/mp4"),
+        )
+
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "creator-material-preview-trigger")
+        self.assertContains(response, 'data-preview-kind="image"')
+        self.assertContains(response, 'data-preview-kind="video"')
+        self.assertContains(
+            response,
+            reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
+        )
+        self.assertContains(
+            response,
+            reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
+        )
+        self.assertContains(response, "creator-material-modal")

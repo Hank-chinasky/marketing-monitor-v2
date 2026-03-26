@@ -1,3 +1,4 @@
+import mimetypes
 import os
 
 from django.conf import settings
@@ -110,6 +111,37 @@ class CreatorMaterial(models.Model):
     @property
     def filename(self) -> str:
         return os.path.basename(self.file.name)
+
+    @property
+    def extension(self) -> str:
+        _, ext = os.path.splitext(self.file.name or "")
+        return ext.lower().lstrip(".")
+
+    @property
+    def mime_type(self) -> str:
+        guessed, _ = mimetypes.guess_type(self.file.name or "")
+        return guessed or "application/octet-stream"
+
+    @property
+    def media_kind(self) -> str:
+        mime_type = self.mime_type
+        if mime_type.startswith("image/"):
+            return "image"
+        if mime_type.startswith("video/"):
+            return "video"
+        return "other"
+
+    @property
+    def is_image(self) -> bool:
+        return self.media_kind == "image"
+
+    @property
+    def is_video(self) -> bool:
+        return self.media_kind == "video"
+
+    @property
+    def is_previewable(self) -> bool:
+        return self.media_kind in {"image", "video"}
 
 
 class CreatorChannel(models.Model):
