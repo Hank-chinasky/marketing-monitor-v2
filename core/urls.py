@@ -1,16 +1,15 @@
 from django.urls import path
 
+from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
 from core.material_views import CreatorDetailView, CreatorMaterialDownloadView
 from core.views import (
     AssignmentListView,
     ChannelDetailView,
     ChannelListView,
     CreatorChannelCreateView,
-    CreatorChannelUpdateView,
     CreatorCreateView,
     CreatorListView,
     CreatorNetworkView,
-    CreatorUpdateView,
     HealthzView,
     OperationsDashboardView,
     OperatorAssignmentCreateView,
