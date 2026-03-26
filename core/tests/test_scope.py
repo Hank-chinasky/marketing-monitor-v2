@@ -267,15 +267,15 @@ class ScopeViewTests(BaseScopeTestCase):
         response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator_b.pk}))
         self.assertEqual(response.status_code, 404)
 
-    def test_operator_can_open_assigned_creator_edit(self):
+    def test_operator_gets_403_on_assigned_creator_edit(self):
         self.client.force_login(self.operator_user)
         response = self.client.get(reverse("creator-update", kwargs={"pk": self.creator_a.pk}))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
 
-    def test_operator_gets_404_on_unassigned_creator_edit(self):
+    def test_operator_gets_403_on_unassigned_creator_edit(self):
         self.client.force_login(self.operator_user)
         response = self.client.get(reverse("creator-update", kwargs={"pk": self.creator_b.pk}))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_plain_user_gets_404_on_creator_detail(self):
         self.client.force_login(self.plain_user)
@@ -302,15 +302,15 @@ class ScopeViewTests(BaseScopeTestCase):
         response = self.client.get(reverse("channel-detail", kwargs={"pk": self.channel_b.pk}))
         self.assertEqual(response.status_code, 404)
 
-    def test_operator_can_open_assigned_channel_edit(self):
+    def test_operator_gets_403_on_assigned_channel_edit(self):
         self.client.force_login(self.operator_user)
         response = self.client.get(reverse("channel-update", kwargs={"pk": self.channel_a.pk}))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
 
-    def test_operator_gets_404_on_unassigned_channel_edit(self):
+    def test_operator_gets_403_on_unassigned_channel_edit(self):
         self.client.force_login(self.operator_user)
         response = self.client.get(reverse("channel-update", kwargs={"pk": self.channel_b.pk}))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
 
     def test_dashboard_for_admin_shows_full_counts(self):
         self.client.force_login(self.admin)
