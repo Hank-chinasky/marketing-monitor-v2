@@ -1,0 +1,117 @@
+Ja. Hieronder staan beide: een kort verslag en een changelogtekst die je direct kunt plakken.
+
+## Verslag van wat we hebben gedaan
+
+We hebben de deployment van `creatorworkboard-ops` op de VPS werkend gekregen en daarna de eerste gebruikers- en appdata ingericht.
+
+Eerst is de applicatie opnieuw vanaf GitHub op de VPS geplaatst onder:
+
+```text
+/opt/commandcenter/apps/creatorworkboard-ops
+```
+
+Daarna hebben we de Docker deployment opgebouwd en gestart. De app startte correct op, migrations draaiden, static files werden verzameld en Gunicorn kwam online.
+
+Vervolgens hebben we een belangrijk deploymentprobleem opgelost:
+de container healthcheck faalde door een HTTP→HTTPS redirect op `/healthz/`, waardoor de container unhealthy bleef. We hebben de compose-healthcheck aangepast zodat deze de app correct controleert achter Traefik. Daarna werd de container healthy.
+
+Daarna hebben we de Traefik-routering voor `ops.creatorworkboard.com` hersteld en bevestigd dat:
+
+* de container op `cc_public` zit
+* de Traefik-labels correct actief zijn
+* de router lokaal en extern correct matcht
+
+Vervolgens hebben we Traefik basic auth hersteld door een nieuw wachtwoord te zetten voor `traefik-auth@docker`. Daarmee werkt de eerste auth-laag weer correct.
+
+Daarna hebben we het Django loginprobleem onderzocht. De Django user-authenticatie werkte al, maar browser-login faalde op CSRF. De oorzaak bleek niet Django zelf te zijn, maar de Traefik security header:
+
+```text
+Referrer-Policy: no-referrer
+```
+
+Die brak de CSRF-validatie op HTTPS-login. We hebben dit aangepast naar een bruikbare policy, waarna login via browser weer werkte.
+
+Na herstel van de loginflow hebben we gebruikers ingericht:
+
+* superuser `Superadmin`
+* bestaande admin bevestigd
+* operators als Django users aangemaakt
+
+Daarna bleek dat creators niet direct aan Django `User` gekoppeld zijn, maar aan een apart `Operator` model. We hebben daarom:
+
+* echte `Operator` records aangemaakt voor de operator-users
+* een eerste `Creator` aangemaakt
+* de creator gekoppeld aan `operator_manoel`
+
+Daarmee is bevestigd dat:
+
+* deployment werkt
+* healthcheck werkt
+* Traefik auth werkt
+* Django login werkt
+* CSRF werkt
+* operator/business data werkt
+* eerste creatorrecord correct is opgeslagen
+
+## Belangrijk eindresultaat
+
+De omgeving is nu operationeel met:
+
+* werkende Docker deployment
+* gezonde app-container
+* werkende Traefik bescherming
+* werkende Django login
+* functionerende operators en creators in de database
+
+## Aanbevolen vervolgstappen
+
+* echte creators en channels invoeren
+* operator-wachtwoorden opnieuw zetten, omdat eerder wachtwoorden in shell/chat zijn gebruikt
+* documenteren van het nieuwe Traefik basic auth wachtwoord in een password manager
+* changelog en deployment docs bijwerken
+* eventueel admin/UI uitbreiden als creators/operators niet via alle gewenste schermen te beheren zijn
+
+---
+
+## Changelogtekst
+
+Hier is een nette changelog-entry:
+
+```md
+## [Unreleased]
+
+### Fixed
+- Fixed Docker healthcheck for the ops app so the container becomes healthy behind Traefik and HTTPS redirect handling.
+- Fixed Traefik routing for `ops.creatorworkboard.com`.
+- Restored Traefik basic authentication for the ops environment.
+- Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
+
+### Changed
+- Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
+- Standardized the live app routing and healthcheck behavior for the `creatorworkboard-ops` service.
+- Adjusted reverse-proxy behavior so Django login works correctly behind Traefik.
+
+### Added
+- Added superuser access for the deployed environment.
+- Added operator user accounts and matching `Operator` model records.
+- Added the first `Creator` record and linked it to an operator for initial data validation.
+
+### Ops
+- Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
+- Confirmed end-to-end access chain: Traefik auth → Django login → app access.
+```
+
+## Kortere changelogvariant
+
+```md
+## [Unreleased]
+
+### Ops
+- Fixed `creatorworkboard-ops` deployment on VPS.
+- Fixed Docker healthcheck and Traefik routing for `ops.creatorworkboard.com`.
+- Restored Traefik basic auth.
+- Fixed Django login CSRF issue caused by reverse-proxy referrer policy.
+- Added superuser, operator records, and first creator test data.
+```
+
+Als je wilt, maak ik hier ook nog een nette `DEPLOY_HISTORY.md` of `CHANGELOG.md` versie van in jullie bestaande stijl.

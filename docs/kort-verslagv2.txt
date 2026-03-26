@@ -1,0 +1,106 @@
+Hier is een nette versie in het Nederlands, klaar om te plakken.
+
+## Voor `CHANGELOG.md`
+
+```md
+## [Unreleased]
+
+### Fixed
+- Docker healthcheck van de ops-app hersteld zodat de container correct `healthy` wordt achter Traefik en HTTPS-redirects de check niet meer breken.
+- Traefik-routering voor `ops.creatorworkboard.com` hersteld.
+- Traefik basic auth voor de ops-omgeving opnieuw ingesteld en bevestigd werkend.
+- Browser-login hersteld door de reverse-proxy referrer policy aan te passen, waardoor Django CSRF-validatie weer correct werkt.
+
+### Changed
+- Deployment van `creatorworkboard-ops` op de VPS gestabiliseerd onder Docker + Traefik.
+- Healthcheck- en routinggedrag van de service opgeschoond en consistent gemaakt.
+- Proxygedrag achter Traefik aangepast zodat Django-login correct werkt onder HTTPS.
+
+### Added
+- Superuser toegang ingericht voor de live omgeving.
+- Operator gebruikersaccounts aangemaakt en gekoppeld aan echte `Operator` records.
+- Eerste `Creator` record aangemaakt en gekoppeld aan een operator ter validatie van de datastroom.
+
+### Ops
+- Migrations, static collection, Gunicorn startup, healthchecks, Traefik-labels en beveiligde toegangsflow gevalideerd.
+- End-to-end flow bevestigd: Traefik auth → Django login → app toegang.
+```
+
+## Voor `DEPLOY_HISTORY.md` of intern logboek
+
+```md
+## Deploy herstel en live validatie — creatorworkboard-ops
+
+De `creatorworkboard-ops` applicatie is opnieuw op de VPS geplaatst onder:
+
+`/opt/commandcenter/apps/creatorworkboard-ops`
+
+### Uitgevoerde werkzaamheden
+
+- Repository live op de VPS geplaatst en Docker deployment opgebouwd.
+- Containerstart gevalideerd:
+  - migrations uitgevoerd
+  - static files verzameld
+  - Gunicorn succesvol gestart
+- Healthcheck-probleem opgelost:
+  - container bleef eerst unhealthy door redirectgedrag op `/healthz/`
+  - compose-healthcheck aangepast zodat de app correct wordt gecontroleerd achter Traefik
+  - container daarna bevestigd als healthy
+- Traefik-routering voor `ops.creatorworkboard.com` hersteld en gevalideerd:
+  - juiste labels actief
+  - service gekoppeld aan `cc_public`
+  - router matcht correct
+- Traefik basic auth opnieuw ingesteld:
+  - nieuw wachtwoord gezet voor `traefik-auth@docker`
+  - toegang tot protected routes bevestigd
+- Django login-probleem onderzocht en opgelost:
+  - server-side authenticatie werkte al
+  - browser login faalde op CSRF
+  - oorzaak gevonden in Traefik `Referrer-Policy: no-referrer`
+  - aangepast zodat Django CSRF-validatie weer correct werkt
+- Gebruikers ingericht:
+  - superuser `Superadmin`
+  - bestaande admin bevestigd
+  - operator logins aangemaakt
+- Datamodel gevalideerd:
+  - vastgesteld dat `Creator.primary_operator` verwijst naar `Operator`, niet direct naar `User`
+  - `Operator` records aangemaakt voor operator-users
+  - eerste `Creator` record aangemaakt
+  - creator gekoppeld aan `operator_manoel`
+
+### Eindstatus
+
+Bevestigd werkend:
+
+- Docker deployment
+- gezonde app-container
+- Traefik routing
+- Traefik basic auth
+- Django login
+- CSRF-flow onder HTTPS
+- operator records
+- eerste creator in database
+
+### Open vervolgwerk
+
+- echte creators invoeren
+- channels toevoegen
+- operator-wachtwoorden opnieuw zetten
+- nieuwe Traefik credentials veilig opslaan in password manager
+- documentatie en changelog bijwerken
+```
+
+## Kortere versie voor commit of PR-omschrijving
+
+```md
+Stabilized live deployment of `creatorworkboard-ops` on VPS.
+
+- fixed Docker healthcheck behind Traefik
+- restored routing for `ops.creatorworkboard.com`
+- reset and validated Traefik basic auth
+- fixed Django login CSRF issue caused by proxy referrer policy
+- added superuser, operator records, and first creator test data
+- validated end-to-end access flow from Traefik auth to Django app
+```
+
+Als je wilt, maak ik hier ook nog een versie van die exact past bij de stijl van jullie bestaande `CHANGELOG.md`.
