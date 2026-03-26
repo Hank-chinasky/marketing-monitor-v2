@@ -107,6 +107,48 @@
     </ul>
 </div>
 
+<h2>Creator Materials</h2>
+<div class="panel">
+    {% if can_upload_materials %}
+        <form method="post" enctype="multipart/form-data" style="margin-bottom: 1rem;">
+            {% csrf_token %}
+            <input type="hidden" name="form_name" value="creator-material-upload">
+            {{ material_form.non_field_errors }}
+            <p>
+                {{ material_form.file.label_tag }}<br>
+                {{ material_form.file }}
+                {{ material_form.file.errors }}
+            </p>
+            <p>
+                {{ material_form.label.label_tag }}<br>
+                {{ material_form.label }}
+                {{ material_form.label.errors }}
+            </p>
+            <p>
+                {{ material_form.notes.label_tag }}<br>
+                {{ material_form.notes }}
+                {{ material_form.notes.errors }}
+            </p>
+            <button class="primary-button" type="submit">Upload materiaal</button>
+        </form>
+    {% endif %}
+
+    <ul class="clean">
+        {% for material in materials %}
+            <li style="margin-bottom: 0.9rem;">
+                <strong>{{ material.label|default:material.filename }}</strong><br>
+                <span class="muted">{{ material.uploaded_at }} door {{ material.uploaded_by.get_full_name|default:material.uploaded_by.username }}</span><br>
+                {% if material.notes %}
+                    <div style="margin: 0.35rem 0;">{{ material.notes|linebreaksbr }}</div>
+                {% endif %}
+                <a class="quick-link" href="{% url 'creator-material-download' creator.pk material.pk %}" target="_blank">Open materiaal</a>
+            </li>
+        {% empty %}
+            <li>Nog geen materiaal geüpload.</li>
+        {% endfor %}
+    </ul>
+</div>
+
 <h2>Notes</h2>
 <div class="panel">
     {{ creator.notes|default:"Geen notities."|linebreaksbr }}

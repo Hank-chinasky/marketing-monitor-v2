@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.models import Creator, CreatorChannel, CreatorMaterial, Operator, OperatorAssignment
 
 UserModel = get_user_model()
 
@@ -160,6 +160,15 @@ class CreatorForm(forms.ModelForm):
             )
 
         return cleaned
+
+
+class CreatorMaterialUploadForm(forms.ModelForm):
+    class Meta:
+        model = CreatorMaterial
+        fields = ["file", "label", "notes"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
 
 
 class CreatorChannelForm(forms.ModelForm):

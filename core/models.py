@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -80,6 +82,34 @@ class Creator(models.Model):
 
     def __str__(self) -> str:
         return self.display_name
+
+
+class CreatorMaterial(models.Model):
+    creator = models.ForeignKey(
+        Creator,
+        on_delete=models.CASCADE,
+        related_name="materials",
+    )
+    file = models.FileField(upload_to="creator_materials/%Y/%m/%d")
+    label = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_creator_materials",
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-uploaded_at", "-id"]
+
+    def __str__(self) -> str:
+        return self.label or self.filename
+
+    @property
+    def filename(self) -> str:
+        return os.path.basename(self.file.name)
 
 
 class CreatorChannel(models.Model):
