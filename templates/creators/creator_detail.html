@@ -117,11 +117,17 @@
             <p>
                 {{ material_form.file.label_tag }}<br>
                 {{ material_form.file }}
+                {% if material_form.file.help_text %}
+                    <br><small class="muted">{{ material_form.file.help_text }}</small>
+                {% endif %}
                 {{ material_form.file.errors }}
             </p>
             <p>
                 {{ material_form.label.label_tag }}<br>
                 {{ material_form.label }}
+                {% if material_form.label.help_text %}
+                    <br><small class="muted">{{ material_form.label.help_text }}</small>
+                {% endif %}
                 {{ material_form.label.errors }}
             </p>
             <p>

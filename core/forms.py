@@ -5,9 +5,28 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import Creator, CreatorChannel, CreatorMaterial, Operator, OperatorAssignment
+from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
 
 UserModel = get_user_model()
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(item, initial) for item in data]
+
+        if data:
+            return [single_file_clean(data, initial)]
+
+        return []
 
 
 class OperatorCreateForm(forms.Form):
@@ -162,13 +181,28 @@ class CreatorForm(forms.ModelForm):
         return cleaned
 
 
-class CreatorMaterialUploadForm(forms.ModelForm):
-    class Meta:
-        model = CreatorMaterial
-        fields = ["file", "label", "notes"]
-        widgets = {
-            "notes": forms.Textarea(attrs={"rows": 3}),
-        }
+class CreatorMaterialUploadForm(forms.Form):
+    file = MultipleFileField(
+        label="Bestanden",
+        help_text="Je kunt meerdere bestanden tegelijk selecteren.",
+    )
+    label = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Label",
+        help_text="Bij meerdere bestanden wordt dit als prefix gebruikt.",
+    )
+    notes = forms.CharField(
+        required=False,
+        label="Notities",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean_file(self):
+        files = self.cleaned_data.get("file") or []
+        if not files:
+            raise forms.ValidationError("Selecteer minimaal één bestand.")
+        return files
 
 
 class CreatorChannelForm(forms.ModelForm):

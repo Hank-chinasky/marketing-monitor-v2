@@ -29,11 +29,28 @@ class CreatorDetailView(BaseCreatorDetailView):
 
         material_form = CreatorMaterialUploadForm(request.POST, request.FILES)
         if material_form.is_valid():
-            material = material_form.save(commit=False)
-            material.creator = self.object
-            material.uploaded_by = request.user
-            material.save()
-            messages.success(request, "Materiaal geüpload.")
+            uploaded_files = material_form.cleaned_data["file"]
+            label = (material_form.cleaned_data.get("label") or "").strip()
+            notes = (material_form.cleaned_data.get("notes") or "").strip()
+
+            for uploaded_file in uploaded_files:
+                material_label = label
+                if label and len(uploaded_files) > 1:
+                    material_label = f"{label} — {uploaded_file.name}"
+
+                CreatorMaterial.objects.create(
+                    creator=self.object,
+                    file=uploaded_file,
+                    label=material_label,
+                    notes=notes,
+                    uploaded_by=request.user,
+                )
+
+            upload_count = len(uploaded_files)
+            if upload_count == 1:
+                messages.success(request, "1 bestand geüpload.")
+            else:
+                messages.success(request, f"{upload_count} bestanden geüpload.")
             return redirect("creator-detail", pk=self.object.pk)
 
         return self.render_to_response(self.get_context_data(material_form=material_form))

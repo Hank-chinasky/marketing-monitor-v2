@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from core.forms import CreatorMaterialUploadForm
 from core.models import Creator, CreatorMaterial, Operator, OperatorAssignment
 
 
@@ -100,3 +101,37 @@ class CreatorMaterialTests(TestCase):
             reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
         )
         self.assertContains(response, "creator-material-modal")
+
+    def test_upload_form_accepts_multiple_files(self):
+        form = CreatorMaterialUploadForm(
+            data={"label": "Shoot", "notes": "Latest set"},
+            files={
+                "file": [
+                    SimpleUploadedFile("one.jpg", b"one", content_type="image/jpeg"),
+                    SimpleUploadedFile("two.jpg", b"two", content_type="image/jpeg"),
+                ]
+            },
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(len(form.cleaned_data["file"]), 2)
+
+    def test_admin_can_upload_multiple_materials_in_one_submit(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("creator-detail", kwargs={"pk": self.creator.pk}),
+            {
+                "form_name": "creator-material-upload",
+                "label": "Shoot",
+                "notes": "Latest set",
+                "file": [
+                    SimpleUploadedFile("one.jpg", b"one", content_type="image/jpeg"),
+                    SimpleUploadedFile("two.jpg", b"two", content_type="image/jpeg"),
+                ],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.creator.materials.count(), 2)
+        labels = set(self.creator.materials.values_list("label", flat=True))
+        self.assertEqual(labels, {"Shoot — one.jpg", "Shoot — two.jpg"})
+        self.assertEqual(set(self.creator.materials.values_list("notes", flat=True)), {"Latest set"})
