@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("core", "0004_creator_content_ready_status_and_more"),
+        ("core", "0009_creatorchannel_account_email_and_more"),
     ]
 
     operations = [
