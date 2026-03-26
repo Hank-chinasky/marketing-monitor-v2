@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.models import Creator, CreatorChannel, CreatorMaterial, Operator, OperatorAssignment
 
 
 @admin.register(Operator)
@@ -27,6 +27,21 @@ class CreatorAdmin(admin.ModelAdmin):
         "content_source_url",
         "content_source_notes",
     )
+
+
+@admin.register(CreatorMaterial)
+class CreatorMaterialAdmin(admin.ModelAdmin):
+    list_display = ("id", "creator", "label", "uploaded_by", "uploaded_at", "active")
+    list_filter = ("active", "uploaded_at")
+    search_fields = (
+        "creator__display_name",
+        "label",
+        "notes",
+        "file",
+        "uploaded_by__username",
+        "uploaded_by__email",
+    )
+    autocomplete_fields = ("creator", "uploaded_by")
 
 
 @admin.register(CreatorChannel)

@@ -77,3 +77,36 @@ Creator now stores:
 ## 2026-03-18
 
 - Documented decision: content intake modeled as source-based metadata on `Creator`.
+
+
+### Added
+- Added `CreatorMaterial` as a creator-bound internal material model for file uploads used directly in the ops cockpit.
+- Added a materials section to creator detail with admin upload support and scoped operator visibility.
+- Added app-controlled material opening/download flow for creator materials.
+
+### Changed
+- Restricted creator edit and channel edit flows to admin-only access.
+- Aligned scope behavior so operators can access assigned creator/channel detail pages but not full edit forms.
+- Established creator-bound materials as the first MVP slice for internal operator use before any creator portal or external upload layer.
+
+### Fixed
+- Fixed migration dependency for `CreatorMaterial` so it follows the current `core` migration chain and no longer creates multiple migration leaf nodes.
+- Fixed scope test expectations to match the chosen product rule: admin manages structure, operator works through scoped operational flows.
+
+### Notes
+- Handmatig lokaal gevalideerd: superadmin kan materiaal uploaden, operator binnen scope kan materiaal zien en openen.
+- Current UX works functionally but still needs preview-first improvements for image and video materials.
+### Added
+- Added preview-first creator materials for images and videos on creator detail pages.
+- Added simple in-page media viewer for creator material previews.
+- Added multi-select upload for creator materials so multiple files can be uploaded in one action.
+
+### Changed
+- Changed creator materials upload flow from single-file upload to multi-file upload.
+- Improved creator materials UX so images and videos are visually recognizable before opening.
+- Kept creator materials attached directly to creators without adding folders or a broader media management layer.
+
+### Validated
+- Confirmed locally that multiple files can be selected and uploaded in one submit.
+- Confirmed locally that preview-first materials rendering works in the site UI.
+- Confirmed locally that scoped operators can still see uploaded materials.

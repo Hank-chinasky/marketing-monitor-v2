@@ -256,3 +256,79 @@ Creator now stores:
 - `content_source_url`
 - `content_source_notes`
 - `content_ready_status`
+
+# Decision Log — 26 maart 2026
+
+## Beslissing 1 — Creator materials horen in NOW
+### Oordeel
+Doen.
+
+### Waarom
+Operators hebben direct materiaal nodig op creator-niveau om sneller te kunnen werken zonder losse tabs, notities en externe zoekstappen.
+
+### Besluit
+Een eerste interne `CreatorMaterial`-laag wordt toegevoegd aan de operations cockpit.
+
+### Scope
+Wel:
+- creator-gebonden materiaal
+- interne upload
+- operator-zichtbaarheid binnen scope
+
+Niet:
+- creator portal
+- externe uploadflows
+- integraties
+- uitgebreide media library
+
+---
+
+## Beslissing 2 — Creator/channel edit blijft admin-only
+### Oordeel
+Doen.
+
+### Waarom
+Full edit hoort bij structureel beheer.  
+Operator-uitvoering en beheer mogen niet door elkaar lopen.
+
+### Besluit
+- `creator-update` admin-only
+- `channel-update` admin-only
+
+### Gevolg
+Operator mag:
+- detail bekijken binnen scope
+
+Operator mag niet:
+- full creator edit openen
+- full channel edit openen
+
+---
+
+## Beslissing 3 — Scope-tests moeten productkeuze volgen
+### Oordeel
+Doen.
+
+### Waarom
+De test-suite bevatte tegenstrijdige verwachtingen over edit-toegang voor operators.
+
+### Besluit
+Tests zijn aangepast zodat ze aansluiten op de gekozen productregel:
+- detail binnen scope zichtbaar
+- edit admin-only
+
+---
+
+## Beslissing 4 — UX-feedback op materials
+### Oordeel
+Goed idee, juiste fase voor een kleine vervolgslag.
+
+### Besluit
+De volgende kleine materials-verbetering wordt:
+- thumbnails/previews voor beeldmateriaal
+- simpele viewer voor foto/video
+
+### Niet nu
+- mappen
+- right-click blokkeren
+- zwaar mediabeheer

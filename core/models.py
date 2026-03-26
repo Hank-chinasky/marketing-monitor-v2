@@ -1,3 +1,6 @@
+import mimetypes
+import os
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -80,6 +83,65 @@ class Creator(models.Model):
 
     def __str__(self) -> str:
         return self.display_name
+
+
+class CreatorMaterial(models.Model):
+    creator = models.ForeignKey(
+        Creator,
+        on_delete=models.CASCADE,
+        related_name="materials",
+    )
+    file = models.FileField(upload_to="creator_materials/%Y/%m/%d")
+    label = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="uploaded_creator_materials",
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-uploaded_at", "-id"]
+
+    def __str__(self) -> str:
+        return self.label or self.filename
+
+    @property
+    def filename(self) -> str:
+        return os.path.basename(self.file.name)
+
+    @property
+    def extension(self) -> str:
+        _, ext = os.path.splitext(self.file.name or "")
+        return ext.lower().lstrip(".")
+
+    @property
+    def mime_type(self) -> str:
+        guessed, _ = mimetypes.guess_type(self.file.name or "")
+        return guessed or "application/octet-stream"
+
+    @property
+    def media_kind(self) -> str:
+        mime_type = self.mime_type
+        if mime_type.startswith("image/"):
+            return "image"
+        if mime_type.startswith("video/"):
+            return "video"
+        return "other"
+
+    @property
+    def is_image(self) -> bool:
+        return self.media_kind == "image"
+
+    @property
+    def is_video(self) -> bool:
+        return self.media_kind == "video"
+
+    @property
+    def is_previewable(self) -> bool:
+        return self.media_kind in {"image", "video"}
 
 
 class CreatorChannel(models.Model):

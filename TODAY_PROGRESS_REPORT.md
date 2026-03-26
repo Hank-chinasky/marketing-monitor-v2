@@ -106,3 +106,96 @@ De omgeving is nu operationeel met:
 - het nieuwe Traefik basic auth wachtwoord vastleggen in een password manager
 - changelog en deploymentdocumentatie bijwerken
 - admin/UI uitbreiden als creators/operators nog niet via alle gewenste schermen te beheren zijn
+
+# Today Progress Report — 26 maart 2026
+
+## Samenvatting
+Vandaag is de eerste werkende `Creator Materials` MVP-slice toegevoegd aan CreatorWorkboard.
+
+De focus lag bewust op directe interne operationele winst:
+- materiaal direct op creator-niveau beschikbaar maken
+- upload mogelijk maken vanuit de interne cockpit
+- operator binnen scope materiaal laten zien en openen
+- beheer en uitvoering strakker scheiden
+
+## Wat is opgeleverd
+- `CreatorMaterial` model toegevoegd
+- materials-sectie toegevoegd op creator detail
+- admin/superadmin kan materiaal uploaden
+- operator binnen scope kan materiaal zien
+- operator binnen scope kan materiaal openen
+- migration-keten hersteld
+- creator/channel edit flows naar admin-only gebracht
+- test-suite weer volledig groen gekregen
+
+## Belangrijke productbeslissing
+Operator mag:
+- detail zien binnen scope
+
+Operator mag niet:
+- full creator edit openen
+- full channel edit openen
+
+Beheer blijft admin-domein.  
+Operator-uitvoering hoort later in een beperkte handoff/workspace-flow.
+
+## Resultaat
+- migrations groen
+- test-suite groen
+- handmatige runtime-validatie geslaagd
+- upload werkt
+- operator-zichtbaarheid werkt
+
+## Belangrijkste feedback uit live test
+De materials-flow werkt functioneel goed, maar de huidige UX is nog te link-gebaseerd.
+
+Gewenste verbetering:
+- thumbnails/previews voor foto en video
+- simpeler herkennen welk materiaal juist is
+- viewer in plaats van alleen openen in kale tab
+
+## Volgende stap
+Kleine UX-upgrade voor materials:
+- preview-first weergave voor image/video
+
+# Next Actions — na Creator Materials MVP
+
+## Eerstvolgende kleine stap
+Preview-first materials-weergave voor beeldmateriaal.
+
+## Concreet
+- thumbnails voor afbeeldingen
+- video preview / player
+- klik opent nette viewer in plaats van kale losse tab
+- eenvoudige typeherkenning: image / video / other
+
+## Waarom nu
+De materials-flow werkt functioneel, maar de operator moet materiaal sneller visueel herkennen.
+
+## Bewuste grens
+Niet nu:
+- mappen
+- grote media library
+- creator portal
+- Dropbox/Drive
+- rechtklik blokkeren
+## Update — preview-first materials + multi-upload
+Na de eerste werkende Creator Materials MVP is de materials-lijst verbeterd naar preview-first gedrag voor afbeeldingen en video’s.
+
+Toegevoegd:
+- image thumbnail preview
+- video preview
+- eenvoudige viewer/modal voor grotere weergave
+- multi-select upload in één submit
+
+Resultaat:
+- materiaal is sneller visueel herkenbaar
+- minder klikwerk nodig
+- meerdere bestanden kunnen in één keer aan dezelfde creator worden gekoppeld
+- operators blijven materiaal binnen scope zien en gebruiken
+
+Bewuste grens:
+- geen mappen
+- geen zwaar mediabeheer
+- geen right-click blokkering
+- geen portal of externe integraties

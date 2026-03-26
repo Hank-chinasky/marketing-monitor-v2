@@ -1,16 +1,15 @@
 from django.urls import path
 
+from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
+from core.material_views import CreatorDetailView, CreatorMaterialDownloadView
 from core.views import (
     AssignmentListView,
     ChannelDetailView,
     ChannelListView,
     CreatorChannelCreateView,
-    CreatorChannelUpdateView,
     CreatorCreateView,
-    CreatorDetailView,
     CreatorListView,
     CreatorNetworkView,
-    CreatorUpdateView,
     HealthzView,
     OperationsDashboardView,
     OperatorAssignmentCreateView,
@@ -28,6 +27,11 @@ urlpatterns = [
     path("creators/", CreatorListView.as_view(), name="creator-list"),
     path("creators/create/", CreatorCreateView.as_view(), name="creator-create"),
     path("creators/<int:pk>/", CreatorDetailView.as_view(), name="creator-detail"),
+    path(
+        "creators/<int:creator_pk>/materials/<int:material_pk>/download/",
+        CreatorMaterialDownloadView.as_view(),
+        name="creator-material-download",
+    ),
     path("creators/<int:pk>/edit/", CreatorUpdateView.as_view(), name="creator-update"),
     path("creators/<int:pk>/network/", CreatorNetworkView.as_view(), name="creator-network"),
     path("channels/", ChannelListView.as_view(), name="channel-list"),

@@ -13,3 +13,8 @@ staticfiles/
 .env
 .env.*
 !.env.example
+
+# local runtime uploads
+creator_materials/
+profielen/
+*.tar.gz
