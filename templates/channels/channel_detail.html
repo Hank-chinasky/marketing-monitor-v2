@@ -3,31 +3,34 @@
 {% block content %}
 <h1>{{ channel.platform|title }} / {{ channel.handle }}</h1>
 
-<div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-    <a class="quick-link" href="{{ back_url }}">
-        {% if next_url %}
-            Terug naar queue
-        {% else %}
-            Terug naar channels
-        {% endif %}
-    </a>
-
-    {% if channel.profile_url %}
-        <a class="quick-link" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open platform</a>
-    {% endif %}
-
-    {% if can_open_workspace %}
-    <a class="quick-link" href="{% url 'instagram-workspace' channel.pk %}">Open Workspace</a>
+<div style="margin-bottom: 1rem; display:grid; gap:0.75rem;">
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+        {% if can_open_workspace %}
+            <a class="primary-button" href="{% url 'instagram-workspace' channel.pk %}">Open Workspace</a>
         {% endif %}
 
-    <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Terug naar creator</a>
-    <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
+        {% if channel.profile_url %}
+            <a class="secondary-button" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open platform</a>
+        {% endif %}
 
-    {% if request.user.is_staff or request.user.is_superuser %}
-        <a class="quick-link" href="{% url 'channel-update' channel.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
-            Edit channel
+        {% if request.user.is_staff or request.user.is_superuser %}
+            <a class="secondary-button" href="{% url 'channel-update' channel.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
+                Edit channel
+            </a>
+        {% endif %}
+    </div>
+
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+        <a class="quick-link" href="{{ back_url }}">
+            {% if next_url %}
+                Terug naar queue
+            {% else %}
+                Terug naar channels
+            {% endif %}
         </a>
-    {% endif %}
+        <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Terug naar creator</a>
+        <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
+    </div>
 </div>
 
 <div class="panel" style="margin-bottom: 1rem;">

@@ -219,3 +219,31 @@ class InstagramWorkspaceViewTests(TestCase):
             reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk}),
         )
         self.assertNotContains(tiktok_response, "Open Workspace")
+
+    def test_channel_detail_renders_workspace_as_primary_action(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("channel-detail", kwargs={"pk": self.instagram_channel.pk})
+        )
+        self.assertContains(
+            response,
+            f'class="primary-button" href="{reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk})}"',
+            html=False,
+        )
+        self.assertContains(
+            response,
+            f'class="secondary-button" href="{self.instagram_channel.profile_url}"',
+            html=False,
+        )
+
+    def test_channel_detail_keeps_back_links_as_quick_links(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(
+            reverse("channel-detail", kwargs={"pk": self.instagram_channel.pk})
+        )
+        self.assertContains(response, 'class="quick-link" href="/channels/"', html=False)
+        self.assertContains(
+            response,
+            f'class="quick-link" href="{reverse("creator-detail", kwargs={"pk": self.creator.pk})}"',
+            html=False,
+        )
