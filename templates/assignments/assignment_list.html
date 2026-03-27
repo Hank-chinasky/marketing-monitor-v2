@@ -2,16 +2,97 @@
 
 {% block content %}
 <h1>Assignments</h1>
+<p class="muted">
+    Beheer hier welke operator op welke creator werkt, met scope, looptijd en actieve status.
+</p>
 
-<ul>
-    {% for assignment in assignments %}
-        <li>
-            {{ assignment.operator }} / {{ assignment.creator.display_name }} /
-            {{ assignment.scope }} / {{ assignment.starts_at }} -
-            {{ assignment.ends_at|default:"open" }}
-        </li>
-    {% empty %}
-        <li>Geen assignments.</li>
-    {% endfor %}
-</ul>
+{% if saved %}
+    <div class="success-panel">
+        Assignment is opgeslagen.
+    </div>
+{% endif %}
+
+{% if status_changed %}
+    <div class="success-panel">
+        Assignment status is bijgewerkt.
+    </div>
+{% endif %}
+
+<div class="cards">
+    <div class="card">
+        <div>Totaal</div>
+        <div class="card-number">{{ summary.assignment_count }}</div>
+    </div>
+    <div class="card">
+        <div>Actief</div>
+        <div class="card-number">{{ summary.active_count }}</div>
+    </div>
+    <div class="card">
+        <div>Inactief</div>
+        <div class="card-number">{{ summary.inactive_count }}</div>
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+    <div>
+        <strong>Assignments overzicht</strong>
+        <div class="muted">Gebruik deactivate om een assignment uit de operatie te halen zonder historie te verliezen.</div>
+    </div>
+    {% if can_manage_assignments %}
+        <a class="primary-button" href="{% url 'assignment-create' %}">Nieuwe assignment</a>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <div style="display:grid; gap:1rem;">
+        {% for assignment in assignments %}
+            <article style="border:1px solid #e5e7eb; border-radius:12px; padding:1rem; background:#fff;">
+                <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                    <div>
+                        <strong>{{ assignment.operator }}</strong>
+                        <span class="muted">→</span>
+                        <strong>{{ assignment.creator.display_name }}</strong>
+                        {% if assignment.active %}
+                            <span class="badge badge-green">active</span>
+                        {% else %}
+                            <span class="badge badge-yellow">inactive</span>
+                        {% endif %}
+                    </div>
+                    {% if can_manage_assignments %}
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <a class="secondary-button" href="{% url 'assignment-update' assignment.pk %}">Edit</a>
+                            {% if assignment.active %}
+                                <form method="post" action="{% url 'assignment-deactivate' assignment.pk %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button class="secondary-button" type="submit">Deactivate</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:0.75rem;">
+                    <div>
+                        <div class="muted">Scope</div>
+                        <div>{{ assignment.get_scope_display }}</div>
+                    </div>
+                    <div>
+                        <div class="muted">Start</div>
+                        <div>{{ assignment.starts_at }}</div>
+                    </div>
+                    <div>
+                        <div class="muted">Einde</div>
+                        <div>{{ assignment.ends_at|default:"open" }}</div>
+                    </div>
+                    <div>
+                        <div class="muted">Creator</div>
+                        <div><a href="{% url 'creator-detail' assignment.creator.pk %}">{{ assignment.creator.display_name }}</a></div>
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <div>Geen assignments.</div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

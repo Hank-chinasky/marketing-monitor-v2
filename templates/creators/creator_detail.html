@@ -320,7 +320,7 @@
     {{ creator.notes|default:"Geen notities."|linebreaksbr }}
 </div>
 
-<h2>Channels</h2>
+<h2>Channels / Workspaces</h2>
 {% for channel in channels %}
     <div class="panel" style="margin-bottom: 1rem;">
         <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.75rem;">
@@ -352,14 +352,17 @@
                 {% endif %}
             </div>
 
-            <div>
-                {% if channel.profile_url %}
-                    <a class="quick-link" href="{{ channel.profile_url }}" target="_blank">Open platform</a>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <a class="secondary-button" href="{% url 'channel-detail' channel.pk %}">Open channel</a>
+                {% if channel.pk in workspace_channel_ids %}
+                    <a class="primary-button" href="{% url 'instagram-workspace' channel.pk %}">Open Workspace</a>
                 {% endif %}
-                <a class="quick-link" href="{% url 'channel-detail' channel.pk %}">Channel detail</a>
-                <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
+                {% if channel.profile_url %}
+                    <a class="secondary-button" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open platform</a>
+                {% endif %}
+                <a class="secondary-button" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
                 {% if request.user.is_staff or request.user.is_superuser %}
-                    <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
+                    <a class="secondary-button" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
                 {% endif %}
             </div>
         </div>
@@ -370,7 +373,7 @@
                 <ul class="clean">
                     <li><strong>Profile URL:</strong>
                         {% if channel.profile_url %}
-                            <a href="{{ channel.profile_url }}" target="_blank">{{ channel.profile_url }}</a>
+                            <a href="{{ channel.profile_url }}" target="_blank" rel="noopener">{{ channel.profile_url }}</a>
                         {% else %}
                             -
                         {% endif %}
