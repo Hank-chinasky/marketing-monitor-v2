@@ -1,9 +1,9 @@
 from django.urls import path
 
 from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
+from core.assignment_views import AssignmentListView, OperatorAssignmentDeactivateView
 from core.material_views import CreatorDetailView, CreatorMaterialDownloadView
 from core.views import (
-    AssignmentListView,
     ChannelDetailView,
     ChannelListView,
     CreatorChannelCreateView,
@@ -47,6 +47,11 @@ urlpatterns = [
     path("assignments/", AssignmentListView.as_view(), name="assignment-list"),
     path("assignments/create/", OperatorAssignmentCreateView.as_view(), name="assignment-create"),
     path("assignments/<int:pk>/edit/", OperatorAssignmentUpdateView.as_view(), name="assignment-update"),
+    path(
+        "assignments/<int:pk>/deactivate/",
+        OperatorAssignmentDeactivateView.as_view(),
+        name="assignment-deactivate",
+    ),
     path("operators/", OperatorListView.as_view(), name="operator-list"),
     path("operators/create/", OperatorCreateView.as_view(), name="operator-create"),
     path("operators/<int:pk>/edit/", OperatorUpdateView.as_view(), name="operator-update"),

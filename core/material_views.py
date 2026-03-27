@@ -5,7 +5,11 @@ from django.views import View
 
 from core.forms import CreatorMaterialUploadForm
 from core.models import CreatorMaterial
-from core.services.scope import get_creator_queryset_for_user, is_admin_user
+from core.services.scope import (
+    get_creator_queryset_for_user,
+    get_instagram_workspace_channel_queryset_for_user,
+    is_admin_user,
+)
 from core.views import CreatorDetailView as BaseCreatorDetailView
 
 
@@ -16,6 +20,11 @@ class CreatorDetailView(BaseCreatorDetailView):
         context["materials"] = creator.materials.filter(active=True).select_related("uploaded_by")
         context["material_form"] = kwargs.get("material_form") or CreatorMaterialUploadForm()
         context["can_upload_materials"] = is_admin_user(self.request.user)
+        context["workspace_channel_ids"] = set(
+            get_instagram_workspace_channel_queryset_for_user(self.request.user)
+            .filter(creator=creator)
+            .values_list("pk", flat=True)
+        )
         return context
 
     def post(self, request, *args, **kwargs):
