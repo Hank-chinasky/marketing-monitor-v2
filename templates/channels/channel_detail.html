@@ -16,6 +16,10 @@
         <a class="quick-link" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open platform</a>
     {% endif %}
 
+    {% if channel.platform == "instagram" %}
+        <a class="quick-link" href="{% url 'instagram-workspace' channel.pk %}">Open Workspace</a>
+    {% endif %}
+
     <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Terug naar creator</a>
     <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
 

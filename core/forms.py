@@ -161,6 +161,7 @@ class CreatorForm(forms.ModelForm):
             "consent_status",
             "primary_operator",
             "notes",
+            "primary_link",
             "content_source_type",
             "content_source_url",
             "content_source_notes",
