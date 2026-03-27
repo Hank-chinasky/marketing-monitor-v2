@@ -2,27 +2,29 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.views.generic import DetailView
 
-from core.mixins import ScopedChannelQuerysetMixin
 from core.models import CreatorChannel
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_active_assignments_queryset,
+    get_instagram_workspace_channel_queryset_for_user,
     get_operator_for_user,
     is_admin_user,
 )
 
 
-class InstagramWorkspaceView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailView):
+class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
     model = CreatorChannel
     template_name = "workspaces/instagram_workspace.html"
     context_object_name = "channel"
 
     def get_queryset(self):
         return (
-            super()
-            .get_queryset()
-            .select_related("creator", "creator__primary_operator", "creator__primary_operator__user")
-            .filter(platform=CreatorChannel.Platform.INSTAGRAM)
+            get_instagram_workspace_channel_queryset_for_user(self.request.user)
+            .select_related(
+                "creator",
+                "creator__primary_operator",
+                "creator__primary_operator__user",
+            )
         )
 
     def get_context_data(self, **kwargs):
@@ -44,8 +46,12 @@ class InstagramWorkspaceView(LoginRequiredMixin, ScopedChannelQuerysetMixin, Det
                 .filter(creator=creator)
             ) if operator else []
 
-        materials = list(creator.materials.filter(active=True).select_related("uploaded_by"))
-        policy_gap = channel.vpn_required and not (channel.approved_ip_label or channel.approved_egress_ip)
+        materials = list(
+            creator.materials.filter(active=True).select_related("uploaded_by")
+        )
+        policy_gap = channel.vpn_required and not (
+            channel.approved_ip_label or channel.approved_egress_ip
+        )
         handoff_missing = not bool((channel.last_operator_update or "").strip())
 
         risk_flags = []
@@ -68,7 +74,11 @@ class InstagramWorkspaceView(LoginRequiredMixin, ScopedChannelQuerysetMixin, Det
 
         human_review_required = bool(risk_flags)
 
-        if creator.status != "active" or creator.consent_status != "active" or channel.status != "active":
+        if (
+            creator.status != "active"
+            or creator.consent_status != "active"
+            or channel.status != "active"
+        ):
             policy_state = {"label": "blocked", "badge": "badge-red"}
         elif human_review_required:
             policy_state = {"label": "review required", "badge": "badge-yellow"}
@@ -77,10 +87,28 @@ class InstagramWorkspaceView(LoginRequiredMixin, ScopedChannelQuerysetMixin, Det
 
         quick_actions = []
         if channel.profile_url:
-            quick_actions.append({"label": "Open Instagram profiel", "url": channel.profile_url, "external": True})
+            quick_actions.append(
+                {
+                    "label": "Open Instagram profiel",
+                    "url": channel.profile_url,
+                    "external": True,
+                }
+            )
         if creator.primary_link:
-            quick_actions.append({"label": "Open primary link", "url": creator.primary_link, "external": True})
-        quick_actions.append({"label": "Open creator detail", "url": reverse("creator-detail", kwargs={"pk": creator.pk}), "external": False})
+            quick_actions.append(
+                {
+                    "label": "Open primary link",
+                    "url": creator.primary_link,
+                    "external": True,
+                }
+            )
+        quick_actions.append(
+            {
+                "label": "Open creator detail",
+                "url": reverse("creator-detail", kwargs={"pk": creator.pk}),
+                "external": False,
+            }
+        )
 
         context.update(
             {
