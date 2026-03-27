@@ -109,6 +109,17 @@ class AssignmentManagementViewTests(TestCase):
         self.assertContains(response, reverse("assignment-update", kwargs={"pk": self.assignment.pk}))
         self.assertContains(response, reverse("assignment-deactivate", kwargs={"pk": self.assignment.pk}))
 
+    def test_assignment_list_shows_reactivate_for_inactive_assignment(self):
+        self.assignment.active = False
+        self.assignment.save(update_fields=["active"])
+
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("assignment-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("assignment-reactivate", kwargs={"pk": self.assignment.pk}))
+        self.assertNotContains(response, reverse("assignment-deactivate", kwargs={"pk": self.assignment.pk}))
+
     def test_admin_can_deactivate_assignment(self):
         self.client.force_login(self.admin)
         response = self.client.post(reverse("assignment-deactivate", kwargs={"pk": self.assignment.pk}))
@@ -116,7 +127,27 @@ class AssignmentManagementViewTests(TestCase):
         self.assignment.refresh_from_db()
         self.assertFalse(self.assignment.active)
 
+    def test_admin_can_reactivate_assignment(self):
+        self.assignment.active = False
+        self.assignment.save(update_fields=["active"])
+
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse("assignment-reactivate", kwargs={"pk": self.assignment.pk}))
+
+        self.assertEqual(response.status_code, 302)
+        self.assignment.refresh_from_db()
+        self.assertTrue(self.assignment.active)
+
     def test_non_admin_cannot_deactivate_assignment(self):
         self.client.force_login(self.operator_user)
         response = self.client.post(reverse("assignment-deactivate", kwargs={"pk": self.assignment.pk}))
+        self.assertEqual(response.status_code, 403)
+
+    def test_non_admin_cannot_reactivate_assignment(self):
+        self.assignment.active = False
+        self.assignment.save(update_fields=["active"])
+
+        self.client.force_login(self.operator_user)
+        response = self.client.post(reverse("assignment-reactivate", kwargs={"pk": self.assignment.pk}))
+
         self.assertEqual(response.status_code, 403)

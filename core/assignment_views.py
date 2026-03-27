@@ -45,3 +45,17 @@ class OperatorAssignmentDeactivateView(LoginRequiredMixin, AdminOnlyMixin, View)
         redirect_url = reverse("assignment-list")
         redirect_url = f"{redirect_url}?status_changed=1"
         return HttpResponseRedirect(redirect_url)
+
+
+class OperatorAssignmentReactivateView(LoginRequiredMixin, AdminOnlyMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        assignment = get_object_or_404(OperatorAssignment, pk=kwargs["pk"])
+        if not assignment.active:
+            assignment.active = True
+            assignment.save(update_fields=["active"])
+
+        redirect_url = reverse("assignment-list")
+        redirect_url = f"{redirect_url}?status_changed=1"
+        return HttpResponseRedirect(redirect_url)

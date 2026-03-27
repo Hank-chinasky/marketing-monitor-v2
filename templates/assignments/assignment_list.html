@@ -36,7 +36,7 @@
 <div class="panel" style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
     <div>
         <strong>Assignments overzicht</strong>
-        <div class="muted">Gebruik deactivate om een assignment uit de operatie te halen zonder historie te verliezen.</div>
+        <div class="muted">Gebruik deactivate of reactivate om een assignment operationeel te schakelen zonder historie te verliezen.</div>
     </div>
     {% if can_manage_assignments %}
         <a class="primary-button" href="{% url 'assignment-create' %}">Nieuwe assignment</a>
@@ -65,6 +65,11 @@
                                 <form method="post" action="{% url 'assignment-deactivate' assignment.pk %}" style="margin:0;">
                                     {% csrf_token %}
                                     <button class="secondary-button" type="submit">Deactivate</button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'assignment-reactivate' assignment.pk %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button class="secondary-button" type="submit">Reactivate</button>
                                 </form>
                             {% endif %}
                         </div>
