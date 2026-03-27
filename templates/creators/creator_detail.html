@@ -65,6 +65,13 @@
         <ul class="clean">
             <li><strong>Legal name:</strong> {{ creator.legal_name|default:"-" }}</li>
             <li><strong>Primary operator:</strong> {{ creator.primary_operator|default:"-" }}</li>
+            <li><strong>Primary link:</strong>
+                {% if creator.primary_link %}
+                    <a href="{{ creator.primary_link }}" target="_blank" rel="noopener">{{ creator.primary_link }}</a>
+                {% else %}
+                    -
+                {% endif %}
+            </li>
         </ul>
     </div>
 
@@ -93,6 +100,13 @@
 <h2>Content Intake</h2>
 <div class="panel">
     <ul class="clean">
+        <li><strong>Primary link:</strong>
+            {% if creator.primary_link %}
+                <a href="{{ creator.primary_link }}" target="_blank" rel="noopener">{{ creator.primary_link }}</a>
+            {% else %}
+                -
+            {% endif %}
+        </li>
         <li><strong>Source type:</strong> {{ creator.content_source_type|default:"-" }}</li>
         <li><strong>Ready status:</strong> {{ creator.content_ready_status|default:"-" }}</li>
         <li>

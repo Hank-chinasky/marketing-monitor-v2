@@ -64,6 +64,7 @@ class Creator(models.Model):
         related_name="primary_creators",
     )
     notes = models.TextField(blank=True)
+    primary_link = models.URLField(blank=True)
 
     content_source_type = models.CharField(
         max_length=30,

@@ -20,6 +20,7 @@ from core.views import (
     OperatorToggleActiveView,
     OperatorUpdateView,
 )
+from core.workspace_views import InstagramWorkspaceView
 
 urlpatterns = [
     path("healthz/", HealthzView.as_view(), name="healthz"),
@@ -37,6 +38,11 @@ urlpatterns = [
     path("channels/", ChannelListView.as_view(), name="channel-list"),
     path("channels/create/", CreatorChannelCreateView.as_view(), name="channel-create"),
     path("channels/<int:pk>/", ChannelDetailView.as_view(), name="channel-detail"),
+    path(
+        "channels/<int:pk>/workspace/",
+        InstagramWorkspaceView.as_view(),
+        name="instagram-workspace",
+    ),
     path("channels/<int:pk>/edit/", CreatorChannelUpdateView.as_view(), name="channel-update"),
     path("assignments/", AssignmentListView.as_view(), name="assignment-list"),
     path("assignments/create/", OperatorAssignmentCreateView.as_view(), name="assignment-create"),

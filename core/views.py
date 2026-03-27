@@ -39,6 +39,7 @@ from core.services.scope import (
     get_creator_queryset_for_user,
     get_operator_for_user,
     is_admin_user,
+    user_can_access_instagram_workspace,
 )
 
 
@@ -528,6 +529,10 @@ class ChannelDetailView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailVi
         context["policy_gap"] = policy_gap
         context["next_url"] = next_url
         context["back_url"] = next_url or reverse("channel-list")
+        context["can_open_workspace"] = user_can_access_instagram_workspace(
+            self.request.user,
+            channel,
+        )
 
         return context
 

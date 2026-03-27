@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Instagram Workspace / {{ channel.handle }}</h1>
+
+<div style="margin-bottom: 1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+    <a class="quick-link" href="{{ back_url }}">Terug naar channel</a>
+    {% if channel.profile_url %}
+        <a class="quick-link" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open Instagram</a>
+    {% endif %}
+    <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Open creator</a>
+    {% if request.user.is_staff or request.user.is_superuser %}
+        <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
+    {% endif %}
+</div>
+
+<div class="cards">
+    <div class="card">
+        <div>Creator</div>
+        <div style="margin-top:0.35rem;">{{ creator.display_name }}</div>
+    </div>
+    <div class="card">
+        <div>Platform</div>
+        <div style="margin-top:0.35rem;">Instagram</div>
+    </div>
+    <div class="card">
+        <div>Policy state</div>
+        <div style="margin-top:0.35rem;">
+            <span class="badge {{ policy_state.badge }}">{{ policy_state.label }}</span>
+        </div>
+    </div>
+    <div class="card">
+        <div>Human review</div>
+        <div style="margin-top:0.35rem;">
+            {% if human_review_required %}
+                <span class="badge badge-yellow">required</span>
+            {% else %}
+                <span class="badge badge-green">not required</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <div>Materials</div>
+        <div class="card-number">{{ materials|length }}</div>
+    </div>
+    <div class="card">
+        <div>Assignments</div>
+        <div class="card-number">{{ assignments|length }}</div>
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom: 1rem;">
+    <h2>Pre-Action Control Block</h2>
+    <ul class="clean">
+        <li>
+            <strong>Primary link:</strong>
+            {% if creator.primary_link %}
+                <a href="{{ creator.primary_link }}" target="_blank" rel="noopener">{{ creator.primary_link }}</a>
+            {% else %}
+                -
+            {% endif %}
+        </li>
+        <li><strong>Content ready status:</strong> {{ creator.content_ready_status|default:"-" }}</li>
+        <li><strong>Source type:</strong> {{ creator.content_source_type|default:"-" }}</li>
+        <li><strong>Source URL:</strong>
+            {% if creator.content_source_url %}
+                <a href="{{ creator.content_source_url }}" target="_blank" rel="noopener">Open source</a>
+            {% else %}
+                -
+            {% endif %}
+        </li>
+        <li><strong>Laatste handoff:</strong> {{ channel.last_operator_update|default:"-"|linebreaksbr }}</li>
+        <li><strong>Laatste handoff datum:</strong> {{ channel.last_operator_update_at|default:"-" }}</li>
+    </ul>
+
+    <h3>Risk flags</h3>
+    <ul class="clean">
+        {% for flag in risk_flags %}
+            <li><span class="badge badge-yellow">flag</span> {{ flag }}</li>
+        {% empty %}
+            <li>Geen directe risk flags.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h2>Access & Policy</h2>
+        <ul class="clean">
+            <li><strong>Status:</strong> {{ channel.status }}</li>
+            <li><strong>Access mode:</strong> {{ channel.access_mode }}</li>
+            <li><strong>Recovery owner:</strong> {{ channel.recovery_owner }}</li>
+            <li><strong>Login identifier:</strong> {{ channel.login_identifier|default:"-" }}</li>
+            <li><strong>Credential status:</strong> {{ channel.credential_status|default:"-" }}</li>
+            <li><strong>2FA enabled:</strong> {{ channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
+            <li><strong>VPN required:</strong> {{ channel.vpn_required|yesno:"Ja,Nee" }}</li>
+            <li><strong>Approved region:</strong> {{ channel.approved_access_region|default:"-" }}</li>
+            <li><strong>IP label:</strong> {{ channel.approved_ip_label|default:"-" }}</li>
+            <li><strong>Egress IP:</strong> {{ channel.approved_egress_ip|default:"-" }}</li>
+            <li><strong>Access notes:</strong> {{ channel.access_notes|default:"-"|linebreaksbr }}</li>
+            <li><strong>Policy notes:</strong> {{ channel.access_profile_notes|default:"-"|linebreaksbr }}</li>
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h2>Quick actions</h2>
+        <ul class="clean">
+            {% for action in quick_actions %}
+                <li>
+                    <a class="quick-link" href="{{ action.url }}"{% if action.external %} target="_blank" rel="noopener"{% endif %}>{{ action.label }}</a>
+                </li>
+            {% empty %}
+                <li>Geen quick actions beschikbaar.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<h2>Creator Materials</h2>
+<div class="panel">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+        {% for material in materials %}
+            <article class="creator-material-card" style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                <div style="padding:0.75rem; background:#f8fafc; border-bottom:1px solid #e5e7eb;">
+                    {% if material.is_image %}
+                        <button type="button" class="creator-material-preview-trigger" data-preview-kind="image" data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}" data-preview-title="{{ material.label|default:material.filename|escape }}" style="display:block; width:100%; border:0; background:none; padding:0; cursor:pointer;">
+                            <img src="{% url 'creator-material-download' creator.pk material.pk %}" alt="{{ material.label|default:material.filename }}" style="display:block; width:100%; height:220px; object-fit:cover; border-radius:8px;">
+                        </button>
+                    {% elif material.is_video %}
+                        <button type="button" class="creator-material-preview-trigger" data-preview-kind="video" data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}" data-preview-type="{{ material.mime_type }}" data-preview-title="{{ material.label|default:material.filename|escape }}" style="display:block; width:100%; border:0; background:none; padding:0; cursor:pointer; text-align:left;">
+                            <video controls preload="metadata" style="display:block; width:100%; max-height:220px; border-radius:8px; background:#111827;">
+                                <source src="{% url 'creator-material-download' creator.pk material.pk %}" type="{{ material.mime_type }}">
+                            </video>
+                        </button>
+                    {% else %}
+                        <div style="display:flex; align-items:center; justify-content:center; height:220px; border-radius:8px; background:#e2e8f0; color:#334155; font-weight:700; font-size:1.2rem; text-transform:uppercase;">
+                            {{ material.extension|default:"file" }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div style="padding:0.9rem;">
+                    <strong>{{ material.label|default:material.filename }}</strong>
+                    <div class="muted" style="margin:0.35rem 0 0.5rem;">{{ material.uploaded_at }} door {{ material.uploaded_by.get_full_name|default:material.uploaded_by.username }}</div>
+                    {% if material.notes %}
+                        <div style="margin:0.35rem 0 0.75rem;">{{ material.notes|linebreaksbr }}</div>
+                    {% endif %}
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        {% if material.is_previewable %}
+                            <button type="button" class="secondary-button creator-material-preview-trigger" data-preview-kind="{{ material.media_kind }}" data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}" data-preview-type="{{ material.mime_type }}" data-preview-title="{{ material.label|default:material.filename|escape }}">Bekijk groter</button>
+                        {% endif %}
+                        <a class="quick-link" href="{% url 'creator-material-download' creator.pk material.pk %}" target="_blank" rel="noopener">Open bestand</a>
+                    </div>
+                </div>
+            </article>
+        {% empty %}
+            <div>Nog geen materiaal geüpload.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Active assignments</h2>
+    <ul class="clean">
+        {% for assignment in assignments %}
+            <li><strong>{{ assignment.operator }}</strong> — {{ assignment.scope }} — {{ assignment.starts_at }} t/m {{ assignment.ends_at|default:"open" }}</li>
+        {% empty %}
+            <li>Geen zichtbare assignments.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div id="creator-material-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,0.85); padding:2rem;">
+    <div style="max-width:1100px; margin:0 auto; height:100%; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; color:#fff; margin-bottom:1rem; gap:1rem;">
+            <strong id="creator-material-modal-title">Preview</strong>
+            <button type="button" id="creator-material-modal-close" class="secondary-button">Sluiten</button>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; min-height:0;">
+            <img id="creator-material-modal-image" src="" alt="" style="display:none; max-width:100%; max-height:100%; border-radius:12px;">
+            <video id="creator-material-modal-video" controls style="display:none; max-width:100%; max-height:100%; border-radius:12px; background:#000;"></video>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const modal = document.getElementById('creator-material-modal');
+    const closeButton = document.getElementById('creator-material-modal-close');
+    const title = document.getElementById('creator-material-modal-title');
+    const image = document.getElementById('creator-material-modal-image');
+    const video = document.getElementById('creator-material-modal-video');
+
+    if (!modal || !closeButton || !image || !video) {
+        return;
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        image.style.display = 'none';
+        image.src = '';
+        video.pause();
+        video.style.display = 'none';
+        video.removeAttribute('src');
+        video.innerHTML = '';
+    }
+
+    function openPreview(kind, url, previewTitle, mimeType) {
+        title.textContent = previewTitle || 'Preview';
+        image.style.display = 'none';
+        video.style.display = 'none';
+
+        if (kind === 'video') {
+            video.innerHTML = '<source src="' + url + '" type="' + (mimeType || 'video/mp4') + '">';
+            video.load();
+            video.style.display = 'block';
+        } else {
+            image.src = url;
+            image.alt = previewTitle || 'Preview';
+            image.style.display = 'block';
+        }
+
+        modal.style.display = 'block';
+    }
+
+    document.querySelectorAll('.creator-material-preview-trigger').forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
+            openPreview(
+                trigger.dataset.previewKind,
+                trigger.dataset.previewUrl,
+                trigger.dataset.previewTitle,
+                trigger.dataset.previewType
+            );
+        });
+    });
+
+    closeButton.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && modal.style.display === 'block') {
+            closeModal();
+        }
+    });
+})();
+</script>
+{% endblock %}
