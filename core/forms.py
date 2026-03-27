@@ -206,6 +206,23 @@ class CreatorMaterialUploadForm(forms.Form):
         return files
 
 
+class ChannelHandoffForm(forms.Form):
+    last_operator_update = forms.CharField(
+        required=False,
+        label="Handoff",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 5,
+                "placeholder": "Korte overdracht voor de volgende operator.",
+            }
+        ),
+        help_text="Beschrijf kort wat gedaan is, wat nog openstaat en waar op gelet moet worden.",
+    )
+
+    def clean_last_operator_update(self):
+        return (self.cleaned_data.get("last_operator_update") or "").strip()
+
+
 class CreatorChannelForm(forms.ModelForm):
     last_access_check_at = forms.DateField(
         label="Laatste access check",

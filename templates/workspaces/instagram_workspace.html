@@ -14,6 +14,12 @@
     {% endif %}
 </div>
 
+{% if saved %}
+    <div class="success-panel" style="margin-bottom: 1rem;">
+        Handoff opgeslagen.
+    </div>
+{% endif %}
+
 <div class="cards">
     <div class="card">
         <div>Creator</div>
@@ -50,6 +56,36 @@
 </div>
 
 <div class="panel" style="margin-bottom: 1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin:0;">Handoff</h2>
+            <div class="muted">Werk de overdracht direct bij zonder de workspace te verlaten.</div>
+        </div>
+        <div class="muted">
+            Laatst bijgewerkt: {{ channel.last_operator_update_at|default:"-" }}
+        </div>
+    </div>
+
+    <form method="post" style="margin-top:1rem;">
+        {% csrf_token %}
+        {{ handoff_form.non_field_errors }}
+
+        <p>
+            {{ handoff_form.last_operator_update.label_tag }}<br>
+            {{ handoff_form.last_operator_update }}
+            {% if handoff_form.last_operator_update.help_text %}
+                <br><small class="muted">{{ handoff_form.last_operator_update.help_text }}</small>
+            {% endif %}
+            {{ handoff_form.last_operator_update.errors }}
+        </p>
+
+        <div class="form-actions">
+            <button class="primary-button" type="submit">Handoff opslaan</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel" style="margin-bottom: 1rem;">
     <h2>Pre-Action Control Block</h2>
     <ul class="clean">
         <li>
@@ -69,8 +105,6 @@
                 -
             {% endif %}
         </li>
-        <li><strong>Laatste handoff:</strong> {{ channel.last_operator_update|default:"-"|linebreaksbr }}</li>
-        <li><strong>Laatste handoff datum:</strong> {{ channel.last_operator_update_at|default:"-" }}</li>
     </ul>
 
     <h3>Risk flags</h3>

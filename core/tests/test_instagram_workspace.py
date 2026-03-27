@@ -247,3 +247,69 @@ class InstagramWorkspaceViewTests(TestCase):
             f'class="quick-link" href="{reverse("creator-detail", kwargs={"pk": self.creator.pk})}"',
             html=False,
         )
+
+    def test_admin_can_save_handoff_in_workspace(self):
+        self.client.force_login(self.admin)
+        old_timestamp = self.instagram_channel.last_operator_update_at
+
+        response = self.client.post(
+            reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk}),
+            {"last_operator_update": "Nieuwe handoff voor de volgende operator."},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk}) + "?saved=1",
+        )
+
+        self.instagram_channel.refresh_from_db()
+        self.assertEqual(
+            self.instagram_channel.last_operator_update,
+            "Nieuwe handoff voor de volgende operator.",
+        )
+        self.assertIsNotNone(self.instagram_channel.last_operator_update_at)
+        self.assertGreater(self.instagram_channel.last_operator_update_at, old_timestamp)
+
+    def test_posting_only_operator_can_save_handoff_in_workspace(self):
+        self.client.force_login(self.posting_user)
+
+        response = self.client.post(
+            reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk}),
+            {"last_operator_update": "Posting operator update."},
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        self.instagram_channel.refresh_from_db()
+        self.assertEqual(
+            self.instagram_channel.last_operator_update,
+            "Posting operator update.",
+        )
+        self.assertIsNotNone(self.instagram_channel.last_operator_update_at)
+
+    def test_analytics_only_operator_cannot_save_handoff_in_workspace(self):
+        self.client.force_login(self.analytics_user)
+
+        response = self.client.post(
+            reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk}),
+            {"last_operator_update": "Mag niet opgeslagen worden."},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+        self.instagram_channel.refresh_from_db()
+        self.assertEqual(
+            self.instagram_channel.last_operator_update,
+            "Laatste contextregel",
+        )
+
+    def test_workspace_shows_success_panel_after_handoff_save(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse("instagram-workspace", kwargs={"pk": self.instagram_channel.pk}) + "?saved=1"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Handoff opgeslagen.")
