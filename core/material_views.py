@@ -99,3 +99,43 @@ class CreatorMaterialDownloadView(View):
             as_attachment=False,
             filename=material.filename,
         )
+
+
+class CreatorMaterialDeleteView(View):
+    http_method_names = ["post"]
+
+    def post(self, request, creator_pk, material_pk, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return HttpResponseForbidden("You do not have permission to delete materials.")
+
+        creator = get_object_or_404(
+            get_creator_queryset_for_user(request.user),
+            pk=creator_pk,
+        )
+        material = get_object_or_404(
+            creator.materials.filter(active=True).select_related("creator", "uploaded_by"),
+            pk=material_pk,
+        )
+
+        file_was_missing = False
+
+        if material.file:
+            try:
+                if material.file.storage.exists(material.file.name):
+                    material.file.delete(save=False)
+                else:
+                    file_was_missing = True
+            except Exception:
+                file_was_missing = True
+        else:
+            file_was_missing = True
+
+        material.active = False
+        material.save(update_fields=["active"])
+
+        if file_was_missing:
+            messages.success(request, "Materiaal verwijderd. Het gekoppelde bestand ontbrak al op disk.")
+        else:
+            messages.success(request, "Materiaal verwijderd.")
+
+        return redirect("creator-detail", pk=creator.pk)
