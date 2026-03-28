@@ -1,8 +1,9 @@
 from pathlib import Path
 
 from django.contrib import messages
-from django.http import FileResponse, HttpResponseForbidden
+from django.http import FileResponse, HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views import View
 
 from core.forms import CreatorMaterialUploadForm
@@ -101,10 +102,10 @@ class CreatorMaterialDownloadView(View):
         )
 
 
-class CreatorMaterialDeleteView(View):
+class CreatorMaterialBulkDeleteView(View):
     http_method_names = ["post"]
 
-    def post(self, request, creator_pk, material_pk, *args, **kwargs):
+    def post(self, request, creator_pk, *args, **kwargs):
         if not is_admin_user(request.user):
             return HttpResponseForbidden("You do not have permission to delete materials.")
 
@@ -112,30 +113,66 @@ class CreatorMaterialDeleteView(View):
             get_creator_queryset_for_user(request.user),
             pk=creator_pk,
         )
-        material = get_object_or_404(
-            creator.materials.filter(active=True).select_related("creator", "uploaded_by"),
-            pk=material_pk,
+
+        raw_ids = request.POST.getlist("material_ids")
+        material_ids = []
+        for raw_id in raw_ids:
+            try:
+                material_ids.append(int(raw_id))
+            except (TypeError, ValueError):
+                continue
+
+        if not material_ids:
+            messages.error(request, "Selecteer minimaal 1 materiaal om te verwijderen.")
+            return self._redirect_to_materials(creator.pk)
+
+        materials = list(
+            creator.materials.filter(active=True, pk__in=material_ids).select_related("creator", "uploaded_by")
         )
 
-        file_was_missing = False
+        if not materials:
+            messages.error(request, "Geen geldige materialen gevonden om te verwijderen.")
+            return self._redirect_to_materials(creator.pk)
 
-        if material.file:
-            try:
-                if material.file.storage.exists(material.file.name):
-                    material.file.delete(save=False)
-                else:
+        deleted_count = 0
+        missing_file_count = 0
+
+        for material in materials:
+            file_was_missing = False
+
+            if material.file:
+                try:
+                    if material.file.storage.exists(material.file.name):
+                        material.file.delete(save=False)
+                    else:
+                        file_was_missing = True
+                except Exception:
                     file_was_missing = True
-            except Exception:
+            else:
                 file_was_missing = True
+
+            material.active = False
+            material.save(update_fields=["active"])
+
+            deleted_count += 1
+            if file_was_missing:
+                missing_file_count += 1
+
+        if deleted_count == 1:
+            message = "1 materiaal verwijderd."
         else:
-            file_was_missing = True
+            message = f"{deleted_count} materialen verwijderd."
 
-        material.active = False
-        material.save(update_fields=["active"])
+        if missing_file_count:
+            if missing_file_count == 1:
+                message += " 1 gekoppeld bestand ontbrak al op disk."
+            else:
+                message += f" {missing_file_count} gekoppelde bestanden ontbraken al op disk."
 
-        if file_was_missing:
-            messages.success(request, "Materiaal verwijderd. Het gekoppelde bestand ontbrak al op disk.")
-        else:
-            messages.success(request, "Materiaal verwijderd.")
+        messages.success(request, message)
+        return self._redirect_to_materials(creator.pk)
 
-        return redirect("creator-detail", pk=creator.pk)
+    def _redirect_to_materials(self, creator_pk):
+        return HttpResponseRedirect(
+            reverse("creator-detail", kwargs={"pk": creator_pk}) + "#creator-materials"
+        )

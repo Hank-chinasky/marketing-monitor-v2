@@ -121,7 +121,7 @@
     </ul>
 </div>
 
-<h2>Creator Materials</h2>
+<h2 id="creator-materials">Creator Materials</h2>
 <div class="panel">
     {% if can_upload_materials %}
         <form method="post" enctype="multipart/form-data" style="margin-bottom: 1rem;">
@@ -153,107 +153,148 @@
         </form>
     {% endif %}
 
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-        {% for material in materials %}
-            <article class="creator-material-card" style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
-                <div style="padding:0.75rem; background:#f8fafc; border-bottom:1px solid #e5e7eb;">
-                    {% if material.is_image %}
-                        <button
-                            type="button"
-                            class="creator-material-preview-trigger"
-                            data-preview-kind="image"
-                            data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}"
-                            data-preview-title="{{ material.label|default:material.filename|escape }}"
-                            style="display:block; width:100%; border:0; background:none; padding:0; cursor:pointer;"
-                        >
-                            <img
-                                src="{% url 'creator-material-download' creator.pk material.pk %}"
-                                alt="{{ material.label|default:material.filename }}"
-                                style="display:block; width:100%; height:220px; object-fit:cover; border-radius:8px;"
-                            >
-                        </button>
-                    {% elif material.is_video %}
-                        <button
-                            type="button"
-                            class="creator-material-preview-trigger"
-                            data-preview-kind="video"
-                            data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}"
-                            data-preview-type="{{ material.mime_type }}"
-                            data-preview-title="{{ material.label|default:material.filename|escape }}"
-                            style="display:block; width:100%; border:0; background:none; padding:0; cursor:pointer; text-align:left;"
-                        >
-                            <video
-                                controls
-                                preload="metadata"
-                                style="display:block; width:100%; max-height:220px; border-radius:8px; background:#111827;"
-                            >
-                                <source src="{% url 'creator-material-download' creator.pk material.pk %}" type="{{ material.mime_type }}">
-                            </video>
-                        </button>
-                    {% else %}
-                        <div style="display:flex; align-items:center; justify-content:center; height:220px; border-radius:8px; background:#e2e8f0; color:#334155; font-weight:700; font-size:1.2rem; text-transform:uppercase;">
-                            {{ material.extension|default:"file" }}
-                        </div>
-                    {% endif %}
+    {% if materials %}
+        <form
+            method="post"
+            action="{% url 'creator-material-bulk-delete' creator.pk %}"
+            id="creator-material-bulk-delete-form"
+            onsubmit="return window.confirmBulkMaterialDelete();"
+        >
+            {% csrf_token %}
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; padding:0.9rem; border:1px solid #e5e7eb; border-radius:12px; background:#f8fafc;">
+                <div>
+                    <strong>Bulk delete</strong><br>
+                    <small class="muted">
+                        Vink materialen aan en verwijder ze in één actie.
+                        <span id="selected-material-count">0 geselecteerd</span>
+                    </small>
                 </div>
+                <div>
+                    <button
+                        type="submit"
+                        class="secondary-button"
+                        id="bulk-delete-button"
+                        disabled
+                        style="border-color:#fecaca; color:#b91c1c;"
+                    >
+                        Verwijder geselecteerde
+                    </button>
+                </div>
+            </div>
 
-                <div style="padding:0.9rem;">
-                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem; margin-bottom:0.35rem;">
-                        <strong>{{ material.label|default:material.filename }}</strong>
-                        {% if material.is_image %}
-                            <span class="badge badge-blue">image</span>
-                        {% elif material.is_video %}
-                            <span class="badge badge-blue">video</span>
-                        {% else %}
-                            <span class="badge badge-yellow">file</span>
-                        {% endif %}
-                    </div>
-                    <div class="muted" style="margin-bottom:0.5rem;">
-                        {{ material.uploaded_at }} door {{ material.uploaded_by.get_full_name|default:material.uploaded_by.username }}
-                    </div>
-                    {% if material.notes %}
-                        <div style="margin:0.35rem 0 0.75rem;">{{ material.notes|linebreaksbr }}</div>
-                    {% endif %}
-                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
-                        {% if material.is_previewable %}
-                            <button
-                                type="button"
-                                class="secondary-button creator-material-preview-trigger"
-                                data-preview-kind="{{ material.media_kind }}"
-                                data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}"
-                                data-preview-type="{{ material.mime_type }}"
-                                data-preview-title="{{ material.label|default:material.filename|escape }}"
-                            >
-                                Bekijk groter
-                            </button>
-                        {% endif %}
-
-                        <a class="quick-link" href="{% url 'creator-material-download' creator.pk material.pk %}" target="_blank" rel="noopener">Open bestand</a>
-
-                        {% if can_upload_materials %}
-                            <form
-                                method="post"
-                                action="{% url 'creator-material-delete' creator.pk material.pk %}"
-                                style="margin:0;"
-                                onsubmit="return confirm('Weet je zeker dat je dit materiaal wilt verwijderen?');"
-                            >
-                                {% csrf_token %}
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+                {% for material in materials %}
+                    <article class="creator-material-card" style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                        <div style="padding:0.75rem; background:#f8fafc; border-bottom:1px solid #e5e7eb;">
+                            {% if material.is_image %}
                                 <button
-                                    type="submit"
-                                    class="secondary-button"
-                                    style="border-color:#fecaca; color:#b91c1c;"
+                                    type="button"
+                                    class="creator-material-preview-trigger"
+                                    data-preview-kind="image"
+                                    data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}"
+                                    data-preview-title="{{ material.label|default:material.filename|escape }}"
+                                    style="display:block; width:100%; border:0; background:none; padding:0; cursor:pointer;"
                                 >
-                                    Verwijder
+                                    <img
+                                        src="{% url 'creator-material-download' creator.pk material.pk %}"
+                                        alt="{{ material.label|default:material.filename }}"
+                                        style="display:block; width:100%; height:220px; object-fit:cover; border-radius:8px;"
+                                    >
                                 </button>
-                            </form>
-                        {% endif %}
-                    </div>
-                </div>
-            </article>
-        {% empty %}
-            <div>Nog geen materiaal geüpload.</div>
-        {% endfor %}
-    </div>
+                            {% elif material.is_video %}
+                                <button
+                                    type="button"
+                                    class="creator-material-preview-trigger"
+                                    data-preview-kind="video"
+                                    data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}"
+                                    data-preview-type="{{ material.mime_type }}"
+                                    data-preview-title="{{ material.label|default:material.filename|escape }}"
+                                    style="display:block; width:100%; border:0; background:none; padding:0; cursor:pointer; text-align:left;"
+                                >
+                                    <video
+                                        controls
+                                        preload="metadata"
+                                        style="display:block; width:100%; max-height:220px; border-radius:8px; background:#111827;"
+                                    >
+                                        <source src="{% url 'creator-material-download' creator.pk material.pk %}" type="{{ material.mime_type }}">
+                                    </video>
+                                </button>
+                            {% else %}
+                                <div style="display:flex; align-items:center; justify-content:center; height:220px; border-radius:8px; background:#e2e8f0; color:#334155; font-weight:700; font-size:1.2rem; text-transform:uppercase;">
+                                    {{ material.extension|default:"file" }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div style="padding:0.9rem;">
+                            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem; margin-bottom:0.35rem;">
+                                <strong>{{ material.label|default:material.filename }}</strong>
+                                {% if material.is_image %}
+                                    <span class="badge badge-blue">image</span>
+                                {% elif material.is_video %}
+                                    <span class="badge badge-blue">video</span>
+                                {% else %}
+                                    <span class="badge badge-yellow">file</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="muted" style="margin-bottom:0.5rem;">
+                                {{ material.uploaded_at }} door {{ material.uploaded_by.get_full_name|default:material.uploaded_by.username }}
+                            </div>
+
+                            {% if material.notes %}
+                                <div style="margin:0.35rem 0 0.75rem;">{{ material.notes|linebreaksbr }}</div>
+                            {% endif %}
+
+                            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center; margin-bottom:0.85rem;">
+                                {% if material.is_previewable %}
+                                    <button
+                                        type="button"
+                                        class="secondary-button creator-material-preview-trigger"
+                                        data-preview-kind="{{ material.media_kind }}"
+                                        data-preview-url="{% url 'creator-material-download' creator.pk material.pk %}"
+                                        data-preview-type="{{ material.mime_type }}"
+                                        data-preview-title="{{ material.label|default:material.filename|escape }}"
+                                    >
+                                        Bekijk groter
+                                    </button>
+                                {% endif %}
+
+                                <a class="quick-link" href="{% url 'creator-material-download' creator.pk material.pk %}" target="_blank" rel="noopener">Open bestand</a>
+                            </div>
+
+                            {% if can_upload_materials %}
+                                <label style="display:flex; align-items:center; gap:0.55rem; padding:0.7rem 0.8rem; border:1px solid #e5e7eb; border-radius:10px; background:#fafafa; cursor:pointer;">
+                                    <input
+                                        type="checkbox"
+                                        name="material_ids"
+                                        value="{{ material.pk }}"
+                                        class="creator-material-checkbox"
+                                    >
+                                    <span>Selecteer voor verwijderen</span>
+                                </label>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+                <button
+                    type="submit"
+                    class="secondary-button"
+                    id="bulk-delete-button-bottom"
+                    disabled
+                    style="border-color:#fecaca; color:#b91c1c;"
+                >
+                    Verwijder geselecteerde
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <div>Nog geen materiaal geüpload.</div>
+    {% endif %}
 </div>
 
 <div id="creator-material-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,0.85); padding:2rem;">
@@ -331,6 +372,58 @@
             closeModal();
         }
     });
+})();
+
+(function () {
+    const checkboxes = Array.from(document.querySelectorAll('.creator-material-checkbox'));
+    const counter = document.getElementById('selected-material-count');
+    const topButton = document.getElementById('bulk-delete-button');
+    const bottomButton = document.getElementById('bulk-delete-button-bottom');
+
+    function updateSelectionState() {
+        const selectedCount = checkboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+
+        if (counter) {
+            if (selectedCount === 1) {
+                counter.textContent = '1 geselecteerd';
+            } else {
+                counter.textContent = selectedCount + ' geselecteerd';
+            }
+        }
+
+        if (topButton) {
+            topButton.disabled = selectedCount === 0;
+        }
+
+        if (bottomButton) {
+            bottomButton.disabled = selectedCount === 0;
+        }
+    }
+
+    window.confirmBulkMaterialDelete = function () {
+        const selectedCount = checkboxes.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+
+        if (selectedCount === 0) {
+            alert('Selecteer minimaal 1 materiaal om te verwijderen.');
+            return false;
+        }
+
+        if (selectedCount === 1) {
+            return window.confirm('Weet je zeker dat je 1 geselecteerd materiaal wilt verwijderen?');
+        }
+
+        return window.confirm('Weet je zeker dat je ' + selectedCount + ' geselecteerde materialen wilt verwijderen?');
+    };
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', updateSelectionState);
+    });
+
+    updateSelectionState();
 })();
 </script>
 
