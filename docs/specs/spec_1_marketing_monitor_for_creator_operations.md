@@ -1,136 +1,142 @@
-# SPEC-1-Marketing-Monitor-for-Creator-Operations
+# SPEC-1 — CreatorWorkboard Connection-Board for Conversion Operations
+
+> Note: the filename of this document still reflects the older repository structure. The product truth does not. This SPEC is now aligned to CreatorWorkboard as a human-controlled connection-board for conversion operations.
 
 ## Background
 
-## Productregel
+CreatorWorkboard is no longer defined primarily as a marketing monitor.
 
-**Dit systeem bestaat om managed creator operations veilig, meetbaar en economisch bestuurbaar te maken — niet om social marketing te automatiseren.**
+It is defined as a human-controlled connection-board for creator conversion operations.
 
-## Scope-regel
+The problem being solved is not "how do we automate marketing" and not "how do we build a new chat first".
 
-**Elke feature die niet direct bijdraagt aan betere controle, betere meting of betere economische besluitvorming hoort niet in MVP.**
+The problem is:
 
-Marketing Monitor for Creator Operations is een interne applicatie voor het beheren van echte creators en hun kanalen, het ondersteunen van handmatige content- en publicatieprocessen, en het zichtbaar maken van economische output per creator, kanaal, operator en contentactie.
+- conversation-driven conversion work happens across scattered external environments
+- operators lose context between shifts, creators and systems
+- outside-paywall and inside-paywall work is poorly connected
+- next action, handoff, routing and ownership are often unclear
+- risk, policy and access context are often discovered too late
 
-De aanleiding is operationeel, niet theoretisch:
+The system therefore exists to make human-operated conversion work manageable, transferable and measurable without replacing the existing transport layer too early.
 
-- creators, kanalen en verantwoordelijkheden zitten vaak verspreid over chats, spreadsheets en losse tools
-- handmatige posting gebeurt wel, maar de uitvoeringswaarheid is niet centraal zichtbaar
-- economische output is vaak losgekoppeld van creator, kanaal, operator en concrete contentactie
-- governance-risico’s zoals consent, access mode en kanaalstatus worden te laat of inconsistent vastgelegd
+## Product rule
 
-Deze MVP is daarom geen droomplatform en geen automation suite. Het is een kleine, serieuze en bruikbare interne control- en monitorlaag.
+**This system exists to make human-controlled creator conversion operations manageable, transferable and operationally clear — not to automate conversations or replace operators.**
 
-De MVP moet drie dingen goed doen:
+## Scope rule
 
-1. creators en hun kanalen gestructureerd beheren
-2. handmatige content- en publicatieprocessen ondersteunen
-3. zichtbaar maken wat economisch werkt en wat niet
+**Any feature that does not directly improve context, routing, handoff, assignment clarity, next action or operational decision-making does not belong in the current core.**
 
-Wat het systeem expliciet **niet** is in MVP:
+## Core product stance
 
-- geen social automation tool
-- geen bulkposter
-- geen DM-bot
-- geen uitgebreide asset library
-- geen scheduling engine met API-publicatie
-- geen AI-contentgenerator
-- geen enterprise rights matrix
-- geen CRM
-- geen uitgebreide audit suite
-- geen health scores
-- geen scorecards
-- geen SEO-module
-- geen customer-facing portal
-- geen uitgebreide exports
-- geen cluster management
-- geen profile graph linking
-- geen csv import
+CreatorWorkboard is:
+
+- control-first
+- context-first
+- routing-first
+- handoff-first
+- human-in-the-loop
+- connector-oriented
+
+CreatorWorkboard is not, in the current phase:
+
+- a new inbox as the primary product
+- a DM-bot
+- an autonomous AI conversation engine
+- a broad OF/Fansly suite
+- a full backoffice platform
+- a broad analytics-first dashboard product
+- a generic CRM
+- a creator password vault
+
+## Current product core
+
+The system must make it possible to:
+
+1. structure creators, channels, operators and assignments
+2. connect work to the correct creator/channel route
+3. make outside-paywall and inside-paywall state visible
+4. keep handoff, acknowledgement and next action explicit
+5. let operators work from context before action
+6. connect to existing chat environments without rebuilding them first
 
 ## Requirements
 
 ### Must have
 
-- Admin/owner kan alle creators, channels, operators, content, publish events, results en dashboards beheren.
-- Operator kan uitsluitend records zien en wijzigen waarvoor een actieve toewijzing bestaat.
-- Een creator moet een status en consent_status hebben; een actieve creator zonder geldige consent_status is niet toegestaan.
-- Een creator moet een primary operator kunnen hebben.
-- Een creator kan meerdere channels hebben met platform, status, access_mode, recovery_owner en risk_flag.
-- Een operator assignment moet verantwoordelijkheid expliciet vastleggen met scope, geldigheidsperiode en active-state.
-- Content items moeten de handmatige werkstroom ondersteunen van draft naar ready/approved naar posted of rejected/removed.
-- Approval moet registreerbaar zijn wanneer vereist.
-- Publish events moeten vastleggen wat daadwerkelijk live ging, wanneer, via welke methode en door welke operator.
-- Tracking links moeten uniek identificeerbare routes bieden per creator/channel/contentcontext.
-- Traffic events moeten ruwe meetevents kunnen opslaan, inclusief optionele omzetwaarde.
-- Results moeten bestuurlijke samenvattingen per dag/periode bewaren voor dashboards en rapportage.
-- Governance-events moeten licht maar bruikbaar worden gelogd in access_audit.
-- Pause/revoke-acties moeten direct operationeel effect hebben op zichtbaarheid en bewerkbaarheid.
-- Het systeem moet zeven primaire schermen hebben: Dashboard, Creators, Creator Detail, Content Queue, Publish Log, Results, Operator Time Entries.
-- Het dashboard moet minimaal revenue, paid_count, joins, clicks, posts, flagged channels en top/worst performers tonen.
-- De applicatie mag geen accountwachtwoorden van creators of channels opslaan.
-- Het systeem moet interne user-accounts hebben voor login en autorisatie.
-- Het systeem moet operatoruren kunnen registreren om revenue per operator hour betrouwbaar te berekenen.
+- Admin can manage all creators, channels, operators, assignments, connection cards, handoffs and acknowledgements.
+- Operator can only access records within active assignments and valid scope.
+- Every operational work unit must belong to a creator and must be attributable to a route, source or channel context.
+- A creator must have a status and consent status; an active creator without valid consent is not allowed.
+- A channel must carry operational access and policy context.
+- A connection card must represent the controllable work unit around a conversation-driven conversion flow.
+- A connection card must support outside-paywall / inside-paywall state.
+- A connection card must support explicit routing state and assignee state.
+- A connection card must support external thread reference(s) without requiring CreatorWorkboard to own the conversation transport.
+- A handoff must be writable and visible in the workspace context.
+- An acknowledgement must record that a user has explicitly seen the current handoff/context before proceeding where required.
+- The system must show source context, risk context, access policy and next action before execution.
+- The system must not store creator or channel passwords.
+- Governance-sensitive changes must be lightly logged.
+- Existing external chat systems must be connectable by reference even before deep integration exists.
 
 ### Should have
 
-- Resultaten moeten herleidbaar zijn naar creator, channel, operator, content item en publish event waar mogelijk.
-- KPI’s moeten revenue per creator, revenue per operator, revenue per operator hour, paid per 100 publish events, account survival rate en time-to-publish ondersteunen.
-- Segmenten moeten als lichte optionele indeling beschikbaar zijn zonder extra bureaucratische laag.
-- De detailpagina van een creator moet overzicht, channels, content queue, publish log, tracking summary en audit tonen.
-- Resultschermen moeten afgeleide metrics tonen zoals estimated profit en revenue per click.
-- Risk flags moeten zichtbaar filterbaar zijn in beheer- en dashboardoverzichten.
+- Operators should be able to move through work from one workspace without reconstructing context from multiple tools.
+- Routing state should make it clear whether work is outside-paywall, inside-paywall, creator input needed, operator follow-up or blocked.
+- Source context should be consistent across creator, channel and connection card layers.
+- Workspaces should support creator materials and other contextual references as supporting inputs.
+- A lightweight event timeline should support latest actions per connection card.
+- Admins should be able to see where handoff is missing, acknowledgement is missing or routing is unclear.
 
-### Could have (opgewaardeerd naar Sprint 6 MVP)
+### Could have
 
-- Minimale webhook-endpoint (één POST-route) voor geautomatiseerde traffic event ingest. Dit is gepromoveerd van 'could have' naar Sprint 6 scope omdat zonder deze route operators clicks handmatig moeten invoeren — precies wat het systeem moet voorkomen.
-- Eenvoudige notificaties voor content dat wacht op approval of handmatige posting.
-- Basis archivering van offboarded creators en inactive assignments.
-- Eenvoudige segmentrapportage op dashboardniveau.
+- Assisted AI summaries for handoff or source context.
+- Assisted AI labeling or prioritisation for connection cards.
+- Connector-specific enrichment for external systems.
+- Lightweight operational metrics such as queue age, stalled cards and acknowledgement lag.
 
-### Won’t have in MVP
+### Won’t have in the current phase
 
-- automatische social publishing
-- geavanceerde scheduling engine
-- DM-automation
-- uitgebreide rights matrix
-- klantportal
-- CRM-functionaliteit
-- asset management suite
-- AI-contentcreatie
-- uitgebreide exportmodule
-- SEO- of campaign-planninglaag
-- geavanceerde audit- en compliance-suite
+- autonomous messaging
+- AI-generated conversation flows as the core product
+- a replacement for all external chat systems
+- a full OF/Fansly suite
+- a wide backoffice
+- a general analytics-first BI environment
+- creator password storage
+- multitenant SaaS architecture
 
 ## Method
 
 ### Architectural stance
 
-De MVP wordt gebouwd als één monolithische server-rendered interne applicatie met PostgreSQL als primaire datastore. Geen losse SPA en geen publieke API-first architectuur in fase 1.
+The current product should be built as one monolithic server-rendered internal application with PostgreSQL as primary datastore.
 
-Voorgestelde stack voor MVP:
+Recommended stack:
 
-- Django, Laravel of Rails
+- Django, Rails or Laravel
 - PostgreSQL
 - server-rendered HTML interface
-- eenvoudige role/scope-based autorisatie op applicatieniveau
-- background jobs alleen voor aggregatie en eventverwerking
-- optionele object storage voor media_ref verwijzingen, maar geen asset library in scope
+- simple role/scope-based authorization
+- background jobs only where clearly needed for syncing, enrichment or aggregation
 
 ### Why this method
 
-Deze methode past bij de productregel:
+This fits the product rule:
 
-- lage operationele overhead
-- snel implementeerbaar door een klein contractor-team
-- sterke standaardadmin- en ORM-capaciteiten
-- relationele datamodellering sluit direct aan op creators/channels/content/results
-- governance en filtering zijn makkelijker correct af te dwingen in één applicatiegrens
+- low operational overhead
+- easy to reason about
+- strong admin and ORM support
+- good fit for relational operational data
+- easier to enforce scope, access and governance in one app boundary
 
-### Core domain model
+## Core domain model
 
-#### 1. users
+### 1. users
 
-Login- en autorisatielaag.
+Authentication and base authorization layer.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -144,14 +150,21 @@ Login- en autorisatielaag.
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-Waarom:
+### 2. operators
 
-- `users` is de authenticatielaag
-- `operators` blijft het operationele domeinobject voor performance, assignments en kostenlogica
-- alleen actieve users mogen inloggen
-- email moet uniek zijn
+Operational actor profile linked to a login user.
 
-#### 2. creators
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid / bigint | PK |
+| user_id | fk users.id | unique |
+| name | varchar(160) | required |
+| status | enum | active, inactive |
+| notes | text | nullable |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
+
+### 3. creators
 
 | Field | Type | Notes |
 |---|---|---|
@@ -162,42 +175,43 @@ Waarom:
 | consent_status | enum | pending, active, revoked |
 | primary_operator_id | fk operators.id | nullable |
 | notes | text | nullable |
+| primary_link | text | nullable |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-#### 3. creator_channels
+### 4. creator_channels
+
+Operational channels or route contexts per creator.
 
 | Field | Type | Notes |
 |---|---|---|
 | id | uuid / bigint | PK |
 | creator_id | fk creators.id | indexed |
-| platform | enum | instagram, tiktok, telegram, other |
+| platform | enum | instagram, tiktok, telegram, onlyfans, fansly, other |
 | handle | varchar(160) | required |
 | profile_url | text | nullable |
 | status | enum | active, paused, restricted, banned |
 | access_mode | enum | creator_only, operator_with_approval, operator_direct, draft_only |
 | recovery_owner | enum | creator, agency, shared |
-| risk_flag | boolean | default false |
-| last_posted_at | timestamptz | nullable |
-| last_checked_at | timestamptz | nullable |
-| notes | text | nullable |
+| credential_status | enum | known, unknown, needs_reset |
+| vpn_required | boolean | default false |
+| approved_access_region | varchar(120) | nullable |
+| approved_ip_label | varchar(120) | nullable |
+| approved_egress_ip | varchar(120) | nullable |
+| access_notes | text | nullable |
+| access_profile_notes | text | nullable |
+| last_operator_update | text | nullable |
+| last_operator_update_at | timestamptz | nullable |
+| operator_acknowledged_at | timestamptz | nullable |
+| operator_acknowledged_by_id | fk users.id | nullable |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-#### 4. operators
+Note:
 
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid / bigint | PK |
-| name | varchar(160) | required |
-| email | varchar(255) | unique |
-| status | enum | active, inactive |
-| hourly_cost | numeric(12,2) | nullable |
-| notes | text | nullable |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
+Current live slices such as workspaces, creator materials and handoff editing fit naturally around this channel context and remain valid.
 
-#### 5. operator_assignments
+### 5. operator_assignments
 
 | Field | Type | Notes |
 |---|---|---|
@@ -211,146 +225,117 @@ Waarom:
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-#### 6. content_items
+### 6. connection_cards
 
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid / bigint | PK |
-| creator_id | fk creators.id | indexed |
-| channel_id | fk creator_channels.id | indexed |
-| title | varchar(200) | required |
-| caption | text | nullable |
-| media_ref | text | nullable |
-| cta_link | text | nullable |
-| content_type | enum | post, story, short_video, telegram_message, other |
-| status | enum | draft, ready, approved, scheduled_manual, posted, rejected, removed |
-| approval_required | boolean | default false |
-| approved_by_creator_at | timestamptz | nullable |
-| approved_by_operator_id | fk operators.id | nullable |
-| planned_publish_at | timestamptz | nullable |
-| actual_publish_at | timestamptz | nullable |
-| created_by | fk users.id | |
-| updated_by | fk users.id | |
-| notes | text | nullable |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
-
-#### 7. publish_events
-
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid / bigint | PK |
-| content_item_id | fk content_items.id | indexed |
-| creator_id | fk creators.id | indexed |
-| channel_id | fk creator_channels.id | indexed |
-| operator_id | fk operators.id | nullable |
-| published_at | timestamptz | required |
-| publish_method | enum | creator_posted, operator_posted, assisted_posting |
-| post_url | text | nullable |
-| tracking_link_id | fk tracking_links.id | nullable |
-| notes | text | nullable |
-| created_at | timestamptz | |
-
-#### 8. tracking_links
+This is the minimal controllable work unit around a conversation-driven conversion flow.
 
 | Field | Type | Notes |
 |---|---|---|
 | id | uuid / bigint | PK |
 | creator_id | fk creators.id | indexed |
 | channel_id | fk creator_channels.id | nullable |
-| content_item_id | fk content_items.id | nullable |
-| destination_type | enum | telegram, site, app, whatsapp, other |
-| destination_url | text | required |
-| short_code | varchar(64) | unique |
-| campaign_name | varchar(120) | nullable |
+| assigned_operator_id | fk operators.id | nullable |
+| source_type | enum | instagram_dm, telegram, legacy_chat, onlyfans, fansly, group, referral, other |
+| source_label | varchar(160) | nullable |
+| source_url | text | nullable |
+| external_system | enum | legacy_chat, instagram, telegram, onlyfans, fansly, other |
+| external_thread_ref | varchar(255) | nullable |
+| external_customer_ref | varchar(255) | nullable |
+| paywall_state | enum | outside_paywall, inside_paywall, transitioning |
+| routing_state | enum | new, operator_follow_up, creator_input_needed, ready_for_operator, blocked, done, dropped |
+| priority | enum | low, normal, high, urgent |
+| status | enum | open, paused, closed |
+| latest_handoff_excerpt | text | nullable |
+| latest_acknowledged_at | timestamptz | nullable |
+| latest_acknowledged_by_id | fk users.id | nullable |
+| next_action | varchar(200) | nullable |
+| risk_flag | boolean | default false |
+| policy_blocked | boolean | default false |
+| notes | text | nullable |
+| created_at | timestamptz | |
+| updated_at | timestamptz | |
+
+Why this matters:
+
+- the product owns the work card, not the conversation transport
+- outside-paywall and inside-paywall become explicit operational states
+- routing becomes manageable without requiring a new inbox first
+
+### 7. handoffs
+
+Explicit transfer layer between operators or work moments.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid / bigint | PK |
+| connection_card_id | fk connection_cards.id | indexed |
+| channel_id | fk creator_channels.id | nullable |
+| created_by_user_id | fk users.id | indexed |
+| body | text | required |
+| created_at | timestamptz | required |
+
+Rules:
+
+- a handoff may belong to a connection card and optionally also reflect channel-level context
+- the latest handoff should be easy to render in the workspace
+- handoff is not a threaded comment system in the current phase
+
+### 8. acknowledgements
+
+Explicit read/seen confirmation for operational context.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid / bigint | PK |
+| connection_card_id | fk connection_cards.id | nullable |
+| channel_id | fk creator_channels.id | nullable |
+| acknowledged_by_user_id | fk users.id | indexed |
+| acknowledged_at | timestamptz | required |
+| acknowledgement_type | enum | handoff_read, context_read |
+| notes | text | nullable |
+
+Rules:
+
+- acknowledgement means "seen/read", not "approved" or "completed"
+- acknowledgement is part of the control layer, not a workflow engine
+
+### 9. creator_materials
+
+Supporting contextual files or references bound to a creator.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid / bigint | PK |
+| creator_id | fk creators.id | indexed |
+| uploaded_by_user_id | fk users.id | indexed |
+| label | varchar(255) | nullable |
+| file_ref | text | required |
+| mime_type | varchar(120) | nullable |
+| notes | text | nullable |
 | active | boolean | default true |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-#### 9. traffic_events
+This is a supporting slice, not the core product identity.
+
+### 10. connection_events
+
+A lightweight operational timeline for routing and state changes.
 
 | Field | Type | Notes |
 |---|---|---|
 | id | uuid / bigint | PK |
-| tracking_link_id | fk tracking_links.id | indexed |
-| event_type | enum | click, landing_view, telegram_join, signup, install, paid |
-| event_time | timestamptz | indexed |
-| revenue_amount | numeric(12,2) | nullable |
-| meta_json | jsonb | nullable |
+| connection_card_id | fk connection_cards.id | indexed |
+| actor_user_id | fk users.id | nullable |
+| event_type | enum | created, routed, assigned, handoff_added, acknowledged, blocked, unblocked, closed, reopened, note_added |
+| payload_json | jsonb | nullable |
+| created_at | timestamptz | required |
 
-#### 10. results
+This is intentionally light. It is not a full audit or messaging store.
 
-Bestuurlijke waarheid / samenvattingslaag voor dashboarding en rapportage.
+### 11. access_audit
 
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid / bigint | PK |
-| result_date | date | indexed |
-| creator_id | fk creators.id | indexed |
-| channel_id | fk creator_channels.id | nullable |
-| content_item_id | fk content_items.id | nullable |
-| publish_event_id | fk publish_events.id | nullable |
-| operator_id | fk operators.id | nullable |
-| clicks | integer | default 0 |
-| telegram_joins | integer | default 0 |
-| contacts | integer | default 0 |
-| leads | integer | default 0 |
-| paid_count | integer | default 0 |
-| revenue | numeric(12,2) | default 0 |
-| cost | numeric(12,2) | default 0 |
-| notes | text | nullable |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
-
-Aanbevolen granulariteit:
-
-- per `result_date`
-- per `creator_id`
-- optioneel verder uitgesplitst naar `channel_id`, `content_item_id`, `publish_event_id`, `operator_id`
-
-Dus:
-
-- `traffic_events` = ruwe eventlaag
-- `results` = geaggregeerde daglaag / bestuurlijke waarheid
-
-#### 11. operator_time_entries
-
-Tijdregistratie per operator. Vastleggen hoeveel tijd een operator heeft besteed aan werk voor een creator of specifiek kanaal, zodat efficiency en economische output per operator meetbaar worden.
-
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid / bigint | PK |
-| operator_id | fk operators.id | indexed |
-| creator_id | fk creators.id | indexed |
-| channel_id | fk creator_channels.id | nullable |
-| entry_date | date | indexed |
-| minutes_spent | integer | required, > 0 |
-| entry_type | enum | content, posting, review, other |
-| source | varchar(40) | nullable (manual, derived, imported) |
-| notes | text | nullable |
-| created_at | timestamptz | |
-| updated_at | timestamptz | |
-
-Belangrijke regels:
-
-- elke tijdregistratie hoort bij exact één operator en één creator
-- channel_id is optioneel, zodat tijd zowel op creator-niveau als op kanaalniveau vastgelegd kan worden
-- minutes_spent moet groter zijn dan 0
-- entry_type beschrijft het soort werk en is verplicht
-- source is optionele metadata over de herkomst van de registratie
-
-#### 12. segments
-
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid / bigint | PK |
-| name | varchar(120) | unique |
-| description | text | nullable |
-| status | varchar(40) | active, inactive |
-
-Alleen gebruiken als lichte indeling van stijl, doelgroep of angle.
-
-#### 13. access_audit
+Light governance log for sensitive operational changes.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -362,447 +347,324 @@ Alleen gebruiken als lichte indeling van stijl, doelgroep of angle.
 | notes | text | nullable |
 | created_at | timestamptz | |
 
-### Relaties
+## Relationships
 
-Simpel overzicht:
+- one creator has many channels
+- one creator may have many connection cards
+- one channel may be linked to many connection cards
+- one operator may own many assignments and be assigned many connection cards
+- one connection card may have many handoffs
+- one connection card may have many acknowledgements over time
+- one connection card may have many connection events
+- creator materials support workspace context for creators
 
-- één creator heeft meerdere channels
-- één creator heeft één primary operator, maar meerdere assignments kunnen actief of historisch bestaan
-- één channel heeft meerdere content items
-- één content item kan leiden tot één of meerdere publish events
-- één publish event gebruikt idealiter één tracking link
-- tracking links genereren traffic events
-- results vatten economische output samen per creator/kanaal/operator/content
-- users loggen in; operators voeren werk uit
-- operator_time_entries leveren de minutenbasis voor rendement per operator
-- één creator kan meerdere operator_time_entries hebben
-- één creator_channel kan meerdere operator_time_entries hebben
+## Hard system rules and constraints
 
-### Harde systeemregels en constraints
+1. `creators.status = active` requires `consent_status = active`
+2. operators may only act within active assignment + valid scope
+3. channel access and policy constraints must be visible before action
+4. CreatorWorkboard must not store creator or channel passwords
+5. a connection card must always belong to a valid creator
+6. `paywall_state` and `routing_state` must be explicit on connection cards
+7. acknowledgement must never be treated as approval or completion
+8. a blocked or policy-blocked card must visibly communicate that state before action
+9. a connection card may reference an external thread, but the external thread is not required to be stored in full
+10. admin users can override broadly, operators cannot override scope or policy constraints outside their permissions
 
-Deze regels horen expliciet in de MVP:
+## Authorization model
 
-1. `creators.status = active` vereist `consent_status = active`
-2. `content_items.channel_id` moet horen bij dezelfde `creator_id`
-3. `content_items.status = posted` vereist minimaal één gekoppeld `publish_event`
-4. `tracking_links.short_code` is uniek en niet-herbruikbaar
-5. operator mag alleen handelen binnen actieve assignment + scope
-6. `pause` of `revoke` heeft direct effect op write-acties en zichtbaarheid waar relevant
-7. de app slaat geen creator- of channel-wachtwoorden op
-8. `access_mode` is verplicht per channel
-9. `publish_events` moeten consistente creator/channel/content-relaties hebben
-10. een actieve operator-user moet gekoppeld zijn aan een geldige operator waar relevant
+### Admin
 
-### Autorisatiemodel
+- full read/write on all records
+- can manage creators, channels, assignments, connection cards, handoffs, acknowledgements and governance-related fields
+- can deactivate/reactivate assignments
+- can view all routing states and stalled work
 
-#### Admin
+### Operator
 
-- volledige read/write op alle domeinobjecten
-- kan pause/revoke uitvoeren
-- kan results corrigeren
-- kan assignments beheren
+- access only within active assignment
+- scope still matters:
+  - `full_management`: full operational actions within assigned creator scope
+  - `posting_only`: operational follow-up and channel/workspace actions where explicitly allowed
+  - `draft_only`: limited drafting or context updates only where product rules allow it
+  - `analytics_only`: read-only access where intended; no routing, no handoff writes, no operational acknowledgement that implies execution responsibility
 
-#### Operator
+Authorization check sequence:
 
-- toegang alleen als gekoppeld aan actieve assignment
-- scope bepaalt capabilities:
-  - `full_management`: alle operationele acties binnen toegewezen creator
-  - `posting_only`: publish events, contentstatus naar posted/rejected, tracking links gebruiken
-  - `draft_only`: content opstellen en aanpassen, geen publish of governance-acties
-  - `analytics_only`: read-only op publish/results/dashboard binnen toewijzing
+1. if admin, allow
+2. else resolve operator from user
+3. check active assignment for creator within valid date range
+4. check scope against requested action
+5. enforce creator/channel/policy blocking rules
 
-Autorisatiecontrole bij elke query:
+## Workflow
 
-1. is user admin, dan toestaan
-2. anders user.operator_id ophalen
-3. controleren op actieve assignment voor betreffende creator binnen datumrange
-4. scope matchen met gevraagde actie
-5. creator/channel-status blokkades toepassen
+### Operational workflow in the corrected product
 
-### Workflow
+1. creator and channel context exist
+2. operator assignment exists
+3. connection card is created or referenced from an external route
+4. source context is visible
+5. handoff is visible
+6. acknowledgement is recorded where needed
+7. routing state is updated
+8. operator takes action in the appropriate environment
+9. next action and handoff are left clearly for the next step
 
-1. creator aanmaken met consent_status, primary operator en status
-2. channels toevoegen met platform, access mode, recovery owner en risk flag
-3. operator assignment vastleggen
-4. content item aanmaken
-5. indien nodig approval registreren
-6. operator of creator post handmatig
-7. publish event registreren en tracking link koppelen
-8. traffic events en/of handmatige result-invoer komen binnen
-9. aggregatie werkt results bij
-10. dashboard toont wat werkt en wat doodloopt
+### Route logic
 
-### Aggregatieregels
+The core route is:
 
-`traffic_events` is de ruwe eventlaag.
-`results` is de bestuurlijke waarheid.
+- outside-paywall → transition → inside-paywall
 
-Aanbevolen aanpak:
+The system must make this route visible and manageable without pretending to own every message.
 
-- ingest pipeline schrijft alleen naar `traffic_events`
-- dagelijkse of on-demand aggregator berekent `results`
-- admins kunnen beperkte handmatige correcties op `results` doen
-- correcties worden vastgelegd in notes of wijzigingshistorie
+## Screens
 
-Aggregatielogica:
+### Primary screen model
 
-1. groepeer traffic events per `result_date` en `tracking_link_id`
-2. resolve tracking link naar creator, channel en content
-3. resolve operator via publish_event of fallback naar primary operator
-4. tel events per `event_type` op
-5. sommeer `revenue_amount` voor paid events
-6. combineer optionele handmatige kostenbron
-7. schrijf of update één `results` record op de gekozen daggranulariteit
+1. Operator Home / Queue
+2. Creator Detail / Creator Work Page
+3. Channel Detail
+4. Workspace
+5. Assignments
+6. Supporting admin flows
 
-### Schermen
+### 1. Operator Home / Queue
 
-**Overzicht van primaire schermen:**
+Purpose:
 
-1. Dashboard
-2. Creators
-3. Creator Detail
-4. Content Queue
-5. Publish Log
-6. Results
-7. Operator Time Entries
+- show what requires attention now
+- reduce search time
+- show routing state and next action
 
-#### 1. Dashboard
+Should show:
 
-Doel: managementoverzicht en economische waarheid.
+- assigned cards
+- paywall state
+- routing state
+- creator/channel
+- risk/policy indicators
+- latest handoff presence
+- acknowledgement state
+- next action
 
-Blokken:
+### 2. Creator Detail / Creator Work Page
 
-- totale revenue
-- paid_count
-- telegram_joins
-- clicks
-- actieve creators
-- actieve kanalen
-- posts per week
-- flagged channels
-- top creators
-- top operators
-- top channels
-- top content types
-- slechtst presterende creators/channels
+Purpose:
 
-KPI’s:
+- show creator context as operational truth
+- show channels, materials, assignments and entry points into active work
 
-- revenue per creator
-- revenue per operator
-- revenue per operator hour
-- paid per 100 posts of publish events
-- revenue per channel
-- revenue per publish event
+Should show:
 
-Filters:
+- creator status
+- consent status
+- primary operator
+- channels
+- active work entry points
+- creator materials
+- workspace links
 
-- datumrange
-- platform
-- operator
-- creator
-- segment
-- status
+### 3. Channel Detail
 
-#### 2. Creators
+Purpose:
 
-Doel: creators beheren.
+- show channel-level access and policy context
+- serve as a bridge to workspace and creator context
 
-Tabelkolommen:
+Should show:
 
-- display_name
-- primary_operator
-- consent_status
-- status
-- actieve kanalen
-- laatste publicatie
-- revenue 30d
-- paid_count 30d
-
-Acties:
-
-- creator toevoegen
-- bewerken
-- pauzeren
-- offboarden
-- detail openen
-
-#### 3. Creator Detail
-
-Tabs:
-
-- Overview
-- Channels
-- Content Queue
-- Publish Log
-- Tracking Summary
-- Audit
-
-Overview toont:
-
-- basisinfo
-- consent
-- operator
-- status
-- omzet/paid laatste 30 dagen
-- actieve routes
-
-Channels toont:
-
-- platform
-- handle
+- channel status
 - access mode
-- risk flag
-- last posted
-- status
+- credential state
+- handoff state
+- acknowledgement state
+- policy and risk context
+- workspace entry
 
-#### 4. Content Queue
+### 4. Workspace
 
-Doel: dagelijkse contentoperatie.
+Purpose:
 
-Tabelkolommen:
+- bring together handoff, acknowledgement, policy, source and quick actions before execution
 
-- creator
-- channel
-- title
-- content_type
-- status
-- approval_required
-- planned_publish_at
-- created_by
-- updated_at
+Should show:
 
-Acties:
+- latest handoff
+- acknowledgement state
+- creator/channel context
+- risk flags
+- access policy
+- source context
+- quick actions into external systems
 
-- content toevoegen
-- status wijzigen
-- goedkeuring registreren
-- markeren als posted / rejected / removed
+### 5. Assignments
 
-#### 5. Publish Log
+Purpose:
 
-Doel: chronologisch zien wat live ging.
+- manage explicit operational ownership
 
-Tabelkolommen:
+Should support:
 
-- published_at
-- creator
-- channel
-- operator
-- publish_method
-- content_item
-- tracking_link
-- post_url
-- first result summary
+- create
+- update
+- deactivate
+- reactivate
+- summary of active/inactive assignments
 
-Acties:
+## Operational metrics
 
-- publish event toevoegen
-- notitie toevoegen
-- link openen
+In the corrected product, the first metrics are operational, not dashboard vanity metrics.
 
-#### 6.5 Operator Time Entries
+Primary operational measures:
 
-Doel: lichte tijdregistratie zodat `revenue per operator hour` berekend kan worden.
+- missing handoff count
+- missing acknowledgement count
+- blocked work count
+- stalled queue count
+- average time from new to ready-for-operator
+- average handoff freshness
+- open cards by route and assignee
 
-Tabelkolommen:
+Economic or broader revenue metrics may return later, but they are no longer the defining product core for phase 1.
 
-- operator
-- creator
-- channel (optioneel)
-- entry_date
-- minutes_spent
-- entry_type
-- notes
+## Security rules from day 1
 
-Acties:
+Required:
 
-- tijd registreren
-- bestaande registratie bewerken
-- filteren op operator, datum, creator, entry_type
-
-Ook beschikbaar als tab in Creator Detail (Tab 7 — Time Entries).
-
-UX-regel: een operator moet tijd in minder dan 15 seconden kunnen registreren. Niet voor micromanagement, maar voor efficiency meten en revenue per operator hour kunnen berekenen.
-
-#### 7. Results
-
-Doel: economische output en vergelijkbaarheid.
-
-Tabelkolommen:
-
-- date
-- creator
-- channel
-- operator
-- clicks
-- telegram_joins
-- contacts
-- leads
-- paid_count
-- revenue
-- cost
-- estimated profit
-
-Extra afgeleide metrics:
-
-- revenue per click
-- revenue per join
-- revenue per creator
-- revenue per operator
-- revenue per operator hour
-- paid per 100 posts of publish events
-
-### KPI-definities
-
-- `estimated_profit = revenue - cost`
-- `revenue per operator hour = sum(revenue) / (sum(minutes_spent) / 60)` binnen dezelfde filterperiode
-- `paid per 100 publish events = 100 * paid_count / aantal publish events`
-- `account survival rate = bruikbaar gebleven channels / channels actief aan begin van periode`
-- `time-to-publish = published_at - content_items.created_at`
-
-### Securityregels vanaf dag 1
-
-Verplicht:
-
-- geen wachtwoorden opslaan in de app
-- consent_status verplicht voor actieve creator
-- access_mode verplicht per channel
-- operator ziet alleen toegewezen creators/channels
-- pause/revoke moet direct operationeel effect hebben
-- unieke trackinglinks gebruiken voor analyse
-- governance-events loggen
-- risk_flag handmatig kunnen zetten per channel
+- no creator or channel passwords stored
+- consent status required for active creators
+- access mode required per channel
+- operators only see assigned creators/channels/cards
+- policy and risk visible before action
+- governance-sensitive changes lightly logged
+- acknowledgement meaning stays narrow and honest
 
 ## Implementation
 
-### Bouwvolgorde in 8 stappen
+### Build order in 8 steps
 
 1. users + auth + operators
 2. creators + creator detail
-3. channels + access mode + consent state
+3. channels + channel policy/access context
 4. operator assignments
-5. content queue
-6. publish log + tracking links
-7. traffic events + minimale ingest-endpoint + results + aggregatielogica + dashboard + operator_time_entries
-8. access audit + pause/revoke flows
+5. workspace context and handoff
+6. acknowledgement layer
+7. connection card model + queue + routing state
+8. external thread reference + lightweight connection events + governance hardening
 
-### Aanbevolen technische invulling
+### Current live slices that remain valid
 
-- monolithische app
-- server-rendered interface
-- PostgreSQL
-- simpele auth
-- interne adminachtige UI
-- geen SPA + losse API als start
+The following already-built or current-direction slices remain valid and useful:
 
-### v0.1 absolute minimum
+- creator materials
+- assignment management
+- workspace access control
+- handoff save flow
+- acknowledgement direction
+- creator/channel/workspace discoverability
 
-Als nog kleiner gestart moet worden, bevat v0.1 alleen:
+They should now be interpreted as parts of the connection-board machine, not as proof that the old marketing-monitor framing should continue unchanged.
+
+### Absolute minimum v0.1 in this corrected direction
+
+If the product must stay very small, v0.1 contains:
 
 - login
-- creators aanmaken
-- channels koppelen
-- operator assignments
-- content item registreren
-- publish event registreren
-- tracking link koppelen
-- results tonen in dashboard
+- creators
+- channels
+- assignments
+- workspace
+- handoff
+- acknowledgement
+- basic routing state
+- external thread reference on connection cards
 
 ## Milestones
 
 ### Milestone 1 — Foundation
 
-- users, auth en operatorrollen werken
-- basisnavigatie staat
-- operators zien alleen toegewezen records
+- auth and operator roles work
+- creators, channels and assignments work
+- scoped access works
 
-### Milestone 2 — Operations backbone
+### Milestone 2 — Control layer backbone
 
-- creators, channels en assignments live
-- consent- en channelstatus afdwingbaar
-- creator detail bruikbaar
+- workspaces are usable
+- handoff is writable and visible
+- acknowledgement is usable
+- channel access/policy context is visible
 
-### Milestone 3 — Content and publishing
+### Milestone 3 — Connection-board core
 
-- content queue live
-- publish log live
-- tracking links bruikbaar
+- connection cards exist
+- routing state exists
+- outside-paywall / inside-paywall state exists
+- operator queue is usable
 
-### Milestone 4 — Economic visibility
+### Milestone 4 — Connector and workflow hardening
 
-- traffic ingest live
-- results aggregatie live
-- dashboard KPI’s bruikbaar
-- operatoruren invoerbaar
+- external thread references are usable
+- lightweight connection events exist
+- blocked/stalled work becomes visible
+- legacy chat operations are measurably better organized
 
-### Milestone 5 — Governance hardening
+### Milestone 5 — Route expansion
 
-- access audit live
-- pause/revoke flow werkt direct
-- risk flags en survival metrics beschikbaar
+- same model starts supporting narrower paywall creator workflows
+- feeder and intake logic improve
+- assisted AI enrichment can be added cautiously
 
-## Gathering Results
+## Gathering results
 
-De MVP is geslaagd wanneer de volgende vragen dagelijks beantwoord kunnen worden zonder spreadsheets of chatreconstructie:
+The corrected product is successful when the following can be answered without reconstructing the truth from scattered chats:
 
-- welke creator is actief?
-- op welke kanalen?
-- wie is verantwoordelijk?
-- wat is geplaatst?
-- via welke route?
-- wat heeft het opgeleverd?
+- who owns this work?
+- which creator and channel does it belong to?
+- is this outside or inside paywall?
+- what is the routing state?
+- what is the latest handoff?
+- was the context acknowledged?
+- what is the next action?
+- what is blocked, stalled or missing?
 
-### KPI’s die bepalen of het model werkt
+### Primary success criteria
 
-1. Revenue per creator  
-   Brengt een creator echt geld binnen?
+1. Less context loss  
+2. Better handoff quality  
+3. Faster next-action clarity  
+4. More stable operator collaboration  
+5. Cleaner outside-paywall to inside-paywall routing  
+6. Better operational control over the existing revenue machine  
 
-2. Revenue per operator  
-   Is het als managed operatie schaalbaar?
+### Scope control after live usage
 
-3. Revenue per operator hour  
-   Dit is de hardste waarheid.
+New feature requests are accepted only if they directly improve:
 
-4. Paid conversions per 100 publish events  
-   Is output commercieel zinvol?
+- context quality
+- routing clarity
+- handoff quality
+- assignment clarity
+- acknowledgement discipline
+- connection-board usefulness
 
-5. Account survival rate  
-   Hoeveel kanalen blijven bruikbaar zonder restrictie of bans?
+Everything else moves to later.
 
-6. Time-to-publish  
-   Hoe snel gaat draft → approval → live?
+## Document hierarchy
 
-### Scope-bewaking na livegang
+For CreatorWorkboard the following now applies:
 
-Nieuwe featureverzoeken worden alleen geaccepteerd als ze direct bijdragen aan:
+- The Startdocument is leading for product goal, scope, out-of-scope, users and success definition.
+- The strategic correction document is leading for product identity and framing.
+- This SPEC is leading for technical modeling and implementation constraints only after alignment to that corrected identity.
 
-- betere controle
-- betere meting
-- betere economische besluitvorming
+### Conflict rule
 
-Alles daarbuiten schuift naar post-MVP.
+- If there is a conflict about scope or product identity, the Startdocument wins.
+- If there is a conflict about the corrected strategic direction, the strategic correction document wins over the older framing.
+- If there is a conflict about technical modeling after alignment, this SPEC wins.
 
-## Documenthiërarchie
+## One-sentence summary
 
-Voor V2.0 gelden de volgende regels:
-
-- Het **Startdocument** (`V2.0_MVP_Startdocument_Marketing_Monitor.md`) is leidend voor:
-  - productdoel
-  - scope
-  - out-of-scope
-  - gebruikers
-  - succesdefinitie
-  - productregels
-
-- **SPEC-1** (dit document) is leidend voor:
-  - technische specificatie
-  - datamodel
-  - constraints
-  - autorisatie
-  - implementatiedetails
-
-### Conflictenregel
-- Bij conflict over **scope of productgrenzen** wint het Startdocument.
-- Bij conflict over **technische modellering of implementatie** wint SPEC-1.
-
+CreatorWorkboard is technically modeled as a human-controlled connection-board that owns context, routing, handoff and acknowledgement around conversation-driven conversion work, while external chat systems still own transport in the current phase.
