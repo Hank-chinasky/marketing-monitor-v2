@@ -47,7 +47,7 @@ Deze keuze is bewust gemaakt op basis van wat op de VPS daadwerkelijk is bevesti
 
 Deze keuze is dus gebaseerd op bewezen bestaande infrastructuur, niet op aannames.
 
----
+--- 28-03-2026
 
 ### Aangebrachte wijzigingen
 
@@ -165,3 +165,37 @@ De gekozen configuratie is bewust conservatief gehouden, zodat de eerste live de
 - weinig verborgen aannames bevat
 - aansluit op de bestaande Traefik-infrastructuur
 - later nog verder verfijnd kan worden zonder nu onnodig risico te nemen
+## 2026-03-28 — Public root-site deployed for `creatorworkboard.com`
+
+### Summary
+A separate public root-site stack was deployed for:
+
+- `creatorworkboard.com`
+- `www.creatorworkboard.com`
+
+This stack is intentionally separate from `creatorworkboard-ops`, which remains the owner of:
+
+- `ops.creatorworkboard.com`
+
+### What changed
+- Added a new public stack: `creatorworkboard-site`
+- Added Traefik router for:
+  - `creatorworkboard.com`
+  - `www.creatorworkboard.com`
+- Served the public site through an Nginx container on `cc_public`
+- Kept `creatorworkboard-ops` unchanged and isolated
+- Removed old Dutch duplicate pages from the public site and kept the English page set
+
+### Validation
+Validated locally through Traefik with:
+
+- `curl -k --resolve creatorworkboard.com:443:127.0.0.1 https://creatorworkboard.com/ -I`
+- `curl -k --resolve www.creatorworkboard.com:443:127.0.0.1 https://www.creatorworkboard.com/ -I`
+
+Result:
+- `HTTP/2 200` on both apex and `www`
+
+### Notes
+- Contact form UI is present, but not yet connected to a live endpoint
+- `www` and apex currently both serve the site; canonical redirect can be added later
+- This public site is intentionally minimal and not coupled to the internal ops application
