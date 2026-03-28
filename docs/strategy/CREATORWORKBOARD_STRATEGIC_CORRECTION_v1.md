@@ -76,6 +76,8 @@ This route exists to:
 - improve assignment clarity
 - reduce chaos in legacy chat workflows
 
+Route 1 has explicit priority over Route 2.
+
 ### Route 2 — Creator paywall operations
 
 Later, the same machine supports creator conversion workflows that cross the paywall boundary for systems such as OnlyFans or Fansly.
@@ -86,6 +88,8 @@ This route exists to:
 - structure creator/operator collaboration
 - keep context and routing above the conversation layer
 - support later backoffice expansion without making backoffice the current product core
+
+Route 2 may only expand once Route 1 is operational on the board model.
 
 These are not two separate products.
 They are two application routes of the same operations machine.
@@ -134,13 +138,11 @@ AI must not become:
 
 The system needs one minimal controllable work unit.
 
-Working name:
+Working term for the current phase:
 
 - connection card
-- case card
-- thread card
 
-This unit should ultimately contain:
+A connection card should ultimately contain:
 
 - source
 - outside-paywall / inside-paywall state
@@ -187,7 +189,7 @@ What belongs in NOW:
 - strengthen handoff and acknowledgement
 - strengthen operator workspace context
 - model routing state
-- model outside-paywall / inside-paywall transitions
+- model outside-paywall and inside-paywall transitions
 - keep humans in the loop
 - avoid building a new chat as the starting point
 
@@ -241,14 +243,14 @@ That means the correct order is:
 
 ## Relationship to existing docs
 
-The existing Startdocument and SPEC-1 still contain language from the older marketing monitor framing.
+This document now sits above the corrected Startdocument and the aligned SPEC-1.
 
 That means:
 
-- this document now defines the corrected strategic truth
-- the Startdocument must be rewritten to match it
-- SPEC-1 must later be aligned to this corrected product core
-- build sequencing must follow the corrected truth, not the older framing
+- this document defines the corrected strategic truth
+- the Startdocument reflects that product truth at scope level
+- SPEC-1 reflects that product truth at technical level
+- remaining sequencing, roadmap and build-order documents must follow this corrected truth
 
 ## One-sentence summary
 
