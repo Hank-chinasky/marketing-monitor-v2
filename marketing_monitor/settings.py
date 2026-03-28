@@ -1,4 +1,3 @@
-  GNU nano 7.2                                                                           settings.py                                                                                     
 import os
 import sys
 from pathlib import Path
