@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib import messages
 from django.http import FileResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
@@ -77,4 +79,23 @@ class CreatorMaterialDownloadView(View):
             creator.materials.filter(active=True).select_related("creator", "uploaded_by"),
             pk=material_pk,
         )
-        return FileResponse(material.file.open("rb"), as_attachment=False, filename=material.filename)
+
+        if not material.file:
+            messages.error(request, "No file is attached to this material.")
+            return redirect("creator-detail", pk=creator.pk)
+
+        try:
+            file_path = Path(material.file.path)
+        except Exception:
+            messages.error(request, "The material file path could not be resolved.")
+            return redirect("creator-detail", pk=creator.pk)
+
+        if not file_path.exists():
+            messages.error(request, "The material file is missing on disk.")
+            return redirect("creator-detail", pk=creator.pk)
+
+        return FileResponse(
+            file_path.open("rb"),
+            as_attachment=False,
+            filename=material.filename,
+        )
