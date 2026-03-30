@@ -262,3 +262,177 @@ class OperatorAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.operator} -> {self.creator} ({self.scope})"
+
+
+class ProfileOpportunity(models.Model):
+    class ScoreValue(models.IntegerChoices):
+        ZERO = 0, "0"
+        ONE = 1, "1"
+        TWO = 2, "2"
+
+    class RiskPenaltyValue(models.IntegerChoices):
+        ZERO = 0, "0"
+        NEGATIVE_ONE = -1, "-1"
+        NEGATIVE_TWO = -2, "-2"
+
+    class PriorityBand(models.TextChoices):
+        HIGH = "high", "High"
+        MEDIUM = "medium", "Medium"
+        LOW = "low", "Low"
+
+    class ActionBucket(models.TextChoices):
+        NOW = "nu_oppakken", "Nu oppakken"
+        LATER = "later", "Later"
+        NOT_WORTH = "niet_waard", "Niet waard"
+
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_profile_opportunities",
+    )
+    intake_name = models.CharField(max_length=255)
+    profile_url = models.URLField(blank=True)
+    intake_notes = models.TextField(blank=True)
+    handoff_note = models.TextField(blank=True)
+
+    source_quality_score = models.PositiveSmallIntegerField(
+        choices=ScoreValue.choices,
+        default=ScoreValue.ZERO,
+    )
+    profile_signal_score = models.PositiveSmallIntegerField(
+        choices=ScoreValue.choices,
+        default=ScoreValue.ZERO,
+    )
+    intent_guess_score = models.PositiveSmallIntegerField(
+        choices=ScoreValue.choices,
+        default=ScoreValue.ZERO,
+    )
+    target_fit_score = models.PositiveSmallIntegerField(
+        choices=ScoreValue.choices,
+        default=ScoreValue.ZERO,
+    )
+    risk_penalty_score = models.SmallIntegerField(
+        choices=RiskPenaltyValue.choices,
+        default=RiskPenaltyValue.ZERO,
+    )
+
+    total_score = models.SmallIntegerField(default=0, editable=False)
+    priority_band = models.CharField(
+        max_length=16,
+        choices=PriorityBand.choices,
+        default=PriorityBand.LOW,
+        editable=False,
+    )
+    action_bucket = models.CharField(
+        max_length=24,
+        choices=ActionBucket.choices,
+        default=ActionBucket.NOT_WORTH,
+        editable=False,
+    )
+    score_reason_short = models.CharField(max_length=255, blank=True, editable=False)
+
+    manual_override = models.BooleanField(default=False)
+    override_priority_band = models.CharField(
+        max_length=16,
+        choices=PriorityBand.choices,
+        blank=True,
+    )
+    override_action_bucket = models.CharField(
+        max_length=24,
+        choices=ActionBucket.choices,
+        blank=True,
+    )
+    override_reason_short = models.CharField(max_length=140, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-created_at"]
+
+    def clean(self):
+        errors = {}
+
+        if self.manual_override:
+            if not (self.override_priority_band or "").strip():
+                errors["override_priority_band"] = "Kies een override priority band."
+            if not (self.override_action_bucket or "").strip():
+                errors["override_action_bucket"] = "Kies een override action bucket."
+            if not (self.override_reason_short or "").strip():
+                errors["override_reason_short"] = "Geef een korte override reden."
+
+        if errors:
+            raise ValidationError(errors)
+
+    def apply_scoring(self):
+        from core.services.opportunity_scoring import evaluate_opportunity
+
+        result = evaluate_opportunity(
+            source_quality_score=self.source_quality_score,
+            profile_signal_score=self.profile_signal_score,
+            intent_guess_score=self.intent_guess_score,
+            target_fit_score=self.target_fit_score,
+            risk_penalty_score=self.risk_penalty_score,
+        )
+        self.total_score = result.total_score
+        self.priority_band = result.priority_band
+        self.action_bucket = result.action_bucket
+        self.score_reason_short = result.score_reason_short
+
+    @property
+    def effective_priority_band(self) -> str:
+        if self.manual_override and self.override_priority_band:
+            return self.override_priority_band
+        return self.priority_band
+
+    @property
+    def effective_action_bucket(self) -> str:
+        if self.manual_override and self.override_action_bucket:
+            return self.override_action_bucket
+        return self.action_bucket
+
+    def save(self, *args, **kwargs):
+        if not self.manual_override:
+            self.override_priority_band = ""
+            self.override_action_bucket = ""
+            self.override_reason_short = ""
+
+        self.apply_scoring()
+        return super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return self.intake_name
+
+
+class OutcomeEntry(models.Model):
+    class OutcomeType(models.TextChoices):
+        GEEN_REACTIE = "geen_reactie", "Geen reactie"
+        GESPREK_GESTART = "gesprek_gestart", "Gesprek gestart"
+        WARM_VERVOLG = "warm_vervolg", "Warm vervolg"
+        CONVERSION = "conversion", "Conversion"
+        AFGEVALLEN = "afgevallen", "Afgevallen"
+        ONDUIDELIJK = "onduidelijk", "Onduidelijk"
+
+    opportunity = models.ForeignKey(
+        "core.ProfileOpportunity",
+        on_delete=models.CASCADE,
+        related_name="outcomes",
+    )
+    outcome_type = models.CharField(max_length=32, choices=OutcomeType.choices)
+    notes = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="profile_opportunity_outcomes",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self) -> str:
+        return f"{self.opportunity.intake_name} / {self.get_outcome_type_display()}"

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Opportunities</h1>
+
+<div class="panel" style="margin-bottom: 1rem;">
+    <strong>Admin-seeded V1 opportunity queue</strong>
+    <div class="muted">Kleine queue voor scoring, handoff en outcome logging.</div>
+</div>
+
+<div class="panel">
+    <div style="margin-bottom: 1rem; color: #555;">
+        <strong>{{ page_obj.paginator.count }}</strong> zichtbaar
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                    <th style="padding: 0.75rem 0.5rem;">Intake</th>
+                    <th style="padding: 0.75rem 0.5rem;">Assigned to</th>
+                    <th style="padding: 0.75rem 0.5rem;">Priority</th>
+                    <th style="padding: 0.75rem 0.5rem;">Action</th>
+                    <th style="padding: 0.75rem 0.5rem;">Total</th>
+                    <th style="padding: 0.75rem 0.5rem;">Reason</th>
+                    <th style="padding: 0.75rem 0.5rem;">Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for opportunity in opportunities %}
+                    <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <a href="{% url 'opportunity-detail' opportunity.pk %}">
+                                {{ opportunity.intake_name }}
+                            </a>
+                            {% if opportunity.profile_url %}
+                                <div class="muted" style="margin-top: 0.25rem;">
+                                    <a href="{{ opportunity.profile_url }}" target="_blank" rel="noopener">Profiel openen</a>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if opportunity.assigned_to %}
+                                {{ opportunity.assigned_to.username }}
+                            {% else %}
+                                <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if opportunity.effective_priority_band == "high" %}
+                                <span class="badge badge-red">high</span>
+                            {% elif opportunity.effective_priority_band == "medium" %}
+                                <span class="badge badge-yellow">medium</span>
+                            {% else %}
+                                <span class="badge badge-blue">low</span>
+                            {% endif %}
+                            {% if opportunity.manual_override %}
+                                <div class="muted" style="margin-top: 0.25rem;">override</div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ opportunity.effective_action_bucket }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ opportunity.total_score }}</td>
+                        <td style="padding: 0.75rem 0.5rem; max-width: 320px;">{{ opportunity.score_reason_short }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ opportunity.updated_at }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding: 1rem 0.5rem; color: #777;">
+                            Geen opportunities zichtbaar.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            {% if page_obj.has_previous %}
+                <a class="secondary-button" href="?page={{ page_obj.previous_page_number }}">Vorige</a>
+            {% endif %}
+            <span class="muted">Pagina {{ page_obj.number }} van {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a class="secondary-button" href="?page={{ page_obj.next_page_number }}">Volgende</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

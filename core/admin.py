@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from core.models import Creator, CreatorChannel, CreatorMaterial, Operator, OperatorAssignment
+from core.models import (
+    Creator,
+    CreatorChannel,
+    CreatorMaterial,
+    Operator,
+    OperatorAssignment,
+    OutcomeEntry,
+    ProfileOpportunity,
+)
 
 
 @admin.register(Operator)
@@ -76,3 +84,34 @@ class CreatorChannelAdmin(admin.ModelAdmin):
 class OperatorAssignmentAdmin(admin.ModelAdmin):
     list_display = ("id", "operator", "creator", "scope", "starts_at", "ends_at", "active")
     search_fields = ("creator__display_name", "operator__user__username")
+
+
+@admin.register(ProfileOpportunity)
+class ProfileOpportunityAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "intake_name",
+        "assigned_to",
+        "priority_band",
+        "action_bucket",
+        "total_score",
+        "manual_override",
+        "updated_at",
+    )
+    list_filter = ("priority_band", "action_bucket", "manual_override", "assigned_to")
+    search_fields = (
+        "intake_name",
+        "profile_url",
+        "intake_notes",
+        "handoff_note",
+        "override_reason_short",
+    )
+    autocomplete_fields = ("assigned_to",)
+
+
+@admin.register(OutcomeEntry)
+class OutcomeEntryAdmin(admin.ModelAdmin):
+    list_display = ("id", "opportunity", "outcome_type", "created_by", "created_at")
+    list_filter = ("outcome_type", "created_at")
+    search_fields = ("opportunity__intake_name", "notes", "created_by__username")
+    autocomplete_fields = ("opportunity", "created_by")

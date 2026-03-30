@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a class="secondary-button" href="{{ back_url }}">Terug naar queue</a>
+</div>
+
+<h1>{{ opportunity.intake_name }}</h1>
+
+{% if saved %}
+    <div class="success-panel">Opportunity opgeslagen.</div>
+{% endif %}
+
+{% if outcome_added %}
+    <div class="success-panel">Outcome toegevoegd.</div>
+{% endif %}
+
+<div class="grid">
+    <div class="panel">
+        <h2 style="margin-top: 0;">Context</h2>
+
+        <form method="post" action="{% url 'opportunity-save' opportunity.pk %}">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div style="margin-bottom: 1rem; color: #991b1b;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            {% for field in form %}
+                <p>
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div style="color: #991b1b; margin-top: 0.25rem;">{{ error }}</div>
+                    {% endfor %}
+                </p>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button class="primary-button" type="submit">Opslaan</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h2 style="margin-top: 0;">Score-uitkomst</h2>
+
+        <p><strong>Total score:</strong> {{ opportunity.total_score }}</p>
+        <p>
+            <strong>Priority band:</strong>
+            {% if opportunity.effective_priority_band == "high" %}
+                <span class="badge badge-red">high</span>
+            {% elif opportunity.effective_priority_band == "medium" %}
+                <span class="badge badge-yellow">medium</span>
+            {% else %}
+                <span class="badge badge-blue">low</span>
+            {% endif %}
+        </p>
+        <p><strong>Action bucket:</strong> {{ opportunity.effective_action_bucket }}</p>
+        <p><strong>Reason:</strong> {{ opportunity.score_reason_short }}</p>
+
+        {% if opportunity.manual_override %}
+            <hr style="margin: 1rem 0;">
+            <p><strong>Override actief</strong></p>
+            <p><strong>Override reason:</strong> {{ opportunity.override_reason_short }}</p>
+        {% endif %}
+
+        {% if opportunity.profile_url %}
+            <p>
+                <strong>Profile URL:</strong>
+                <a href="{{ opportunity.profile_url }}" target="_blank" rel="noopener">
+                    {{ opportunity.profile_url }}
+                </a>
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h2 style="margin-top: 0;">Handoff</h2>
+        {% if opportunity.handoff_note %}
+            <p style="white-space: pre-line;">{{ opportunity.handoff_note }}</p>
+        {% else %}
+            <p class="muted">Nog geen handoff vastgelegd.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h2 style="margin-top: 0;">Outcome toevoegen</h2>
+
+        <form method="post" action="{% url 'opportunity-outcome-add' opportunity.pk %}">
+            {% csrf_token %}
+            {% for field in outcome_form %}
+                <p>
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div style="color: #991b1b; margin-top: 0.25rem;">{{ error }}</div>
+                    {% endfor %}
+                </p>
+            {% endfor %}
+            <div class="form-actions">
+                <button class="primary-button" type="submit">Outcome opslaan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="panel">
+    <h2 style="margin-top: 0;">Outcomes</h2>
+
+    {% if opportunity.outcomes.all %}
+        <ul class="clean">
+            {% for outcome in opportunity.outcomes.all %}
+                <li style="margin-bottom: 0.65rem;">
+                    <strong>{{ outcome.get_outcome_type_display }}</strong>
+                    <span class="muted">— {{ outcome.created_at }}</span>
+                    {% if outcome.created_by %}
+                        <span class="muted">door {{ outcome.created_by.username }}</span>
+                    {% endif %}
+                    {% if outcome.notes %}
+                        <div style="margin-top: 0.25rem;">{{ outcome.notes }}</div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">Nog geen outcomes vastgelegd.</p>
+    {% endif %}
+</div>
+{% endblock %}

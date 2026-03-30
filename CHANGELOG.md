@@ -31,11 +31,17 @@
 - Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
 - Standardized live routing and healthcheck behavior for the `creatorworkboard-ops` service.
 - Adjusted reverse-proxy behavior so Django login works correctly behind Traefik.
+- Added paginated rendering for the admin-seeded V1 opportunity queue.
+- Kept opportunity creation outside app flow in V1; records can be created through Django admin.
 
 ### Added
 - Added superuser access for the deployed environment.
 - Added operator user accounts and matching `Operator` model records.
 - Added the first `Creator` record and linked it to an operator for initial data validation.
+- Added `ProfileOpportunity` in `core/` for small admin-seeded intake, scoring, handoff and queue handling.
+- Added `OutcomeEntry` with fixed outcome choices for minimal per-opportunity outcome logging.
+- Added opportunity queue and detail views with small server-rendered templates.
+- Added a server-side scoring service for `priority_band` and `action_bucket`.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -50,6 +56,9 @@
 - Added superuser access for the live environment.
 - Added operator user accounts and matching `Operator` records.
 - Added first `Creator` test record and linked it to an operator.
+
+### Tests
+- Added tests for opportunity scoring rules, override validation, scoped visibility, queue ordering, and queue pagination.
 
 ## 2026-03-22 — creatorworkboard ops deployment stabilized
 

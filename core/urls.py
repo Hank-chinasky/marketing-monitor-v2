@@ -1,11 +1,17 @@
 from django.urls import path
 
 from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
-from core.assignment_views import AssignmentListView, OperatorAssignmentDeactivateView
-from core.material_views import (
-    CreatorDetailView,
-    CreatorMaterialBulkDeleteView,
-    CreatorMaterialDownloadView,
+from core.assignment_views import (
+    AssignmentListView,
+    OperatorAssignmentDeactivateView,
+    OperatorAssignmentReactivateView,
+)
+from core.material_views import CreatorDetailView, CreatorMaterialDownloadView
+from core.opportunity_views import (
+    OpportunityDetailView,
+    OpportunityOutcomeCreateView,
+    OpportunityQueueView,
+    OpportunityUpdateView,
 )
 from core.views import (
     ChannelDetailView,
@@ -37,11 +43,6 @@ urlpatterns = [
         CreatorMaterialDownloadView.as_view(),
         name="creator-material-download",
     ),
-    path(
-        "creators/<int:creator_pk>/materials/delete/",
-        CreatorMaterialBulkDeleteView.as_view(),
-        name="creator-material-bulk-delete",
-    ),
     path("creators/<int:pk>/edit/", CreatorUpdateView.as_view(), name="creator-update"),
     path("creators/<int:pk>/network/", CreatorNetworkView.as_view(), name="creator-network"),
     path("channels/", ChannelListView.as_view(), name="channel-list"),
@@ -61,6 +62,11 @@ urlpatterns = [
         OperatorAssignmentDeactivateView.as_view(),
         name="assignment-deactivate",
     ),
+    path(
+        "assignments/<int:pk>/reactivate/",
+        OperatorAssignmentReactivateView.as_view(),
+        name="assignment-reactivate",
+    ),
     path("operators/", OperatorListView.as_view(), name="operator-list"),
     path("operators/create/", OperatorCreateView.as_view(), name="operator-create"),
     path("operators/<int:pk>/edit/", OperatorUpdateView.as_view(), name="operator-update"),
@@ -73,5 +79,13 @@ urlpatterns = [
         "operators/<int:pk>/reset-password/",
         OperatorPasswordResetView.as_view(),
         name="operator-reset-password",
+    ),
+    path("opportunities/", OpportunityQueueView.as_view(), name="opportunity-queue"),
+    path("opportunities/<int:pk>/", OpportunityDetailView.as_view(), name="opportunity-detail"),
+    path("opportunities/<int:pk>/save/", OpportunityUpdateView.as_view(), name="opportunity-save"),
+    path(
+        "opportunities/<int:pk>/outcomes/add/",
+        OpportunityOutcomeCreateView.as_view(),
+        name="opportunity-outcome-add",
     ),
 ]

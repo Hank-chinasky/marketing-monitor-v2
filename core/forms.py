@@ -5,7 +5,15 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.models import (
+    Creator,
+    CreatorChannel,
+    Operator,
+    OperatorAssignment,
+    OutcomeEntry,
+    ProfileOpportunity,
+)
+from core.services.scope import is_admin_user
 
 UserModel = get_user_model()
 
@@ -206,6 +214,23 @@ class CreatorMaterialUploadForm(forms.Form):
         return files
 
 
+class ChannelHandoffForm(forms.Form):
+    last_operator_update = forms.CharField(
+        required=False,
+        label="Handoff",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 5,
+                "placeholder": "Korte overdracht voor de volgende operator.",
+            }
+        ),
+        help_text="Beschrijf kort wat gedaan is, wat nog openstaat en waar op gelet moet worden.",
+    )
+
+    def clean_last_operator_update(self):
+        return (self.cleaned_data.get("last_operator_update") or "").strip()
+
+
 class CreatorChannelForm(forms.ModelForm):
     last_access_check_at = forms.DateField(
         label="Laatste access check",
@@ -337,3 +362,69 @@ class OperatorAssignmentForm(forms.ModelForm):
 
         end_dt = datetime.combine(end_date, time.min)
         return timezone.make_aware(end_dt, timezone.get_current_timezone())
+
+
+class ProfileOpportunityForm(forms.ModelForm):
+    class Meta:
+        model = ProfileOpportunity
+        fields = [
+            "assigned_to",
+            "intake_name",
+            "profile_url",
+            "intake_notes",
+            "handoff_note",
+            "source_quality_score",
+            "profile_signal_score",
+            "intent_guess_score",
+            "target_fit_score",
+            "risk_penalty_score",
+            "manual_override",
+            "override_priority_band",
+            "override_action_bucket",
+            "override_reason_short",
+        ]
+        widgets = {
+            "intake_notes": forms.Textarea(attrs={"rows": 4}),
+            "handoff_note": forms.Textarea(attrs={"rows": 4}),
+            "override_reason_short": forms.TextInput(attrs={"maxlength": 140}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+        if self.user is not None and not is_admin_user(self.user):
+            self.fields["assigned_to"].disabled = True
+            self.fields["assigned_to"].required = False
+
+    def clean_assigned_to(self):
+        if self.user is not None and not is_admin_user(self.user) and self.instance.pk:
+            return self.instance.assigned_to
+        return self.cleaned_data.get("assigned_to")
+
+    def clean(self):
+        cleaned = super().clean()
+        manual_override = cleaned.get("manual_override")
+
+        if manual_override:
+            if not (cleaned.get("override_priority_band") or "").strip():
+                self.add_error("override_priority_band", "Kies een override priority band.")
+            if not (cleaned.get("override_action_bucket") or "").strip():
+                self.add_error("override_action_bucket", "Kies een override action bucket.")
+            if not (cleaned.get("override_reason_short") or "").strip():
+                self.add_error("override_reason_short", "Geef een korte override reden.")
+        else:
+            cleaned["override_priority_band"] = ""
+            cleaned["override_action_bucket"] = ""
+            cleaned["override_reason_short"] = ""
+
+        return cleaned
+
+
+class OutcomeEntryForm(forms.ModelForm):
+    class Meta:
+        model = OutcomeEntry
+        fields = ["outcome_type", "notes"]
+        widgets = {
+            "notes": forms.TextInput(attrs={"maxlength": 255}),
+        }
