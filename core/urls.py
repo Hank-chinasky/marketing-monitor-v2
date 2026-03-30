@@ -7,6 +7,7 @@ from core.material_views import (
     CreatorMaterialBulkDeleteView,
     CreatorMaterialDownloadView,
 )
+from core.operational_state_views import ChannelOperationalStateUpdateView
 from core.views import (
     ChannelDetailView,
     ChannelListView,
@@ -47,6 +48,11 @@ urlpatterns = [
     path("channels/", ChannelListView.as_view(), name="channel-list"),
     path("channels/create/", CreatorChannelCreateView.as_view(), name="channel-create"),
     path("channels/<int:pk>/", ChannelDetailView.as_view(), name="channel-detail"),
+    path(
+        "channels/<int:pk>/handoff/update/",
+        ChannelOperationalStateUpdateView.as_view(),
+        name="channel-operational-state-update",
+    ),
     path(
         "channels/<int:pk>/workspace/",
         InstagramWorkspaceView.as_view(),

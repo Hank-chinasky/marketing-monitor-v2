@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from core.models import Creator, CreatorChannel, CreatorMaterial, Operator, OperatorAssignment
+from core.models import (
+    ChannelOperationalState,
+    Creator,
+    CreatorChannel,
+    CreatorMaterial,
+    Operator,
+    OperatorAssignment,
+)
 
 
 @admin.register(Operator)
@@ -69,7 +76,35 @@ class CreatorChannelAdmin(admin.ModelAdmin):
         "approved_access_region",
         "access_profile_notes",
         "last_operator_update",
+        "operational_state__next_action",
+        "operational_state__blocked_reason",
+        "operational_state__last_update",
     )
+
+
+@admin.register(ChannelOperationalState)
+class ChannelOperationalStateAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "channel",
+        "status",
+        "priority",
+        "owner",
+        "due_date",
+        "updated_by",
+        "updated_at",
+    )
+    list_filter = ("status", "priority", "due_date", "updated_at")
+    search_fields = (
+        "channel__handle",
+        "channel__creator__display_name",
+        "next_action",
+        "blocked_reason",
+        "last_update",
+        "owner__username",
+        "updated_by__username",
+    )
+    autocomplete_fields = ("channel", "owner", "updated_by")
 
 
 @admin.register(OperatorAssignment)

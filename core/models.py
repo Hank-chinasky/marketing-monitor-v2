@@ -235,6 +235,90 @@ class CreatorChannel(models.Model):
         return f"{self.creator.display_name} / {self.platform} / {self.handle}"
 
 
+class ChannelOperationalState(models.Model):
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        ACTIVE = "active", "Active"
+        WAITING = "waiting", "Waiting"
+        BLOCKED = "blocked", "Blocked"
+        DONE = "done", "Done"
+
+    class Priority(models.TextChoices):
+        LOW = "low", "Low"
+        NORMAL = "normal", "Normal"
+        HIGH = "high", "High"
+        URGENT = "urgent", "Urgent"
+
+    channel = models.OneToOneField(
+        CreatorChannel,
+        on_delete=models.CASCADE,
+        related_name="operational_state",
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owned_channel_operational_states",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NEW,
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=Priority.choices,
+        default=Priority.NORMAL,
+    )
+    next_action = models.CharField(max_length=255, blank=True)
+    blocked_reason = models.TextField(blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    last_update = models.TextField(blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_channel_operational_states",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["due_date", "-updated_at", "-id"]
+
+    def __str__(self) -> str:
+        return f"{self.channel} / {self.status}"
+
+    def clean(self):
+        if self.status == self.Status.BLOCKED and not (self.blocked_reason or "").strip():
+            raise ValidationError(
+                {"blocked_reason": "Blocked reason is verplicht wanneer status 'blocked' is."}
+            )
+
+    @property
+    def status_badge_class(self) -> str:
+        mapping = {
+            self.Status.NEW: "badge-yellow",
+            self.Status.ACTIVE: "badge-green",
+            self.Status.WAITING: "badge-blue",
+            self.Status.BLOCKED: "badge-red",
+            self.Status.DONE: "badge-green",
+        }
+        return mapping.get(self.status, "badge-yellow")
+
+    @property
+    def priority_badge_class(self) -> str:
+        mapping = {
+            self.Priority.LOW: "badge-blue",
+            self.Priority.NORMAL: "badge-green",
+            self.Priority.HIGH: "badge-yellow",
+            self.Priority.URGENT: "badge-red",
+        }
+        return mapping.get(self.priority, "badge-blue")
+
+
 class OperatorAssignment(models.Model):
     class Scope(models.TextChoices):
         FULL_MANAGEMENT = "full_management", "Full management"

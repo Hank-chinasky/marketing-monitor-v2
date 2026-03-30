@@ -5,7 +5,6 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import (
@@ -18,6 +17,7 @@ from django.views.generic import (
 )
 
 from core.forms import (
+    ChannelOperationalStateForm,
     CreatorChannelForm,
     CreatorForm,
     OperatorAssignmentForm,
@@ -32,6 +32,7 @@ from core.mixins import (
     ScopedCreatorQuerysetMixin,
 )
 from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.services.operational_state import get_or_create_channel_operational_state
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_active_assignments_queryset,
@@ -62,6 +63,13 @@ def get_safe_next_url(request):
         return next_url
 
     return ""
+
+
+def get_channel_operational_state_or_none(channel):
+    try:
+        return channel.operational_state
+    except CreatorChannel.operational_state.RelatedObjectDoesNotExist:
+        return None
 
 
 class HealthzView(View):
@@ -358,7 +366,7 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
     }
 
     def get_base_queryset(self):
-        return super().get_queryset().select_related("creator").order_by(
+        return super().get_queryset().select_related("creator", "operational_state").order_by(
             "creator__display_name", "platform", "handle"
         )
 
@@ -409,7 +417,8 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
                     & Q(approved_egress_ip__exact="")
                 )
                 | Q(login_identifier__exact="")
-                | Q(last_operator_update__exact="")
+                | Q(operational_state__isnull=True)
+                | Q(operational_state__last_update__exact="")
             )
 
         if preset == "needs_reset":
@@ -429,7 +438,9 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
             return qs.filter(login_identifier__exact="")
 
         if preset == "no_update":
-            return qs.filter(last_operator_update__exact="")
+            return qs.filter(
+                Q(operational_state__isnull=True) | Q(operational_state__last_update__exact="")
+            )
 
         return qs
 
@@ -464,9 +475,13 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
         preset_counts = self.get_preset_counts()
 
         channels = list(context["channels"])
-        issue_count = sum(
-            1
-            for channel in channels
+        issue_count = 0
+        for channel in channels:
+            operational_state = get_channel_operational_state_or_none(channel)
+            handoff_missing = not bool(
+                ((operational_state.last_update if operational_state else "") or "").strip()
+            )
+
             if (
                 channel.credential_status == "needs_reset"
                 or not channel.two_factor_enabled
@@ -475,9 +490,9 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
                     and not (channel.approved_ip_label or channel.approved_egress_ip)
                 )
                 or not ((channel.login_identifier or "").strip())
-                or not (channel.last_operator_update or "").strip()
-            )
-        )
+                or handoff_missing
+            ):
+                issue_count += 1
 
         context["next_url"] = self.request.get_full_path()
         context["preset_counts"] = preset_counts
@@ -503,6 +518,8 @@ class ChannelDetailView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailVi
         context = super().get_context_data(**kwargs)
         channel = self.object
         creator = channel.creator
+        operational_state = get_or_create_channel_operational_state(channel)
+        operational_state_form = ChannelOperationalStateForm(instance=operational_state)
 
         if is_admin_user(self.request.user):
             assignments = list(
@@ -523,6 +540,7 @@ class ChannelDetailView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailVi
         )
 
         next_url = get_safe_next_url(self.request)
+        handoff_missing = not bool((operational_state.last_update or "").strip())
 
         context["creator"] = creator
         context["assignments"] = assignments
@@ -533,6 +551,9 @@ class ChannelDetailView(LoginRequiredMixin, ScopedChannelQuerysetMixin, DetailVi
             self.request.user,
             channel,
         )
+        context["operational_state"] = operational_state
+        context["operational_state_form"] = operational_state_form
+        context["handoff_missing"] = handoff_missing
 
         return context
 
@@ -559,18 +580,6 @@ class CreatorChannelUpdateView(LoginRequiredMixin, ScopedChannelQuerysetMixin, U
     model = CreatorChannel
     form_class = CreatorChannelForm
     template_name = "channels/channel_form.html"
-
-    def form_valid(self, form):
-        if "last_operator_update" in form.cleaned_data:
-            last_update = (form.cleaned_data.get("last_operator_update") or "").strip()
-            form.instance.last_operator_update = last_update
-            if last_update:
-                existing_ts = form.cleaned_data.get("last_operator_update_at")
-                form.instance.last_operator_update_at = existing_ts or timezone.now()
-            else:
-                form.instance.last_operator_update_at = None
-
-        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -2,7 +2,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.views.generic import DetailView
 
+from core.forms import ChannelOperationalStateForm
 from core.models import CreatorChannel
+from core.services.operational_state import get_or_create_channel_operational_state
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_active_assignments_queryset,
@@ -31,6 +33,8 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         channel = self.object
         creator = channel.creator
+        operational_state = get_or_create_channel_operational_state(channel)
+        operational_state_form = ChannelOperationalStateForm(instance=operational_state)
 
         if is_admin_user(self.request.user):
             assignments = list(
@@ -52,7 +56,7 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
         policy_gap = channel.vpn_required and not (
             channel.approved_ip_label or channel.approved_egress_ip
         )
-        handoff_missing = not bool((channel.last_operator_update or "").strip())
+        handoff_missing = not bool((operational_state.last_update or "").strip())
 
         risk_flags = []
         if creator.status != "active":
@@ -122,6 +126,8 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
                 "policy_state": policy_state,
                 "quick_actions": quick_actions,
                 "back_url": reverse("channel-detail", kwargs={"pk": channel.pk}),
+                "operational_state": operational_state,
+                "operational_state_form": operational_state_form,
             }
         )
         return context

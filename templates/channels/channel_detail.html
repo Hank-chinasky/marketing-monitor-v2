@@ -33,20 +33,107 @@
     </div>
 </div>
 
-<div class="panel" style="margin-bottom: 1rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
-        <h2 style="margin:0;">Laatste operator update</h2>
-        {% if request.user.is_staff or request.user.is_superuser %}
-            <a class="quick-link" href="{% url 'channel-update' channel.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
-                Werk context bij
-            </a>
-        {% endif %}
+<div id="operational-handoff" class="panel" style="margin-bottom: 1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <h2 style="margin:0;">Operational Handoff</h2>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <span class="badge {{ operational_state.status_badge_class }}">{{ operational_state.status }}</span>
+            <span class="badge {{ operational_state.priority_badge_class }}">{{ operational_state.priority }}</span>
+        </div>
     </div>
 
-    <ul class="clean" style="margin-top:1rem;">
-        <li><strong>Laatste context:</strong> {{ channel.last_operator_update|default:"-"|linebreaksbr }}</li>
-        <li><strong>Updated at:</strong> {{ channel.last_operator_update_at|default:"-" }}</li>
-    </ul>
+    <div class="grid" style="margin-top:1rem;">
+        <div>
+            <ul class="clean">
+                <li>
+                    <strong>Owner:</strong>
+                    {% if operational_state.owner %}
+                        {{ operational_state.owner.get_full_name|default:operational_state.owner.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </li>
+                <li><strong>Due date:</strong> {{ operational_state.due_date|default:"-" }}</li>
+                <li><strong>Next action:</strong> {{ operational_state.next_action|default:"-" }}</li>
+                <li>
+                    <strong>Blocked reason:</strong>
+                    {% if operational_state.blocked_reason %}
+                        {{ operational_state.blocked_reason|linebreaksbr }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>Updated by:</strong>
+                    {% if operational_state.updated_by %}
+                        {{ operational_state.updated_by.get_full_name|default:operational_state.updated_by.username }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </li>
+                <li><strong>Updated at:</strong> {{ operational_state.updated_at|default:"-" }}</li>
+            </ul>
+        </div>
+
+        <div>
+            <h3 style="margin-top:0;">Laatste update</h3>
+            {% if operational_state.last_update %}
+                <div>{{ operational_state.last_update|linebreaksbr }}</div>
+            {% else %}
+                <div class="muted">Nog geen handoff-update vastgelegd.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post" action="{% url 'channel-operational-state-update' channel.pk %}" style="margin-top:1rem;">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}#operational-handoff">
+
+        {{ operational_state_form.non_field_errors }}
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1rem;">
+            <div>
+                {{ operational_state_form.owner.label_tag }}<br>
+                {{ operational_state_form.owner }}
+                {{ operational_state_form.owner.errors }}
+            </div>
+            <div>
+                {{ operational_state_form.status.label_tag }}<br>
+                {{ operational_state_form.status }}
+                {{ operational_state_form.status.errors }}
+            </div>
+            <div>
+                {{ operational_state_form.priority.label_tag }}<br>
+                {{ operational_state_form.priority }}
+                {{ operational_state_form.priority.errors }}
+            </div>
+            <div>
+                {{ operational_state_form.due_date.label_tag }}<br>
+                {{ operational_state_form.due_date }}
+                {{ operational_state_form.due_date.errors }}
+            </div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            {{ operational_state_form.next_action.label_tag }}<br>
+            {{ operational_state_form.next_action }}
+            {{ operational_state_form.next_action.errors }}
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            {{ operational_state_form.blocked_reason.label_tag }}<br>
+            {{ operational_state_form.blocked_reason }}
+            {{ operational_state_form.blocked_reason.errors }}
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            {{ operational_state_form.last_update.label_tag }}<br>
+            {{ operational_state_form.last_update }}
+            {{ operational_state_form.last_update.errors }}
+        </div>
+
+        <button type="submit" class="primary-button">Opslaan handoff</button>
+    </form>
 </div>
 
 <div class="cards">
@@ -111,6 +198,9 @@
             {% if handoff_missing %}
                 <li><span class="badge badge-yellow">update mist</span> Laatste operator context ontbreekt.</li>
             {% endif %}
+            {% if operational_state.status == "blocked" %}
+                <li><span class="badge badge-red">blocked</span> Deze channel heeft een actieve blokkade.</li>
+            {% endif %}
             {% if channel.credential_status == "needs_reset" %}
                 <li><span class="badge badge-red">needs reset</span> Credentials vragen aandacht.</li>
             {% endif %}
@@ -126,7 +216,7 @@
             {% if channel.status != "active" %}
                 <li><span class="badge badge-yellow">{{ channel.status }}</span> Channel is niet actief.</li>
             {% endif %}
-            {% if not handoff_missing and channel.credential_status != "needs_reset" and channel.two_factor_enabled and not policy_gap and channel.status == "active" %}
+            {% if not handoff_missing and operational_state.status != "blocked" and channel.credential_status != "needs_reset" and channel.two_factor_enabled and not policy_gap and channel.status == "active" %}
                 <li>Geen directe alerts.</li>
             {% endif %}
         </ul>

@@ -5,7 +5,13 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.models import (
+    ChannelOperationalState,
+    Creator,
+    CreatorChannel,
+    Operator,
+    OperatorAssignment,
+)
 
 UserModel = get_user_model()
 
@@ -206,6 +212,55 @@ class CreatorMaterialUploadForm(forms.Form):
         return files
 
 
+class ChannelOperationalStateForm(forms.ModelForm):
+    due_date = forms.DateField(
+        required=False,
+        label="Due date",
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+
+    class Meta:
+        model = ChannelOperationalState
+        fields = [
+            "owner",
+            "status",
+            "priority",
+            "due_date",
+            "next_action",
+            "blocked_reason",
+            "last_update",
+        ]
+        widgets = {
+            "next_action": forms.TextInput(attrs={"placeholder": "Volgende concrete stap"}),
+            "blocked_reason": forms.Textarea(attrs={"rows": 3}),
+            "last_update": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["owner"].queryset = UserModel.objects.order_by(
+            "first_name",
+            "last_name",
+            "username",
+        )
+        self.fields["owner"].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        status = cleaned.get("status")
+        blocked_reason = (cleaned.get("blocked_reason") or "").strip()
+        last_update = (cleaned.get("last_update") or "").strip()
+
+        if not last_update:
+            self.add_error("last_update", "Laatste update is verplicht.")
+
+        if status == ChannelOperationalState.Status.BLOCKED and not blocked_reason:
+            self.add_error("blocked_reason", "Geef een blocked reason op bij status 'blocked'.")
+
+        return cleaned
+
+
 class CreatorChannelForm(forms.ModelForm):
     last_access_check_at = forms.DateField(
         label="Laatste access check",
@@ -215,12 +270,6 @@ class CreatorChannelForm(forms.ModelForm):
     )
     last_ip_check_at = forms.DateField(
         label="Laatste IP check",
-        required=False,
-        widget=forms.DateInput(attrs={"type": "date"}),
-        input_formats=["%Y-%m-%d"],
-    )
-    last_operator_update_at = forms.DateField(
-        label="Laatste operator update datum",
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],
@@ -247,8 +296,6 @@ class CreatorChannelForm(forms.ModelForm):
             "approved_access_region",
             "access_profile_notes",
             "last_ip_check_at",
-            "last_operator_update",
-            "last_operator_update_at",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -268,11 +315,6 @@ class CreatorChannelForm(forms.ModelForm):
                 instance.last_ip_check_at
             ).date()
 
-        if instance.last_operator_update_at:
-            self.initial["last_operator_update_at"] = timezone.localtime(
-                instance.last_operator_update_at
-            ).date()
-
     def _date_to_aware_datetime(self, value):
         if not value:
             return None
@@ -284,9 +326,6 @@ class CreatorChannelForm(forms.ModelForm):
 
     def clean_last_ip_check_at(self):
         return self._date_to_aware_datetime(self.cleaned_data.get("last_ip_check_at"))
-
-    def clean_last_operator_update_at(self):
-        return self._date_to_aware_datetime(self.cleaned_data.get("last_operator_update_at"))
 
 
 class OperatorAssignmentForm(forms.ModelForm):
