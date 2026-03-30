@@ -4,9 +4,12 @@ from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
 from core.assignment_views import (
     AssignmentListView,
     OperatorAssignmentDeactivateView,
-    OperatorAssignmentReactivateView,
 )
-from core.material_views import CreatorDetailView, CreatorMaterialDownloadView
+from core.material_views import (
+    CreatorDetailView,
+    CreatorMaterialBulkDeleteView,
+    CreatorMaterialDownloadView,
+)
 from core.opportunity_views import (
     OpportunityDetailView,
     OpportunityOutcomeCreateView,
@@ -43,6 +46,11 @@ urlpatterns = [
         CreatorMaterialDownloadView.as_view(),
         name="creator-material-download",
     ),
+    path(
+        "creators/<int:creator_pk>/materials/bulk-delete/",
+        CreatorMaterialBulkDeleteView.as_view(),
+        name="creator-material-bulk-delete",
+    ),
     path("creators/<int:pk>/edit/", CreatorUpdateView.as_view(), name="creator-update"),
     path("creators/<int:pk>/network/", CreatorNetworkView.as_view(), name="creator-network"),
     path("channels/", ChannelListView.as_view(), name="channel-list"),
@@ -61,11 +69,6 @@ urlpatterns = [
         "assignments/<int:pk>/deactivate/",
         OperatorAssignmentDeactivateView.as_view(),
         name="assignment-deactivate",
-    ),
-    path(
-        "assignments/<int:pk>/reactivate/",
-        OperatorAssignmentReactivateView.as_view(),
-        name="assignment-reactivate",
     ),
     path("operators/", OperatorListView.as_view(), name="operator-list"),
     path("operators/create/", OperatorCreateView.as_view(), name="operator-create"),
