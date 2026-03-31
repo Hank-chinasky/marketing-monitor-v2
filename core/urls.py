@@ -1,11 +1,20 @@
 from django.urls import path
 
 from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
-from core.assignment_views import AssignmentListView, OperatorAssignmentDeactivateView
+from core.assignment_views import (
+    AssignmentListView,
+    OperatorAssignmentDeactivateView,
+)
 from core.material_views import (
     CreatorDetailView,
     CreatorMaterialBulkDeleteView,
     CreatorMaterialDownloadView,
+)
+from core.opportunity_views import (
+    OpportunityDetailView,
+    OpportunityOutcomeCreateView,
+    OpportunityQueueView,
+    OpportunityUpdateView,
 )
 from core.views import (
     ChannelDetailView,
@@ -38,7 +47,7 @@ urlpatterns = [
         name="creator-material-download",
     ),
     path(
-        "creators/<int:creator_pk>/materials/delete/",
+        "creators/<int:creator_pk>/materials/bulk-delete/",
         CreatorMaterialBulkDeleteView.as_view(),
         name="creator-material-bulk-delete",
     ),
