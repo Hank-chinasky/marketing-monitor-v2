@@ -10,12 +10,6 @@ from core.material_views import (
     CreatorMaterialBulkDeleteView,
     CreatorMaterialDownloadView,
 )
-from core.opportunity_views import (
-    OpportunityDetailView,
-    OpportunityOutcomeCreateView,
-    OpportunityQueueView,
-    OpportunityUpdateView,
-)
 from core.views import (
     ChannelDetailView,
     ChannelListView,
@@ -82,13 +76,5 @@ urlpatterns = [
         "operators/<int:pk>/reset-password/",
         OperatorPasswordResetView.as_view(),
         name="operator-reset-password",
-    ),
-    path("opportunities/", OpportunityQueueView.as_view(), name="opportunity-queue"),
-    path("opportunities/<int:pk>/", OpportunityDetailView.as_view(), name="opportunity-detail"),
-    path("opportunities/<int:pk>/save/", OpportunityUpdateView.as_view(), name="opportunity-save"),
-    path(
-        "opportunities/<int:pk>/outcomes/add/",
-        OpportunityOutcomeCreateView.as_view(),
-        name="opportunity-outcome-add",
     ),
 ]
