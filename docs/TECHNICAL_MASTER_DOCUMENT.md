@@ -1,262 +1,201 @@
-# TECHNICAL_MASTER_DOCUMENT.md
+# CreatorWorkboard — Technical Master Document
 
-## CreatorWorkboard — Technical Master Document
+## Doel
 
-**Status:** Active  
-**Last updated:** 2026-03-28  
-**Environment:** VPS / Docker / Traefik  
-**Scope:** Current live technical architecture for CreatorWorkboard
+Dit document beschrijft de huidige technische bouwrichting van CreatorWorkboard.
 
----
+De prioriteit is op dit moment:
 
-## 1. Purpose
-
-This document defines the current technical architecture of CreatorWorkboard.
-
-It exists to make the following explicit:
-
-- what is live now
-- what owns which domain
-- which stacks are operationally separate
-- what is intentionally in scope now
-- what is intentionally not in scope now
-
-This document is not a vision deck.
-It is the current technical ground truth.
+- interne operations cockpit versterken
+- de huidige control layer live bewijzen
+- de betaalde wedge smal houden
+- geen premature verbreding naar suite of SaaS
 
 ---
 
-## 2. Core build order
+## Technische hoofdrichting
 
-CreatorWorkboard follows this build order:
+CreatorWorkboard blijft in deze fase:
 
-1. internal operations cockpit
+- een Django monolith
+- server-rendered
+- simpel in operatie
+- bewust beperkt in complexiteit
+- gericht op dagelijkse operatorflow
+- geschikt voor live validatie in bestaande chatomgevingen
+
+### Niet de focus
+- multitenancy
+- full SaaS architectuur
+- heavy AI
+- brede integrations
+- realtime suite-gedrag
+- inbox replacement
+- analyticsplatform
+
+---
+
+## Bouwvolgorde
+
+De vaste volgorde blijft:
+
+1. interne operations cockpit
 2. routing / conversation layer
 3. backoffice / monetization layer
-4. only then SaaS / productization
+4. pas daarna SaaS / productisering
 
-This order is deliberate.
-
-The internal machine must work before the public machine grows.
-The public site exists as a small support layer, not as the main product surface.
+De huidige slice zit nog steeds vooral in laag 1, met een klein begin van laag 2.
 
 ---
 
-## 3. Architecture principles
+## Huidige technische basis
 
-### 3.1 Separation of ownership
-Public and internal surfaces are separate by default.
+De volgende fundamenten staan nu:
 
-That means:
+### Scopebasis
+- central assignment scope helpers in `core/services/scope.py`
+- creator en channel views gebruiken assignment-scoped querysets
+- operations dashboard gebruikt dezelfde access rules
+- `primary_operator` is verwijderd uit autorisatiebeslissingen
+- admin breadth blijft via `is_staff` / `is_superuser`
 
-- separate stack
-- separate routing
-- separate failure boundary
-- separate deployment ownership
+### Deploymentbasis
+- Docker deployment live op VPS
+- Traefik routing werkend
+- basic auth werkend
+- reverse-proxy loginflow hersteld
+- healthcheck stabiel
+- Gunicorn startup bevestigd
+- migrations en collectstatic bevestigd
 
-### 3.2 Traefik is the public ingress
-All public HTTP/HTTPS traffic should enter through Traefik.
-
-That means:
-
-- no host-level nginx/apache for public routing
-- no extra public host port bindings per app
-- public services must be attached to `cc_public`
-- internal-only services must stay off `cc_public`
-
-### 3.3 Minimal NOW-scope
-Anything that does not create direct operational value should stay out of NOW.
-
-That includes:
-
-- premature SaaS structure
-- premature multitenancy
-- multilingual public infrastructure
-- CMS layers
-- heavy AI
-- broad integrations without direct operational need
-
-### 3.4 Reconstructable live state
-Live state should be reconstructable from:
-
-- git-managed files
-- explicit environment/config
-- stack-level deployment
-
-Manual live-only ownership is not acceptable as a stable end state.
+### Bestaande ops-slices
+- creator materials
+- preview-first materials UX
+- app-controlled material open/download
+- materials scoped zichtbaar voor operators binnen scope
 
 ---
 
-## 4. Current domain model
+## Huidige Route 1 Control Layer
 
-### 4.1 Active domains
+### Status
+De eerste versie bestaat al in de app.
 
-Current domain intent:
+### Implementatie-app
+`core/`
 
-- `creatorworkboard.com` → public root-site
-- `www.creatorworkboard.com` → public root-site alias
-- `ops.creatorworkboard.com` → internal ops application
+### Huidige onderdelen
+- `ProfileOpportunity`
+- `OutcomeEntry`
+- server-side scoring service
+- opportunity queue
+- opportunity detail view
+- queue pagination
+- tests op scoring, override, visibility, ordering en pagination
 
-### 4.2 Reserved / later domains
-
-Reserved for later phases only:
-
-- `portal.creatorworkboard.com`
-- `account.creatorworkboard.com`
-
-These are not part of NOW.
-
-### 4.3 Ownership boundaries
-
-Current domain ownership is explicitly split:
-
-#### Public owner
-- stack: `creatorworkboard-site`
-- domains:
-  - `creatorworkboard.com`
-  - `www.creatorworkboard.com`
-
-#### Internal owner
-- stack: `creatorworkboard-ops`
-- domain:
-  - `ops.creatorworkboard.com`
-
-This separation is intentional.
-
-The public site must not be merged into the ops stack.
+### Huidige V1-regel
+Opportunity creation blijft buiten app-flow.  
+Records worden in V1 via Django admin aangemaakt.
 
 ---
 
-## 5. Current live stack structure
+## Datamodel
 
-### 5.1 Public site stack
+## ProfileOpportunity
 
-**Stack name:** `creatorworkboard-site`
+### Doel
+Eén klein werkobject in de queue.
 
-**Purpose:**  
-Small public frontdoor explaining what CreatorWorkboard is and what it can mean for companies.
+### Velden
+- `assigned_to`
+- `intake_name`
+- `profile_url`
+- `intake_notes`
+- `handoff_note`
+- `source_quality_score`
+- `profile_signal_score`
+- `intent_guess_score`
+- `target_fit_score`
+- `risk_penalty_score`
+- `total_score`
+- `priority_band`
+- `action_bucket`
+- `score_reason_short`
+- `manual_override`
+- `override_priority_band`
+- `override_action_bucket`
+- `override_reason_short`
+- `created_at`
+- `updated_at`
 
-**Current characteristics:**
-- static site
-- Nginx container
-- routed through Traefik
-- attached to `cc_public`
-- no database
-- no Redis
-- no worker
-- no coupling to internal ops logic
-
-**Current page set:**
-- `/`
-- `/for-teams.html`
-- `/how-it-works.html`
-- `/why-creatorworkboard.html`
-- `/contact.html`
-
-**Current limitations:**
-- contact form UI exists
-- contact form is not yet connected to a live endpoint
-- `www` and apex both serve the site
-- canonical redirect can be added later
-
----
-
-### 5.2 Internal ops stack
-
-**Stack name:** `creatorworkboard-ops`
-
-**Purpose:**  
-Internal operations cockpit for creators, channels, operators, assignments, access policy and handoff.
-
-**Current ownership:**
-- `ops.creatorworkboard.com`
-
-**Important rule:**  
-This stack remains operationally separate from the public root-site.
-
-No public homepage logic should be added to this stack.
+### Bewuste grenzen
+Niet toevoegen:
+- creator FK
+- channel FK
+- assignment FK
+- analytics velden
+- statusmachine
+- tags
+- payoutvelden
+- CRM-historie
+- recommendation modelvelden als aparte sublaag
 
 ---
 
-### 5.3 Traefik
+## OutcomeEntry
 
-**Role:** public ingress / reverse proxy / TLS termination
+### Doel
+Kleine uitkomstregel per opportunity.
 
-**Current behavior:**
-- handles public HTTPS routing
-- reads Docker provider
-- reads file provider
-- uses ACME / Let’s Encrypt resolver `le`
-- `exposedByDefault: false`
+### Velden
+- `opportunity`
+- `outcome_type`
+- `notes`
+- `created_by`
+- `created_at`
 
-This means all public containers must opt in explicitly with labels.
-
----
-
-## 6. Current network model
-
-### 6.1 Public network
-`cc_public`
-
-This network is the public ingress network.
-Any public web-facing service must join this network.
-
-### 6.2 Internal stack networks
-Each stack may also have its own local internal network.
-
-Example:
-- `creatorworkboard-site_site_net`
-- stack-specific internal traffic only
-
-### 6.3 Rule of use
-Allowed:
-- public web container on `cc_public`
-- internal stack network for local isolation
-
-Not allowed:
-- putting DB/Redis/worker on `cc_public`
-- exposing internal services directly to the public ingress layer
+### outcome_type choices
+- `geen_reactie`
+- `gesprek_gestart`
+- `warm_vervolg`
+- `conversion`
+- `afgevallen`
+- `onduidelijk`
 
 ---
 
-## 7. Current public root-site implementation
+## Scoringlogica
 
-### 7.1 Stack
-`creatorworkboard-site`
+### Locatie
+`core/services/opportunity_scoring.py`
 
-### 7.2 Web container
-- image: `nginx:alpine`
+### Regel
+Scoring is altijd server-side.
 
-### 7.3 Routing
-Traefik router rule:
+Niet in:
+- templates
+- JavaScript
+- prompts
+- client-side decisioning
 
-- `Host(\`creatorworkboard.com\`) || Host(\`www.creatorworkboard.com\`)`
+### Inputwaarden
+- `source_quality_score`: 0 / 1 / 2
+- `profile_signal_score`: 0 / 1 / 2
+- `intent_guess_score`: 0 / 1 / 2
+- `target_fit_score`: 0 / 1 / 2
+- `risk_penalty_score`: 0 / -1 / -2
 
-### 7.4 TLS
-Enabled through Traefik with:
+### Harde afvang
+Direct `low` + `niet_waard` bij:
+- `risk_penalty_score == -2`
+- `target_fit_score == 0 and intent_guess_score == 0`
 
-- `tls=true`
-- `tls.certresolver=le`
-
-### 7.5 Deployment path
-Current owner-map:
-
-- `/opt/commandcenter/apps/creatorworkboard-site`
-
-### 7.6 Current structure
-```text
-/opt/commandcenter/apps/creatorworkboard-site/
-├── docker-compose.yml
-├── nginx/
-│   └── default.conf
-└── site/
-    ├── index.html
-    ├── for-teams.html
-    ├── how-it-works.html
-    ├── why-creatorworkboard.html
-    ├── contact.html
-    ├── robots.txt
-    ├── sitemap.xml
-    └── assets/
-        ├── styles.css
-        └── site.js
+### Totaalscore
+```python
+total_score = (
+    source_quality_score
+    + profile_signal_score
+    + intent_guess_score
+    + target_fit_score
+    + risk_penalty_score
+)

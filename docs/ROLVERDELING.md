@@ -1,244 +1,212 @@
-# ROLVERDELING.md
+# CreatorWorkboard — Rolverdeling
 
-## CreatorWorkboard — Rolverdeling
+## Kernregel
 
-**Status:** Actief  
-**Laatste update:** 2026-03-28
+CreatorWorkboard wordt gebouwd met duidelijke rolgrenzen.
 
----
-
-## 1. Doel van dit document
-
-Dit document maakt duidelijk:
-
-- welke rollen er zijn
-- wat elke rol wel en niet mag
-- waar eigenaarschap ligt
-- hoe scope, verantwoordelijkheid en handoff logisch verdeeld zijn
-
-Belangrijke regel:
-**rolhelderheid verlaagt frictie en fouten.**
+Niet iedereen beslist over alles.  
+Niet iedereen bouwt tegelijk aan visie, operatie, product en verkoop.
 
 ---
 
-## 2. Hoofdrollen
+## 1. Founder / Product Owner
 
-De huidige logische rollen zijn:
+### Verantwoordelijk voor
+- scope bewaken
+- fasekeuzes maken
+- prioriteiten bepalen
+- live testomgeving organiseren
+- commerciële positionering bepalen
+- beslissen wat NOW / NEXT / LATER / NIET NU is
 
-- Superadmin
-- Admin
-- Operator
+### Concreet in deze fase
+- de control layer smal houden
+- social intake intern houden
+- live proof sprint in Mara aansturen
+- claims pas doen op basis van gemeten bewijs
+- de eerste wedge niet vervuilen met intake, payout of analytics
 
-Publieke bezoekers van de root-site zijn geen operationele rol binnen de app.
-
----
-
-## 3. Superadmin
-
-## Doel
-Technische en operationele systeemverantwoordelijke.
-
-## Verantwoordelijk voor
-- globale systeeminrichting
-- deployment
-- stack ownership
-- domein/routing-structuur
-- kritieke policy-instellingen
-- toegangsbeheer op hoog niveau
-- beheer van rollen en admins
-- herstelacties bij incidenten
-
-## Mag wel
-- infrastructuur aanpassen
-- stacks beheren
-- routing en Traefik beheren
-- gevoelige policy velden beheren
-- admins aanmaken/verwijderen
-- operatorstructuur corrigeren
-- globale configuraties aanpassen
-
-## Mag niet
-- dagelijkse operatorflow vervangen als normale werkmodus
-- productscope oprekken zonder expliciete keuze
-- public-site wijzigingen mengen met ops-logica zonder reden
-
-## Belangrijk
-Superadmin is systeem-owner, niet standaard dagelijkse operator.
+### Niet doen
+- tijdens de sprint scope uitbreiden
+- losse ideeën meteen als backlog behandelen
+- social intake meeverkopen in de eerste wedge
+- een harde performanceclaim doen zonder bewijs
 
 ---
 
-## 4. Admin
+## 2. Coder / Builder
 
-## Doel
-Operationele beheerrol boven operators, binnen de dagelijkse machine.
+### Verantwoordelijk voor
+- stabiel bouwen binnen de afgesproken scope
+- server-side implementatie
+- tests toevoegen en draaiend houden
+- simpele en betrouwbare uitvoering
+- geen premature architectuur
 
-## Verantwoordelijk voor
-- creators beheren
-- channels beheren
-- operators beheren
-- assignments beheren
-- controleren van handoff/kwaliteit
-- operationele structuur bewaken
-- zorgen dat het team binnen duidelijke scope werkt
+### Concreet in deze fase
+- opportunity layer in `core/` onderhouden en aanscherpen
+- queue, detailflow, scoring en outcomes stabiel houden
+- bugs oplossen die live gebruik blokkeren
+- kleine UX-verbeteringen doen op basis van echte operatorflow
+- deployment veilig houden binnen bestaande Docker/Traefik setup
 
-## Mag wel
-- creators aanmaken en wijzigen
-- channels aanmaken en wijzigen
-- operators beheren
-- assignments toewijzen
-- operationele status corrigeren
-- handoff-kwaliteit bewaken
-
-## Mag niet
-- globale infrastructuur wijzigen
-- domeinen/routing aanpassen
-- publieke stack wijzigen zonder technische verantwoordelijkheid
-- systeemarchitectuur veranderen
-
-## Belangrijk
-Admin bewaakt de dagelijkse operatie, niet de infrastructuur.
+### Niet doen
+- creator/channel-relaties toevoegen “voor later”
+- analytics bouwen
+- intake adapter productiseren
+- AI-laag verbreden
+- brede refactors doen zonder directe operationele winst
 
 ---
 
-## 5. Operator
+## 3. Operator / Tester
 
-## Doel
-Dagelijkse uitvoerende gebruiker binnen duidelijke operationele scope.
+### Verantwoordelijk voor
+- echte dagelijkse flow gebruiken
+- handoff discipline volgen
+- outcomes consistent loggen
+- frictie teruggeven uit echt gebruik
+- signaleren waar context nog lekt
 
-## Verantwoordelijk voor
-- werken aan toegewezen creators
-- channelcontext volgen
-- updates vastleggen
-- handoff werkbaar houden
-- werken binnen policy en assignment-scope
+### Concreet in deze fase
+- werken in Mara’s chatomgeving
+- beide chatflows testen
+- echte items gebruiken
+- owner / next step discipline volgen
+- feedback geven op queue, detail en handoff
 
-## Mag wel
-- werken binnen toegewezen creator/channel-context
-- operationele updates vastleggen
-- handoff-notities bijwerken
-- workspace-context gebruiken
-- uitvoering doen binnen de gegeven scope
-
-## Mag niet
-- globale structuur wijzigen
-- andere operators beheren
-- assignments op hoog niveau aanpassen
-- infrastructuur of routing aanpassen
-- buiten toegewezen scope werken zonder duidelijke reden
-
-## Belangrijk
-Operatorwerk moet snel, simpel en duidelijk blijven.
-De rol is uitvoerend, niet systeemsturend.
+### Niet doen
+- workflow buiten het testkader zwaar veranderen
+- nieuwe wensen direct als feature pushen
+- zonder logging conclusies trekken
 
 ---
 
-## 6. Publieke site versus interne rollen
+## 4. AI-assistent
 
-De publieke root-site is geen operationele rolomgeving.
+### Verantwoordelijk voor
+- coder helpen met uitwerken
+- documentatie schrijven en bijwerken
+- scorelogica vertalen naar code
+- tests en templates versnellen
+- scope scherp houden in voorstellen
 
-Dat betekent:
+### Mag wel
+- boilerplate schrijven
+- docs structureren
+- refactors voorstellen
+- testcases uitschrijven
+- UI-copy versimpelen
+- changelog en strategische docs gelijktrekken
 
-- bezoekers van `creatorworkboard.com` zitten niet in het interne rollenmodel
-- de public site is alleen:
-  - uitleg
-  - positionering
-  - contact
-- er is nu geen publiek accountmodel
-- er is nu geen customer portal
-- er is nu geen self-service gebruikerslaag
-
----
-
-## 7. Eigenaarschap per laag
-
-## Publieke root-site
-**Owner:** technische / product-owner laag  
-**Stack:** `creatorworkboard-site`
-
-Gebruik:
-- publiek
-- uitleg
-- contact
-- kleine frontdoor
-
-## Interne ops-app
-**Owner:** operationele machine  
-**Stack:** `creatorworkboard-ops`
-
-Gebruik:
-- creators
-- channels
-- operators
-- assignments
-- access policy
-- handoff
+### Mag niet
+- scope bepalen buiten productgrenzen
+- productgrenzen verbreden
+- vision-features als MVP presenteren
+- commerciële claims verzinnen zonder bewijs
 
 ---
 
-## 8. Role boundaries in de praktijk
+## 5. Live proof owner
 
-## Superadmin
-Denkt vanuit:
-- systeem
-- stabiliteit
-- scheiding
-- herstel
-- deployment
+### Verantwoordelijk voor
+- baseline vastleggen
+- metrics bijhouden
+- proof sprint structureren
+- pilot proof sheet opstellen
 
-## Admin
-Denkt vanuit:
-- teamflow
-- structuur
-- kwaliteit
-- toewijzing
-- dagelijkse operatie
+### Hoofdmetric
+- tijd van handoff naar hervatting / eerste juiste actie
 
-## Operator
-Denkt vanuit:
-- uitvoering
-- actuele context
-- volgende stap
-- handoff
-- werken binnen scope
+### Steunmetrics
+- items zonder owner / next step
+- stalled items
+- outcome logging %
+- tijd van nieuw item naar eerste actie
+
+### Niet doen
+- meetmethode veranderen midden in sprint
+- meerdere grote variabelen tegelijk aanpassen
+- buddy + layer + proces tegelijk zwaar wijzigen
+- harde claims trekken zonder meetbasis
 
 ---
 
-## 9. Wat rolverdeling moet voorkomen
+## 6. Commerciële rol
 
-Dit document bestaat vooral om deze fouten te voorkomen:
+### Verantwoordelijk voor
+- ICP bewaken
+- prospectkwalificatie
+- pilotgesprekken
+- offer positionering
+- wedge klein houden
 
-- operators die buiten scope werken
-- admins die infrastructuurprobleem moeten oplossen
-- superadmins die dagelijkse operatorflow overnemen
-- onduidelijk eigenaarschap per creator of channel
-- losse overdracht zonder duidelijke verantwoordelijke
+### Eerste verkoopbare belofte
+**We vervangen je chats niet. We maken je operatorflow bestuurbaar.**
 
----
-
-## 10. Niet nu
-
-Niet nu toevoegen:
-- publieke customer roles
-- klantaccounts
-- multitenant role modellen
-- brede permissiematrices zonder directe noodzaak
-- extra rollen die geen directe operationele winst geven
-
-Meer rollen zonder directe noodzaak vergroten alleen complexiteit.
+### Niet verkopen
+- social intake adapter
+- payout logic
+- lead ownership logic
+- inbox replacement
+- analytics suite
+- AI-autopilot
 
 ---
 
-## 11. Samenvatting
+## 7. Internal cashflow route owner
 
-De kernrolverdeling is simpel:
+### Verantwoordelijk voor
+- interne social intake-route bewaken
+- zorgen dat de interne route cashflow ondersteunt
+- onderscheid bewaken tussen intern nuttig en extern verkoopbaar
 
-### Superadmin
-Owner van systeem, deployment en kritieke configuratie
+### Concreet in deze fase
+- social intake intern doorontwikkelen waar dat direct geld ondersteunt
+- human-in-the-loop intake blijven testen
+- routing naar de operatorflow bruikbaar houden
 
-### Admin
-Owner van dagelijkse operationele structuur
+### Niet doen
+- deze intake automatisch in de betaalde wedge trekken
+- regelzware intake-logica verkopen voordat die hard bewezen is
+
+---
+
+## Beslisvolgorde
+
+Elke nieuwe vraag of feature gaat langs deze volgorde:
+
+1. helpt dit de huidige operatie direct?
+2. verlaagt dit frictie of fouten?
+3. maakt dit de basis sterker?
+4. verhoogt dit complexiteit te vroeg?
+
+Als 1–3 niet sterk ja zijn:
+**niet in NOW.**
+
+---
+
+## Samenvatting
+
+### Founder
+bewaakt scope, bewijs en commerciële grens
+
+### Coder
+stabiliseert en versimpelt de bestaande control layer
 
 ### Operator
-Owner van dagelijkse uitvoering binnen toegewezen scope
+test in echt werk
 
-Dat is voorlopig genoeg.
+### AI
+versnelt en structureert, maar bepaalt de richting niet
+
+### Live proof owner
+meet strak en voorkomt bewijsvervuiling
+
+### Commercie
+verkoopt alleen de control layer
+
+### Internal route owner
+houdt social intake intern nuttig, maar extern buiten de wedge
+
+Dat is de juiste rolverdeling voor deze fase.
