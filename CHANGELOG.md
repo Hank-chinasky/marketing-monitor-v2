@@ -26,6 +26,8 @@
 - Fixed Traefik routing for `ops.creatorworkboard.com`.
 - Restored Traefik basic authentication for the ops environment.
 - Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
+- Restored the missing `creator-material-bulk-delete` route after the opportunity queue URL update.
+- Removed an invalid `OperatorAssignmentReactivateView` import from `core/urls.py` to stop the web container restart loop.
 
 ### Changed
 - Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
@@ -51,6 +53,8 @@
 - Restored Traefik basic auth for the ops app.
 - Fixed Django login CSRF failure caused by reverse-proxy referrer policy.
 - Validated end-to-end access flow: Traefik auth -> Django login -> app access.
+- Rebuilt and restarted the `creatorworkboard-ops` web container after the opportunity queue URL fix.
+- Validated live access to `/opportunities/` after the rebuild.
 
 ### Data
 - Added superuser access for the live environment.
@@ -59,6 +63,7 @@
 
 ### Tests
 - Added tests for opportunity scoring rules, override validation, scoped visibility, queue ordering, and queue pagination.
+- Re-ran the full Django test suite on the VPS after the URL fix; 102 tests passed.
 
 ## 2026-03-22 — creatorworkboard ops deployment stabilized
 
