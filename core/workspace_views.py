@@ -1,7 +1,10 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.utils import timezone
 from django.views.generic import DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
+from core.forms import ChannelHandoffForm
 from core.models import CreatorChannel
 from core.services.scope import (
     get_active_assignments_for_operator,
@@ -110,6 +113,14 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
             }
         )
 
+        handoff_form = kwargs.get("handoff_form")
+        if handoff_form is None:
+            handoff_form = ChannelHandoffForm(
+                initial={
+                    "last_operator_update": channel.last_operator_update,
+                }
+            )
+
         context.update(
             {
                 "creator": creator,
@@ -122,6 +133,33 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
                 "policy_state": policy_state,
                 "quick_actions": quick_actions,
                 "back_url": reverse("channel-detail", kwargs={"pk": channel.pk}),
+                "handoff_form": handoff_form,
+                "saved": self.request.GET.get("saved") == "1",
             }
         )
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        handoff_form = ChannelHandoffForm(request.POST)
+
+        if not handoff_form.is_valid():
+            return self.render_to_response(
+                self.get_context_data(handoff_form=handoff_form)
+            )
+
+        last_operator_update = handoff_form.cleaned_data["last_operator_update"]
+        self.object.last_operator_update = last_operator_update
+
+        if last_operator_update:
+            self.object.last_operator_update_at = timezone.now()
+        else:
+            self.object.last_operator_update_at = None
+
+        self.object.save(
+            update_fields=["last_operator_update", "last_operator_update_at"]
+        )
+
+        redirect_url = reverse("instagram-workspace", kwargs={"pk": self.object.pk})
+        redirect_url = f"{redirect_url}?saved=1"
+        return HttpResponseRedirect(redirect_url)
