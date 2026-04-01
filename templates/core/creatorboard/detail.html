@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if back_url %}
+    <div style="margin-bottom: 1rem;">
+        <a class="secondary-button" href="{{ back_url }}">Terug naar queue</a>
+    </div>
+{% endif %}
+
+<h1>{{ workitem.title }}</h1>
+<p class="muted">{{ detail_title }}</p>
+
+<div class="grid">
+    <div class="panel">
+        <h2 style="margin-top: 0;">Samenvatting</h2>
+        {% if workitem.summary %}
+            <p style="white-space: pre-line;">{{ workitem.summary }}</p>
+        {% else %}
+            <p class="muted">Nog geen samenvatting vastgelegd.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h2 style="margin-top: 0;">Status en prioriteit</h2>
+        <p><strong>Status:</strong> {{ workitem.get_status_display }}</p>
+        <p><strong>Priority:</strong> {{ workitem.get_priority_display }}</p>
+        <p><strong>Source:</strong> {{ workitem.get_source_type_display }}</p>
+        <p>
+            <strong>Assigned to:</strong>
+            {% if workitem.assigned_to %}
+                {{ workitem.assigned_to.username }}
+            {% else %}
+                <span class="muted">Nog niet toegewezen</span>
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h2 style="margin-top: 0;">Action area basis</h2>
+        {% if workitem.next_action %}
+            <p>{{ workitem.next_action }}</p>
+        {% else %}
+            <p class="muted">Nog geen next action vastgelegd.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h2 style="margin-top: 0;">Timestamps</h2>
+        <p><strong>Aangemaakt:</strong> {{ workitem.created_at }}</p>
+        <p><strong>Bijgewerkt:</strong> {{ workitem.updated_at }}</p>
+    </div>
+</div>
+{% endblock %}

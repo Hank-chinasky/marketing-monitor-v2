@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ queue_title }}</h1>
+<p class="muted">{{ queue_subtitle }}</p>
+
+<div class="panel" style="margin-bottom: 1rem;">
+    <strong>{{ page_obj.paginator.count }}</strong> work items zichtbaar
+</div>
+
+<div class="panel">
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                    <th style="padding: 0.75rem 0.5rem;">Titel</th>
+                    <th style="padding: 0.75rem 0.5rem;">Assigned to</th>
+                    <th style="padding: 0.75rem 0.5rem;">Status</th>
+                    <th style="padding: 0.75rem 0.5rem;">Priority</th>
+                    <th style="padding: 0.75rem 0.5rem;">Source</th>
+                    <th style="padding: 0.75rem 0.5rem;">Next action</th>
+                    <th style="padding: 0.75rem 0.5rem;">Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for workitem in workitems %}
+                    <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
+                        <td style="padding: 0.75rem 0.5rem;">
+                            <strong>{{ workitem.title }}</strong>
+                            {% if workitem.summary %}
+                                <div class="muted" style="margin-top: 0.25rem;">
+                                    {{ workitem.summary|truncatechars:120 }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if workitem.assigned_to %}
+                                {{ workitem.assigned_to.username }}
+                            {% else %}
+                                <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ workitem.get_status_display }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ workitem.get_priority_display }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ workitem.get_source_type_display }}</td>
+                        <td style="padding: 0.75rem 0.5rem;">
+                            {% if workitem.next_action %}
+                                {{ workitem.next_action }}
+                            {% else %}
+                                <span class="muted">Nog geen next action</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 0.5rem;">{{ workitem.updated_at }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" style="padding: 1rem 0.5rem; color: #777;">
+                            Geen work items zichtbaar.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if is_paginated %}
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            {% if page_obj.has_previous %}
+                <a class="secondary-button" href="?page={{ page_obj.previous_page_number }}">Vorige</a>
+            {% endif %}
+            <span class="muted">Pagina {{ page_obj.number }} van {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a class="secondary-button" href="?page={{ page_obj.next_page_number }}">Volgende</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from core.models import (
     Creator,
+    CreatorBoardWorkItem,
     CreatorChannel,
     CreatorMaterial,
     Operator,
@@ -115,3 +116,19 @@ class OutcomeEntryAdmin(admin.ModelAdmin):
     list_filter = ("outcome_type", "created_at")
     search_fields = ("opportunity__intake_name", "notes", "created_by__username")
     autocomplete_fields = ("opportunity", "created_by")
+
+
+@admin.register(CreatorBoardWorkItem)
+class CreatorBoardWorkItemAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "title",
+        "assigned_to",
+        "status",
+        "priority",
+        "source_type",
+        "updated_at",
+    )
+    list_filter = ("status", "priority", "source_type", "assigned_to")
+    search_fields = ("title", "summary", "next_action")
+    autocomplete_fields = ("assigned_to",)

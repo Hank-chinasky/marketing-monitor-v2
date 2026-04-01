@@ -436,3 +436,56 @@ class OutcomeEntry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.opportunity.intake_name} / {self.get_outcome_type_display()}"
+
+
+class CreatorBoardWorkItem(models.Model):
+    class Status(models.TextChoices):
+        NEW = "new", "Nieuw"
+        IN_PROGRESS = "in_progress", "In uitvoering"
+        BLOCKED = "blocked", "Geblokkeerd"
+        DONE = "done", "Afgerond"
+
+    class Priority(models.TextChoices):
+        HIGH = "high", "High"
+        MEDIUM = "medium", "Medium"
+        LOW = "low", "Low"
+
+    class SourceType(models.TextChoices):
+        MANUAL_INTAKE = "manual_intake", "Handmatige intake"
+        CREATOR = "creator", "Creator"
+        CHANNEL = "channel", "Channel"
+        OTHER = "other", "Overig"
+
+    title = models.CharField(max_length=255)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_creatorboard_work_items",
+    )
+    status = models.CharField(
+        max_length=24,
+        choices=Status.choices,
+        default=Status.NEW,
+    )
+    priority = models.CharField(
+        max_length=16,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
+    )
+    source_type = models.CharField(
+        max_length=24,
+        choices=SourceType.choices,
+        default=SourceType.MANUAL_INTAKE,
+    )
+    summary = models.TextField(blank=True)
+    next_action = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at", "-created_at"]
+
+    def __str__(self) -> str:
+        return self.title
