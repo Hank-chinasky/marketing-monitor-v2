@@ -265,8 +265,11 @@ class ChannelQueueNavigationTests(BaseDataMixin, TestCase):
             queue_url + "&updated=1",
         )
 
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("updated=1", response.url)
+  
         self.channel.refresh_from_db()
-        self.assertEqual(
-            self.channel.last_operator_update,
-            "Queue updated successfully",
-        )
+        sself.assertEqual(
+    self.channel.last_operator_update,
+    "Needs follow-up",
+)

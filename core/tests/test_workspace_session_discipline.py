@@ -103,23 +103,17 @@ class InstagramWorkspaceSessionDisciplineTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertFormError(
-            response,
-            "handoff_form",
-            "session_what_done",
-            "Dit veld is verplicht.",
-        )
-        self.assertFormError(
-            response,
-            "handoff_form",
-            "session_next_action",
-            "Dit veld is verplicht.",
-        )
-        self.assertFormError(
-            response,
-            "handoff_form",
-            "session_policy_context_reviewed",
-            "Dit veld is verplicht.",
+
+        form = response.context["handoff_form"]
+        self.assertTrue(form.is_bound)
+        self.assertIn("session_what_done", form.errors)
+        self.assertIn("session_next_action", form.errors)
+        self.assertIn("session_policy_context_reviewed", form.errors)
+        self.assertEqual(form.errors["session_what_done"], ["Dit veld is verplicht."])
+        self.assertEqual(form.errors["session_next_action"], ["Dit veld is verplicht."])
+        self.assertEqual(
+            form.errors["session_policy_context_reviewed"],
+            ["Dit veld is verplicht."],
         )
 
         self.channel.refresh_from_db()
