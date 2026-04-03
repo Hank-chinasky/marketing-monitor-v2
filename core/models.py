@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from core.validators import (
     validate_active_creator_requires_active_consent,
@@ -207,6 +208,12 @@ class CreatorChannel(models.Model):
     access_profile_notes = models.TextField(blank=True)
     last_ip_check_at = models.DateTimeField(null=True, blank=True)
 
+    session_what_done = models.TextField(blank=True, default="")
+    session_next_action = models.CharField(max_length=255, blank=True, default="")
+    session_blockers = models.TextField(blank=True, default="")
+    session_policy_context_reviewed = models.BooleanField(default=False)
+    session_updated_at = models.DateTimeField(null=True, blank=True)
+
     last_operator_update = models.TextField(blank=True)
     last_operator_update_at = models.DateTimeField(null=True, blank=True)
 
@@ -222,7 +229,8 @@ class CreatorChannel(models.Model):
         validate_platform_handle_unique_ci(self)
 
         if self.vpn_required and not (
-            (self.approved_ip_label or "").strip() or (self.approved_egress_ip or "").strip()
+            (self.approved_ip_label or "").strip()
+            or (self.approved_egress_ip or "").strip()
         ):
             raise ValidationError(
                 {
@@ -230,6 +238,59 @@ class CreatorChannel(models.Model):
                     "approved_egress_ip": "Set an approved IP label or approved egress IP when VPN is required.",
                 }
             )
+
+    def has_structured_session_handoff(self) -> bool:
+        return bool(
+            (self.session_what_done or "").strip()
+            and (self.session_next_action or "").strip()
+            and self.session_policy_context_reviewed
+            and self.session_updated_at is not None
+        )
+
+    def build_workspace_session_summary(self) -> str:
+        what_done = (self.session_what_done or "").strip()
+        next_action = (self.session_next_action or "").strip()
+        blockers = (self.session_blockers or "").strip() or "-"
+        reviewed = "Ja" if self.session_policy_context_reviewed else "Nee"
+
+        return "\n\n".join(
+            [
+                f"Wat gedaan:\n{what_done}",
+                f"Next action:\n{next_action}",
+                f"Blockers / open issues:\n{blockers}",
+                f"Policy/disclosure context reviewed: {reviewed}",
+            ]
+        )
+
+    def apply_workspace_session(
+        self,
+        *,
+        what_done: str,
+        next_action: str,
+        blockers: str = "",
+        policy_context_reviewed: bool,
+        updated_at=None,
+    ):
+        timestamp = updated_at or timezone.now()
+
+        self.session_what_done = (what_done or "").strip()
+        self.session_next_action = (next_action or "").strip()
+        self.session_blockers = (blockers or "").strip()
+        self.session_policy_context_reviewed = bool(policy_context_reviewed)
+        self.session_updated_at = timestamp
+
+        self.last_operator_update = self.build_workspace_session_summary()
+        self.last_operator_update_at = timestamp if self.last_operator_update else None
+
+        return [
+            "session_what_done",
+            "session_next_action",
+            "session_blockers",
+            "session_policy_context_reviewed",
+            "session_updated_at",
+            "last_operator_update",
+            "last_operator_update_at",
+        ]
 
     def __str__(self) -> str:
         return f"{self.creator.display_name} / {self.platform} / {self.handle}"

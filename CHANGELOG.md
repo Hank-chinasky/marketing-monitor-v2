@@ -1,5 +1,46 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Fixed Docker healthcheck behavior for the ops app so the container becomes healthy behind Traefik and HTTPS redirect handling.
+- Fixed Traefik routing for `ops.creatorworkboard.com`.
+- Restored Traefik basic authentication for the ops environment.
+- Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
+
+### Changed
+- Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
+- Standardized live routing and healthcheck behavior for the `creatorworkboard-ops` service.
+- Adjusted reverse-proxy behavior so Django login works correctly behind Traefik.
+- Replaced the Instagram workspace loose handoff note with a structured session closeout on `CreatorChannel`.
+- Promoted risk/policy visibility and launch-first quick actions higher in the Instagram workspace.
+- Removed `last_operator_update` and `last_operator_update_at` from the main channel edit form so the workspace structured session becomes the primary operator handoff source.
+
+### Added
+- Added superuser access for the deployed environment.
+- Added operator user accounts and matching `Operator` model records.
+- Added the first `Creator` record and linked it to an operator for initial data validation.
+- Added structured Instagram workspace session fields on `CreatorChannel` for what was done, next action, blockers, policy-context review, and session timestamp.
+
+### Ops
+- Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
+- Confirmed the full access chain: Traefik auth -> Django login -> app access.
+- Fixed Docker healthcheck for `creatorworkboard-ops` so the container becomes healthy behind Traefik.
+- Restored Traefik routing for `ops.creatorworkboard.com`.
+- Restored Traefik basic auth for the ops app.
+- Fixed Django login CSRF failure caused by reverse-proxy referrer policy.
+- Validated end-to-end access flow: Traefik auth -> Django login -> app access.
+
+### Data
+- Added superuser access for the live environment.
+- Added operator user accounts and matching `Operator` records.
+- Added first `Creator` test record and linked it to an operator.
+
+### Tests
+- Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
+- Updated Instagram workspace tests to use the structured session-closeout contract.
+- Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
+
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
 ### Changed
@@ -18,38 +59,6 @@
 - No model changes.
 - No migrations.
 - No connector or auth framework changes.
-
-## [Unreleased]
-
-### Fixed
-- Fixed Docker healthcheck behavior for the ops app so the container becomes healthy behind Traefik and HTTPS redirect handling.
-- Fixed Traefik routing for `ops.creatorworkboard.com`.
-- Restored Traefik basic authentication for the ops environment.
-- Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
-
-### Changed
-- Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
-- Standardized live routing and healthcheck behavior for the `creatorworkboard-ops` service.
-- Adjusted reverse-proxy behavior so Django login works correctly behind Traefik.
-
-### Added
-- Added superuser access for the deployed environment.
-- Added operator user accounts and matching `Operator` model records.
-- Added the first `Creator` record and linked it to an operator for initial data validation.
-
-### Ops
-- Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
-- Confirmed the full access chain: Traefik auth -> Django login -> app access.
-- Fixed Docker healthcheck for `creatorworkboard-ops` so the container becomes healthy behind Traefik.
-- Restored Traefik routing for `ops.creatorworkboard.com`.
-- Restored Traefik basic auth for the ops app.
-- Fixed Django login CSRF failure caused by reverse-proxy referrer policy.
-- Validated end-to-end access flow: Traefik auth -> Django login -> app access.
-
-### Data
-- Added superuser access for the live environment.
-- Added operator user accounts and matching `Operator` records.
-- Added first `Creator` test record and linked it to an operator.
 
 ## 2026-03-22 — creatorworkboard ops deployment stabilized
 
@@ -78,7 +87,6 @@ Creator now stores:
 
 - Documented decision: content intake modeled as source-based metadata on `Creator`.
 
-
 ### Added
 - Added `CreatorMaterial` as a creator-bound internal material model for file uploads used directly in the ops cockpit.
 - Added a materials section to creator detail with admin upload support and scoped operator visibility.
@@ -96,6 +104,7 @@ Creator now stores:
 ### Notes
 - Handmatig lokaal gevalideerd: superadmin kan materiaal uploaden, operator binnen scope kan materiaal zien en openen.
 - Current UX works functionally but still needs preview-first improvements for image and video materials.
+
 ### Added
 - Added preview-first creator materials for images and videos on creator detail pages.
 - Added simple in-page media viewer for creator material previews.
