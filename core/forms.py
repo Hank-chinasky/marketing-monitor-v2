@@ -207,20 +207,66 @@ class CreatorMaterialUploadForm(forms.Form):
 
 
 class ChannelHandoffForm(forms.Form):
-    last_operator_update = forms.CharField(
-        required=False,
-        label="Handoff",
+    session_what_done = forms.CharField(
+        label="Wat is gedaan",
+        required=True,
         widget=forms.Textarea(
             attrs={
                 "rows": 5,
-                "placeholder": "Korte overdracht voor de volgende operator.",
+                "placeholder": "Beschrijf kort wat in deze sessie is gedaan.",
             }
         ),
-        help_text="Beschrijf kort wat gedaan is, wat nog openstaat en waar op gelet moet worden.",
+        help_text="Verplicht. Houd het concreet en operationeel.",
+    )
+    session_next_action = forms.CharField(
+        label="Next action",
+        required=True,
+        max_length=255,
+        widget=forms.TextInput(
+            attrs={
+                "maxlength": 255,
+                "placeholder": "Beschrijf de eerstvolgende concrete stap.",
+            }
+        ),
+        help_text="Verplicht. Eén duidelijke volgende stap.",
+    )
+    session_blockers = forms.CharField(
+        label="Blockers / open issues",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": "Optioneel: noteer blockers of open issues.",
+            }
+        ),
+        help_text="Optioneel. Laat leeg als er geen blockers zijn.",
+    )
+    session_policy_context_reviewed = forms.BooleanField(
+        label="Policy/disclosure context reviewed",
+        required=True,
+        help_text="Verplicht. Bevestig dat je vóór afsluiten de policy/disclosure context hebt bekeken.",
     )
 
-    def clean_last_operator_update(self):
-        return (self.cleaned_data.get("last_operator_update") or "").strip()
+    def __init__(self, *args, channel=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if channel is not None and not self.is_bound:
+            self.initial.setdefault("session_what_done", channel.session_what_done)
+            self.initial.setdefault("session_next_action", channel.session_next_action)
+            self.initial.setdefault("session_blockers", channel.session_blockers)
+            self.initial.setdefault(
+                "session_policy_context_reviewed",
+                channel.session_policy_context_reviewed,
+            )
+
+    def clean_session_what_done(self):
+        return (self.cleaned_data.get("session_what_done") or "").strip()
+
+    def clean_session_next_action(self):
+        return (self.cleaned_data.get("session_next_action") or "").strip()
+
+    def clean_session_blockers(self):
+        return (self.cleaned_data.get("session_blockers") or "").strip()
 
 
 class CreatorChannelForm(forms.ModelForm):
@@ -232,12 +278,6 @@ class CreatorChannelForm(forms.ModelForm):
     )
     last_ip_check_at = forms.DateField(
         label="Laatste IP check",
-        required=False,
-        widget=forms.DateInput(attrs={"type": "date"}),
-        input_formats=["%Y-%m-%d"],
-    )
-    last_operator_update_at = forms.DateField(
-        label="Laatste operator update datum",
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],
@@ -254,6 +294,8 @@ class CreatorChannelForm(forms.ModelForm):
             "access_mode",
             "recovery_owner",
             "login_identifier",
+            "account_email",
+            "account_phone_number",
             "credential_status",
             "access_notes",
             "last_access_check_at",
@@ -264,8 +306,6 @@ class CreatorChannelForm(forms.ModelForm):
             "approved_access_region",
             "access_profile_notes",
             "last_ip_check_at",
-            "last_operator_update",
-            "last_operator_update_at",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -285,11 +325,6 @@ class CreatorChannelForm(forms.ModelForm):
                 instance.last_ip_check_at
             ).date()
 
-        if instance.last_operator_update_at:
-            self.initial["last_operator_update_at"] = timezone.localtime(
-                instance.last_operator_update_at
-            ).date()
-
     def _date_to_aware_datetime(self, value):
         if not value:
             return None
@@ -301,9 +336,6 @@ class CreatorChannelForm(forms.ModelForm):
 
     def clean_last_ip_check_at(self):
         return self._date_to_aware_datetime(self.cleaned_data.get("last_ip_check_at"))
-
-    def clean_last_operator_update_at(self):
-        return self._date_to_aware_datetime(self.cleaned_data.get("last_operator_update_at"))
 
 
 class OperatorAssignmentForm(forms.ModelForm):

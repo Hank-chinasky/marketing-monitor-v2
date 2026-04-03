@@ -5,64 +5,183 @@
 
 <div style="margin-bottom: 1rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
     <a class="quick-link" href="{{ back_url }}">Terug naar channel</a>
-    {% if channel.profile_url %}
-        <a class="quick-link" href="{{ channel.profile_url }}" target="_blank" rel="noopener">Open Instagram</a>
-    {% endif %}
-    <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Open creator</a>
-    {% if request.user.is_staff or request.user.is_superuser %}
+    {% if can_edit_channel %}
         <a class="quick-link" href="{% url 'channel-update' channel.pk %}">Edit channel</a>
     {% endif %}
 </div>
 
 {% if saved %}
     <div class="success-panel" style="margin-bottom: 1rem;">
-        Handoff opgeslagen.
+        Workspace session opgeslagen.
     </div>
 {% endif %}
 
-<div class="cards">
-    <div class="card">
-        <div>Creator</div>
-        <div style="margin-top:0.35rem;">{{ creator.display_name }}</div>
-    </div>
-    <div class="card">
-        <div>Platform</div>
-        <div style="margin-top:0.35rem;">Instagram</div>
-    </div>
-    <div class="card">
-        <div>Policy state</div>
-        <div style="margin-top:0.35rem;">
+<div class="panel" style="margin-bottom: 1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin:0;">Risk / policy before action</h2>
+            <div class="muted" style="margin-top:0.35rem;">
+                Review de signalen hieronder vóór je Instagram opent of de sessie afsluit.
+            </div>
+        </div>
+        <div>
             <span class="badge {{ policy_state.badge }}">{{ policy_state.label }}</span>
         </div>
     </div>
-    <div class="card">
-        <div>Human review</div>
-        <div style="margin-top:0.35rem;">
-            {% if human_review_required %}
-                <span class="badge badge-yellow">required</span>
-            {% else %}
-                <span class="badge badge-green">not required</span>
-            {% endif %}
+
+    {% if review_required_warning %}
+        <div style="margin-top:1rem; padding:0.85rem 1rem; border-radius:10px; background:#fffbeb; border:1px solid #f59e0b;">
+            <strong>Review required.</strong> Bekijk eerst risk, policy en disclosure-context voordat je actie neemt.
+        </div>
+    {% elif blocked_warning %}
+        <div style="margin-top:1rem; padding:0.85rem 1rem; border-radius:10px; background:#fef2f2; border:1px solid #dc2626;">
+            <strong>Blocked.</strong> De channel of creatorcontext blokkeert directe workspace-actie.
+        </div>
+    {% endif %}
+
+    <div class="cards" style="margin-top:1rem;">
+        <div class="card">
+            <div>Creator</div>
+            <div style="margin-top:0.35rem;">{{ creator.display_name }}</div>
+        </div>
+        <div class="card">
+            <div>Platform</div>
+            <div style="margin-top:0.35rem;">Instagram</div>
+        </div>
+        <div class="card">
+            <div>Human review</div>
+            <div style="margin-top:0.35rem;">
+                {% if human_review_required %}
+                    <span class="badge badge-yellow">required</span>
+                {% else %}
+                    <span class="badge badge-green">not required</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card">
+            <div>Materials</div>
+            <div class="card-number">{{ materials|length }}</div>
+        </div>
+        <div class="card">
+            <div>Assignments</div>
+            <div class="card-number">{{ assignments|length }}</div>
+        </div>
+        <div class="card">
+            <div>Laatste sessie</div>
+            <div style="margin-top:0.35rem;">
+                {{ latest_session.updated_at|default:"-" }}
+            </div>
         </div>
     </div>
-    <div class="card">
-        <div>Materials</div>
-        <div class="card-number">{{ materials|length }}</div>
-    </div>
-    <div class="card">
-        <div>Assignments</div>
-        <div class="card-number">{{ assignments|length }}</div>
+
+    <div style="margin-top:1rem;">
+        <h3 style="margin-bottom:0.65rem;">Scanbare signalen</h3>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            {% for flag in risk_flags %}
+                <span class="badge badge-yellow">{{ flag.label }}</span>
+            {% empty %}
+                <span class="badge badge-green">Geen directe risk flags</span>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
-<div class="panel" style="margin-bottom: 1rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+<div class="grid" style="margin-bottom: 1rem;">
+    <div class="panel">
+        <h2 style="margin-top:0;">Laatste sessiecontext</h2>
+        {% if latest_session.available %}
+            <p><strong>Wat gedaan:</strong></p>
+            <div style="white-space:pre-line; margin-bottom:0.85rem;">{{ latest_session.what_done }}</div>
+
+            <p><strong>Next action:</strong></p>
+            <div style="white-space:pre-line; margin-bottom:0.85rem;">{{ latest_session.next_action }}</div>
+
+            <p><strong>Blockers / open issues:</strong></p>
+            <div style="white-space:pre-line; margin-bottom:0.85rem;">
+                {{ latest_session.blockers|default:"-" }}
+            </div>
+
+            <p><strong>Policy/disclosure context reviewed:</strong> {{ latest_session.policy_context_reviewed|yesno:"Ja,Nee" }}</p>
+            <p><strong>Laatste update:</strong> {{ latest_session.updated_at }}</p>
+
+            {% if latest_session.legacy_summary %}
+                <details style="margin-top:1rem;">
+                    <summary>Legacy summary (compatibility read field)</summary>
+                    <pre style="white-space:pre-wrap; margin-top:0.75rem;">{{ latest_session.legacy_summary }}</pre>
+                </details>
+            {% endif %}
+        {% else %}
+            <p class="muted">Nog geen gestructureerde sessie-afsluiting opgeslagen.</p>
+            {% if latest_session.legacy_summary %}
+                <details style="margin-top:1rem;">
+                    <summary>Bestaande legacy handoff tonen</summary>
+                    <pre style="white-space:pre-wrap; margin-top:0.75rem;">{{ latest_session.legacy_summary }}</pre>
+                </details>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h2 style="margin-top:0;">Launch-first action block</h2>
+        <div class="muted" style="margin-bottom:1rem;">
+            Werkvolgorde: starten → uitvoeren → afsluiten.
+        </div>
+
+        {% for group in quick_action_groups %}
+            <div style="margin-bottom:1rem;">
+                <h3 style="margin-bottom:0.65rem;">{{ group.title }}</h3>
+                <div style="display:flex; flex-direction:column; gap:0.65rem;">
+                    {% for action in group.actions %}
+                        {% if action.kind == "link" %}
+                            <a
+                                class="quick-link"
+                                href="{{ action.url }}"
+                                {% if action.external %}target="_blank" rel="noopener"{% endif %}
+                            >
+                                {{ action.label }}
+                            </a>
+                        {% elif action.kind == "copy" %}
+                            <button
+                                type="button"
+                                class="secondary-button js-copy-value"
+                                data-copy-value="{{ action.copy_value }}"
+                            >
+                                {{ action.label }}
+                            </button>
+                        {% elif action.kind == "value_copy" %}
+                            <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+                                <div>
+                                    <strong>{{ action.label }}</strong><br>
+                                    <code>{{ action.value }}</code>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="secondary-button js-copy-value"
+                                    data-copy-value="{{ action.value }}"
+                                >
+                                    {{ action.copy_label }}
+                                </button>
+                            </div>
+                        {% elif action.kind == "jump" %}
+                            <a class="quick-link" href="{{ action.url }}">{{ action.label }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="panel" id="session-closeout" style="margin-bottom: 1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
         <div>
-            <h2 style="margin:0;">Handoff</h2>
-            <div class="muted">Werk de overdracht direct bij zonder de workspace te verlaten.</div>
+            <h2 style="margin:0;">Sessie afsluiten</h2>
+            <div class="muted" style="margin-top:0.35rem;">
+                Sluit de sessie gestructureerd af. Een losse notitie is niet meer genoeg.
+            </div>
         </div>
         <div class="muted">
-            Laatst bijgewerkt: {{ channel.last_operator_update_at|default:"-" }}
+            Laatste workspace update: {{ channel.session_updated_at|default:"-" }}
         </div>
     </div>
 
@@ -71,61 +190,82 @@
         {{ handoff_form.non_field_errors }}
 
         <p>
-            {{ handoff_form.last_operator_update.label_tag }}<br>
-            {{ handoff_form.last_operator_update }}
-            {% if handoff_form.last_operator_update.help_text %}
-                <br><small class="muted">{{ handoff_form.last_operator_update.help_text }}</small>
+            {{ handoff_form.session_what_done.label_tag }}<br>
+            {{ handoff_form.session_what_done }}
+            {% if handoff_form.session_what_done.help_text %}
+                <br><small class="muted">{{ handoff_form.session_what_done.help_text }}</small>
             {% endif %}
-            {{ handoff_form.last_operator_update.errors }}
+            {{ handoff_form.session_what_done.errors }}
+        </p>
+
+        <p>
+            {{ handoff_form.session_next_action.label_tag }}<br>
+            {{ handoff_form.session_next_action }}
+            {% if handoff_form.session_next_action.help_text %}
+                <br><small class="muted">{{ handoff_form.session_next_action.help_text }}</small>
+            {% endif %}
+            {{ handoff_form.session_next_action.errors }}
+        </p>
+
+        <p>
+            {{ handoff_form.session_blockers.label_tag }}<br>
+            {{ handoff_form.session_blockers }}
+            {% if handoff_form.session_blockers.help_text %}
+                <br><small class="muted">{{ handoff_form.session_blockers.help_text }}</small>
+            {% endif %}
+            {{ handoff_form.session_blockers.errors }}
+        </p>
+
+        <p>
+            <label>
+                {{ handoff_form.session_policy_context_reviewed }}
+                {{ handoff_form.session_policy_context_reviewed.label }}
+            </label>
+            {% if handoff_form.session_policy_context_reviewed.help_text %}
+                <br><small class="muted">{{ handoff_form.session_policy_context_reviewed.help_text }}</small>
+            {% endif %}
+            {{ handoff_form.session_policy_context_reviewed.errors }}
         </p>
 
         <div class="form-actions">
-            <button class="primary-button" type="submit">Handoff opslaan</button>
+            <button class="primary-button" type="submit">Sessie opslaan</button>
         </div>
     </form>
 </div>
 
-<div class="panel" style="margin-bottom: 1rem;">
-    <h2>Pre-Action Control Block</h2>
-    <ul class="clean">
-        <li>
-            <strong>Primary link:</strong>
-            {% if creator.primary_link %}
-                <a href="{{ creator.primary_link }}" target="_blank" rel="noopener">{{ creator.primary_link }}</a>
-            {% else %}
-                -
-            {% endif %}
-        </li>
-        <li><strong>Content ready status:</strong> {{ creator.content_ready_status|default:"-" }}</li>
-        <li><strong>Source type:</strong> {{ creator.content_source_type|default:"-" }}</li>
-        <li><strong>Source URL:</strong>
-            {% if creator.content_source_url %}
-                <a href="{{ creator.content_source_url }}" target="_blank" rel="noopener">Open source</a>
-            {% else %}
-                -
-            {% endif %}
-        </li>
-    </ul>
-
-    <h3>Risk flags</h3>
-    <ul class="clean">
-        {% for flag in risk_flags %}
-            <li><span class="badge badge-yellow">flag</span> {{ flag }}</li>
-        {% empty %}
-            <li>Geen directe risk flags.</li>
-        {% endfor %}
-    </ul>
-</div>
-
-<div class="grid">
+<div class="grid" style="margin-bottom: 1rem;">
     <div class="panel">
-        <h2>Access & Policy</h2>
+        <h2 style="margin-top:0;">Pre-action context</h2>
         <ul class="clean">
-            <li><strong>Status:</strong> {{ channel.status }}</li>
-            <li><strong>Access mode:</strong> {{ channel.access_mode }}</li>
-            <li><strong>Recovery owner:</strong> {{ channel.recovery_owner }}</li>
+            <li>
+                <strong>Primary link:</strong>
+                {% if creator.primary_link %}
+                    <a href="{{ creator.primary_link }}" target="_blank" rel="noopener">{{ creator.primary_link }}</a>
+                {% else %}
+                    -
+                {% endif %}
+            </li>
+            <li><strong>Content ready status:</strong> {{ creator.get_content_ready_status_display|default:"-" }}</li>
+            <li><strong>Source type:</strong> {{ creator.get_content_source_type_display|default:"-" }}</li>
+            <li>
+                <strong>Source URL:</strong>
+                {% if creator.content_source_url %}
+                    <a href="{{ creator.content_source_url }}" target="_blank" rel="noopener">Open source</a>
+                {% else %}
+                    -
+                {% endif %}
+            </li>
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h2 style="margin-top:0;">Access & policy</h2>
+        <ul class="clean">
+            <li><strong>Status:</strong> {{ channel.get_status_display }}</li>
+            <li><strong>Access mode:</strong> {{ channel.get_access_mode_display }}</li>
+            <li><strong>Recovery owner:</strong> {{ channel.get_recovery_owner_display }}</li>
             <li><strong>Login identifier:</strong> {{ channel.login_identifier|default:"-" }}</li>
-            <li><strong>Credential status:</strong> {{ channel.credential_status|default:"-" }}</li>
+            <li><strong>Credential status:</strong> {{ channel.get_credential_status_display|default:"-" }}</li>
             <li><strong>2FA enabled:</strong> {{ channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
             <li><strong>VPN required:</strong> {{ channel.vpn_required|yesno:"Ja,Nee" }}</li>
             <li><strong>Approved region:</strong> {{ channel.approved_access_region|default:"-" }}</li>
@@ -135,23 +275,10 @@
             <li><strong>Policy notes:</strong> {{ channel.access_profile_notes|default:"-"|linebreaksbr }}</li>
         </ul>
     </div>
-
-    <div class="panel">
-        <h2>Quick actions</h2>
-        <ul class="clean">
-            {% for action in quick_actions %}
-                <li>
-                    <a class="quick-link" href="{{ action.url }}"{% if action.external %} target="_blank" rel="noopener"{% endif %}>{{ action.label }}</a>
-                </li>
-            {% empty %}
-                <li>Geen quick actions beschikbaar.</li>
-            {% endfor %}
-        </ul>
-    </div>
 </div>
 
 <h2>Creator Materials</h2>
-<div class="panel">
+<div class="panel" style="margin-bottom: 1rem;">
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
         {% for material in materials %}
             <article class="creator-material-card" style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
@@ -196,11 +323,15 @@
     <h2>Active assignments</h2>
     <ul class="clean">
         {% for assignment in assignments %}
-            <li><strong>{{ assignment.operator }}</strong> — {{ assignment.scope }} — {{ assignment.starts_at }} t/m {{ assignment.ends_at|default:"open" }}</li>
+            <li><strong>{{ assignment.operator }}</strong> — {{ assignment.get_scope_display }} — {{ assignment.starts_at }} t/m {{ assignment.ends_at|default:"open" }}</li>
         {% empty %}
             <li>Geen zichtbare assignments.</li>
         {% endfor %}
     </ul>
+</div>
+
+<div id="copy-feedback" style="display:none; position:fixed; right:1rem; bottom:1rem; z-index:999; background:#111827; color:#fff; padding:0.75rem 1rem; border-radius:8px;">
+    Gekopieerd
 </div>
 
 <div id="creator-material-modal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,0.85); padding:2rem;">
@@ -215,6 +346,53 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    const feedback = document.getElementById('copy-feedback');
+
+    function showFeedback() {
+        if (!feedback) {
+            return;
+        }
+
+        feedback.style.display = 'block';
+        window.clearTimeout(showFeedback._timer);
+        showFeedback._timer = window.setTimeout(function () {
+            feedback.style.display = 'none';
+        }, 1400);
+    }
+
+    function fallbackCopy(value) {
+        const input = document.createElement('textarea');
+        input.value = value;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+    }
+
+    document.querySelectorAll('.js-copy-value').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const value = button.dataset.copyValue || '';
+            if (!value) {
+                return;
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(value).then(showFeedback).catch(function () {
+                    fallbackCopy(value);
+                    showFeedback();
+                });
+                return;
+            }
+
+            fallbackCopy(value);
+            showFeedback();
+        });
+    });
+})();
+</script>
 
 <script>
 (function () {
