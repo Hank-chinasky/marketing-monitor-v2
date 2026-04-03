@@ -56,7 +56,14 @@ class ChannelHandoffFormTests(SimpleTestCase):
         self.assertEqual(form.initial["session_what_done"], "Bio bijgewerkt.")
         self.assertEqual(form.initial["session_next_action"], "Nieuwe caption klaarzetten.")
         self.assertEqual(form.initial["session_blockers"], "Story assets ontbreken nog.")
-        self.assertTrue(form.initial["session_policy_context_reviewed"])
+
+    def test_form_does_not_prefill_policy_confirmation_checkbox(self):
+        channel = self._build_channel()
+
+        form = ChannelHandoffForm(channel=channel)
+
+        self.assertIn("session_policy_context_reviewed", form.fields)
+        self.assertFalse(form.initial["session_policy_context_reviewed"])
 
     def test_channel_builds_legacy_summary_from_structured_session(self):
         channel = self._build_channel()

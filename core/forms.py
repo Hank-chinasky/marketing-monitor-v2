@@ -254,10 +254,7 @@ class ChannelHandoffForm(forms.Form):
             self.initial.setdefault("session_what_done", channel.session_what_done)
             self.initial.setdefault("session_next_action", channel.session_next_action)
             self.initial.setdefault("session_blockers", channel.session_blockers)
-            self.initial.setdefault(
-                "session_policy_context_reviewed",
-                channel.session_policy_context_reviewed,
-            )
+            self.initial["session_policy_context_reviewed"] = False
 
     def clean_session_what_done(self):
         return (self.cleaned_data.get("session_what_done") or "").strip()
