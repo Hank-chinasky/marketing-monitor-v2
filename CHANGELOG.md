@@ -26,29 +26,16 @@
 - Fixed Traefik routing for `ops.creatorworkboard.com`.
 - Restored Traefik basic authentication for the ops environment.
 - Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
-- Restored the missing `creator-material-bulk-delete` route after the opportunity queue URL update.
-- Removed an invalid `OperatorAssignmentReactivateView` import from `core/urls.py` to stop the web container restart loop.
 
 ### Changed
 - Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
 - Standardized live routing and healthcheck behavior for the `creatorworkboard-ops` service.
 - Adjusted reverse-proxy behavior so Django login works correctly behind Traefik.
-- Added paginated rendering for the admin-seeded V1 opportunity queue.
-- Kept opportunity creation outside app flow in V1; records can be created through Django admin.
-- Added a separate `core/creatorboard_views.py` slice for CreatorBoard 1A queue/detail basis without restoring live routing or dashboard-entry.
-- Kept CreatorBoard 1A server-rendered and hard-bounded with queue pagination from day 1.
 
 ### Added
 - Added superuser access for the deployed environment.
 - Added operator user accounts and matching `Operator` model records.
 - Added the first `Creator` record and linked it to an operator for initial data validation.
-- Added `ProfileOpportunity` in `core/` for small admin-seeded intake, scoring, handoff and queue handling.
-- Added `OutcomeEntry` with fixed outcome choices for minimal per-opportunity outcome logging.
-- Added opportunity queue and detail views with small server-rendered templates.
-- Added a server-side scoring service for `priority_band` and `action_bucket`.
-- Added `CreatorBoardWorkItem` as the productgebonden hoofdwerkitem for CreatorBoard V1 phase 1A.
-- Added CreatorBoard queue/detail templates for the first workflow-core work surface.
-- Added admin registration for `CreatorBoardWorkItem` to support admin seeding and early testing.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -58,18 +45,11 @@
 - Restored Traefik basic auth for the ops app.
 - Fixed Django login CSRF failure caused by reverse-proxy referrer policy.
 - Validated end-to-end access flow: Traefik auth -> Django login -> app access.
-- Rebuilt and restarted the `creatorworkboard-ops` web container after the opportunity queue URL fix.
-- Validated live access to `/opportunities/` after the rebuild.
 
 ### Data
 - Added superuser access for the live environment.
 - Added operator user accounts and matching `Operator` records.
 - Added first `Creator` test record and linked it to an operator.
-
-### Tests
-- Added tests for opportunity scoring rules, override validation, scoped visibility, queue ordering, and queue pagination.
-- Re-ran the full Django test suite on the VPS after the URL fix; 102 tests passed.
-- Added CreatorBoard 1A tests for model defaults, admin/operator queue scope, detail access, and queue pagination.
 
 ## 2026-03-22 — creatorworkboard ops deployment stabilized
 

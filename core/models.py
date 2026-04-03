@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from core.validators import (
     validate_active_creator_requires_active_consent,
@@ -207,6 +208,12 @@ class CreatorChannel(models.Model):
     access_profile_notes = models.TextField(blank=True)
     last_ip_check_at = models.DateTimeField(null=True, blank=True)
 
+    session_what_done = models.TextField(blank=True, default="")
+    session_next_action = models.CharField(max_length=255, blank=True, default="")
+    session_blockers = models.TextField(blank=True, default="")
+    session_policy_context_reviewed = models.BooleanField(default=False)
+    session_updated_at = models.DateTimeField(null=True, blank=True)
+
     last_operator_update = models.TextField(blank=True)
     last_operator_update_at = models.DateTimeField(null=True, blank=True)
 
@@ -222,7 +229,8 @@ class CreatorChannel(models.Model):
         validate_platform_handle_unique_ci(self)
 
         if self.vpn_required and not (
-            (self.approved_ip_label or "").strip() or (self.approved_egress_ip or "").strip()
+            (self.approved_ip_label or "").strip()
+            or (self.approved_egress_ip or "").strip()
         ):
             raise ValidationError(
                 {
@@ -230,6 +238,59 @@ class CreatorChannel(models.Model):
                     "approved_egress_ip": "Set an approved IP label or approved egress IP when VPN is required.",
                 }
             )
+
+    def has_structured_session_handoff(self) -> bool:
+        return bool(
+            (self.session_what_done or "").strip()
+            and (self.session_next_action or "").strip()
+            and self.session_policy_context_reviewed
+            and self.session_updated_at is not None
+        )
+
+    def build_workspace_session_summary(self) -> str:
+        what_done = (self.session_what_done or "").strip()
+        next_action = (self.session_next_action or "").strip()
+        blockers = (self.session_blockers or "").strip() or "-"
+        reviewed = "Ja" if self.session_policy_context_reviewed else "Nee"
+
+        return "\n\n".join(
+            [
+                f"Wat gedaan:\n{what_done}",
+                f"Next action:\n{next_action}",
+                f"Blockers / open issues:\n{blockers}",
+                f"Policy/disclosure context reviewed: {reviewed}",
+            ]
+        )
+
+    def apply_workspace_session(
+        self,
+        *,
+        what_done: str,
+        next_action: str,
+        blockers: str = "",
+        policy_context_reviewed: bool,
+        updated_at=None,
+    ):
+        timestamp = updated_at or timezone.now()
+
+        self.session_what_done = (what_done or "").strip()
+        self.session_next_action = (next_action or "").strip()
+        self.session_blockers = (blockers or "").strip()
+        self.session_policy_context_reviewed = bool(policy_context_reviewed)
+        self.session_updated_at = timestamp
+
+        self.last_operator_update = self.build_workspace_session_summary()
+        self.last_operator_update_at = timestamp if self.last_operator_update else None
+
+        return [
+            "session_what_done",
+            "session_next_action",
+            "session_blockers",
+            "session_policy_context_reviewed",
+            "session_updated_at",
+            "last_operator_update",
+            "last_operator_update_at",
+        ]
 
     def __str__(self) -> str:
         return f"{self.creator.display_name} / {self.platform} / {self.handle}"
@@ -262,230 +323,3 @@ class OperatorAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.operator} -> {self.creator} ({self.scope})"
-
-
-class ProfileOpportunity(models.Model):
-    class ScoreValue(models.IntegerChoices):
-        ZERO = 0, "0"
-        ONE = 1, "1"
-        TWO = 2, "2"
-
-    class RiskPenaltyValue(models.IntegerChoices):
-        ZERO = 0, "0"
-        NEGATIVE_ONE = -1, "-1"
-        NEGATIVE_TWO = -2, "-2"
-
-    class PriorityBand(models.TextChoices):
-        HIGH = "high", "High"
-        MEDIUM = "medium", "Medium"
-        LOW = "low", "Low"
-
-    class ActionBucket(models.TextChoices):
-        NOW = "nu_oppakken", "Nu oppakken"
-        LATER = "later", "Later"
-        NOT_WORTH = "niet_waard", "Niet waard"
-
-    assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assigned_profile_opportunities",
-    )
-    intake_name = models.CharField(max_length=255)
-    profile_url = models.URLField(blank=True)
-    intake_notes = models.TextField(blank=True)
-    handoff_note = models.TextField(blank=True)
-
-    source_quality_score = models.PositiveSmallIntegerField(
-        choices=ScoreValue.choices,
-        default=ScoreValue.ZERO,
-    )
-    profile_signal_score = models.PositiveSmallIntegerField(
-        choices=ScoreValue.choices,
-        default=ScoreValue.ZERO,
-    )
-    intent_guess_score = models.PositiveSmallIntegerField(
-        choices=ScoreValue.choices,
-        default=ScoreValue.ZERO,
-    )
-    target_fit_score = models.PositiveSmallIntegerField(
-        choices=ScoreValue.choices,
-        default=ScoreValue.ZERO,
-    )
-    risk_penalty_score = models.SmallIntegerField(
-        choices=RiskPenaltyValue.choices,
-        default=RiskPenaltyValue.ZERO,
-    )
-
-    total_score = models.SmallIntegerField(default=0, editable=False)
-    priority_band = models.CharField(
-        max_length=16,
-        choices=PriorityBand.choices,
-        default=PriorityBand.LOW,
-        editable=False,
-    )
-    action_bucket = models.CharField(
-        max_length=24,
-        choices=ActionBucket.choices,
-        default=ActionBucket.NOT_WORTH,
-        editable=False,
-    )
-    score_reason_short = models.CharField(max_length=255, blank=True, editable=False)
-
-    manual_override = models.BooleanField(default=False)
-    override_priority_band = models.CharField(
-        max_length=16,
-        choices=PriorityBand.choices,
-        blank=True,
-    )
-    override_action_bucket = models.CharField(
-        max_length=24,
-        choices=ActionBucket.choices,
-        blank=True,
-    )
-    override_reason_short = models.CharField(max_length=140, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-updated_at", "-created_at"]
-
-    def clean(self):
-        errors = {}
-
-        if self.manual_override:
-            if not (self.override_priority_band or "").strip():
-                errors["override_priority_band"] = "Kies een override priority band."
-            if not (self.override_action_bucket or "").strip():
-                errors["override_action_bucket"] = "Kies een override action bucket."
-            if not (self.override_reason_short or "").strip():
-                errors["override_reason_short"] = "Geef een korte override reden."
-
-        if errors:
-            raise ValidationError(errors)
-
-    def apply_scoring(self):
-        from core.services.opportunity_scoring import evaluate_opportunity
-
-        result = evaluate_opportunity(
-            source_quality_score=self.source_quality_score,
-            profile_signal_score=self.profile_signal_score,
-            intent_guess_score=self.intent_guess_score,
-            target_fit_score=self.target_fit_score,
-            risk_penalty_score=self.risk_penalty_score,
-        )
-        self.total_score = result.total_score
-        self.priority_band = result.priority_band
-        self.action_bucket = result.action_bucket
-        self.score_reason_short = result.score_reason_short
-
-    @property
-    def effective_priority_band(self) -> str:
-        if self.manual_override and self.override_priority_band:
-            return self.override_priority_band
-        return self.priority_band
-
-    @property
-    def effective_action_bucket(self) -> str:
-        if self.manual_override and self.override_action_bucket:
-            return self.override_action_bucket
-        return self.action_bucket
-
-    def save(self, *args, **kwargs):
-        if not self.manual_override:
-            self.override_priority_band = ""
-            self.override_action_bucket = ""
-            self.override_reason_short = ""
-
-        self.apply_scoring()
-        return super().save(*args, **kwargs)
-
-    def __str__(self) -> str:
-        return self.intake_name
-
-
-class OutcomeEntry(models.Model):
-    class OutcomeType(models.TextChoices):
-        GEEN_REACTIE = "geen_reactie", "Geen reactie"
-        GESPREK_GESTART = "gesprek_gestart", "Gesprek gestart"
-        WARM_VERVOLG = "warm_vervolg", "Warm vervolg"
-        CONVERSION = "conversion", "Conversion"
-        AFGEVALLEN = "afgevallen", "Afgevallen"
-        ONDUIDELIJK = "onduidelijk", "Onduidelijk"
-
-    opportunity = models.ForeignKey(
-        "core.ProfileOpportunity",
-        on_delete=models.CASCADE,
-        related_name="outcomes",
-    )
-    outcome_type = models.CharField(max_length=32, choices=OutcomeType.choices)
-    notes = models.CharField(max_length=255, blank=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="profile_opportunity_outcomes",
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at", "-id"]
-
-    def __str__(self) -> str:
-        return f"{self.opportunity.intake_name} / {self.get_outcome_type_display()}"
-
-
-class CreatorBoardWorkItem(models.Model):
-    class Status(models.TextChoices):
-        NEW = "new", "Nieuw"
-        IN_PROGRESS = "in_progress", "In uitvoering"
-        BLOCKED = "blocked", "Geblokkeerd"
-        DONE = "done", "Afgerond"
-
-    class Priority(models.TextChoices):
-        HIGH = "high", "High"
-        MEDIUM = "medium", "Medium"
-        LOW = "low", "Low"
-
-    class SourceType(models.TextChoices):
-        MANUAL_INTAKE = "manual_intake", "Handmatige intake"
-        CREATOR = "creator", "Creator"
-        CHANNEL = "channel", "Channel"
-        OTHER = "other", "Overig"
-
-    title = models.CharField(max_length=255)
-    assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="assigned_creatorboard_work_items",
-    )
-    status = models.CharField(
-        max_length=24,
-        choices=Status.choices,
-        default=Status.NEW,
-    )
-    priority = models.CharField(
-        max_length=16,
-        choices=Priority.choices,
-        default=Priority.MEDIUM,
-    )
-    source_type = models.CharField(
-        max_length=24,
-        choices=SourceType.choices,
-        default=SourceType.MANUAL_INTAKE,
-    )
-    summary = models.TextField(blank=True)
-    next_action = models.CharField(max_length=255, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-updated_at", "-created_at"]
-
-    def __str__(self) -> str:
-        return self.title
