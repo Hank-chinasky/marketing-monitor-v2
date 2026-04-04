@@ -228,6 +228,23 @@
                             </button>
                         {% endif %}
                         <a class="quick-link" href="{% url 'creator-material-download' creator.pk material.pk %}" target="_blank">Open bestand</a>
+                        {% if can_upload_materials %}
+                            <form
+                                method="post"
+                                action="{% url 'creator-material-delete' creator.pk material.pk %}"
+                                style="margin:0;"
+                                onsubmit="return confirm('Weet je zeker dat je dit materiaal wilt verwijderen?');"
+                            >
+                                {% csrf_token %}
+                                <button
+                                    type="submit"
+                                    class="secondary-button"
+                                    style="border-color:#dc2626; color:#b91c1c;"
+                                >
+                                    Verwijder
+                                </button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             </article>

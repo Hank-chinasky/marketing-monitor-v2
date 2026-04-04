@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -101,6 +102,28 @@ class CreatorMaterialTests(TestCase):
             reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
         )
         self.assertContains(response, "creator-material-modal")
+        self.assertNotContains(
+            response,
+            reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
+        )
+
+    def test_admin_sees_delete_action_on_creator_detail(self):
+        material = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            label="Image one",
+            file=SimpleUploadedFile("preview.jpg", b"image-bytes", content_type="image/jpeg"),
+        )
+
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": material.pk}),
+        )
+        self.assertContains(response, "Verwijder")
 
     def test_upload_form_accepts_multiple_files(self):
         form = CreatorMaterialUploadForm(
@@ -135,3 +158,47 @@ class CreatorMaterialTests(TestCase):
         labels = set(self.creator.materials.values_list("label", flat=True))
         self.assertEqual(labels, {"Shoot — one.jpg", "Shoot — two.jpg"})
         self.assertEqual(set(self.creator.materials.values_list("notes", flat=True)), {"Latest set"})
+
+    def test_admin_can_delete_material(self):
+        material = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            label="Delete me",
+            file=SimpleUploadedFile("delete-me.jpg", b"image-bytes", content_type="image/jpeg"),
+        )
+        file_path = Path(material.file.path)
+        self.assertTrue(file_path.exists())
+
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": material.pk}),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("creator-detail", kwargs={"pk": self.creator.pk}))
+
+        material.refresh_from_db()
+        self.assertFalse(material.active)
+        self.assertFalse(file_path.exists())
+        self.assertEqual(self.creator.materials.filter(active=True).count(), 0)
+
+    def test_operator_cannot_delete_material(self):
+        material = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            label="Do not delete",
+            file=SimpleUploadedFile("do-not-delete.jpg", b"image-bytes", content_type="image/jpeg"),
+        )
+        file_path = Path(material.file.path)
+        self.assertTrue(file_path.exists())
+
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": material.pk}),
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        material.refresh_from_db()
+        self.assertTrue(material.active)
+        self.assertTrue(file_path.exists())

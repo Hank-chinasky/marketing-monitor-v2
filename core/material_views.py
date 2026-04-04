@@ -78,3 +78,31 @@ class CreatorMaterialDownloadView(View):
             pk=material_pk,
         )
         return FileResponse(material.file.open("rb"), as_attachment=False, filename=material.filename)
+
+
+class CreatorMaterialDeleteView(View):
+    http_method_names = ["post"]
+
+    def post(self, request, creator_pk, material_pk, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return HttpResponseForbidden("You do not have permission to delete materials.")
+
+        creator = get_object_or_404(
+            get_creator_queryset_for_user(request.user),
+            pk=creator_pk,
+        )
+        material = get_object_or_404(
+            creator.materials.filter(active=True).select_related("creator", "uploaded_by"),
+            pk=material_pk,
+        )
+
+        if material.file and material.file.name:
+            storage = material.file.storage
+            if storage.exists(material.file.name):
+                storage.delete(material.file.name)
+
+        material.active = False
+        material.save(update_fields=["active"])
+
+        messages.success(request, "Materiaal verwijderd.")
+        return redirect("creator-detail", pk=creator.pk)

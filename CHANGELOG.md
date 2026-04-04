@@ -16,6 +16,7 @@
 - Replaced the Instagram workspace loose handoff note with a structured session closeout on `CreatorChannel`.
 - Promoted risk/policy visibility and launch-first quick actions higher in the Instagram workspace.
 - Removed `last_operator_update` and `last_operator_update_at` from the main channel edit form so the workspace structured session becomes the primary operator handoff source.
+- Added an admin-only delete action for creator materials on the existing creator detail flow.
 
 ### Added
 - Added superuser access for the deployed environment.
@@ -41,6 +42,7 @@
 - Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
+- Added creator material tests for admin-only delete access, visible delete actions for admins, and delete denial for scoped operators.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
@@ -101,6 +103,7 @@ Creator now stores:
 ### Fixed
 - Fixed migration dependency for `CreatorMaterial` so it follows the current `core` migration chain and no longer creates multiple migration leaf nodes.
 - Fixed scope test expectations to match the chosen product rule: admin manages structure, operator works through scoped operational flows.
+
 ### Notes
 - Handmatig lokaal gevalideerd: superadmin kan materiaal uploaden, operator binnen scope kan materiaal zien en openen.
 - Current UX works functionally but still needs preview-first improvements for image and video materials.
