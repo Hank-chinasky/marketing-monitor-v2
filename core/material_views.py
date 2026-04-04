@@ -1,6 +1,7 @@
 from django.contrib import messages
-from django.http import FileResponse, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect
+from django.http import FileResponse, Http404, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views import View
 
 from core.forms import CreatorMaterialUploadForm
@@ -60,7 +61,7 @@ class CreatorDetailView(BaseCreatorDetailView):
                 messages.success(request, "1 bestand geüpload.")
             else:
                 messages.success(request, f"{upload_count} bestanden geüpload.")
-            return redirect("creator-detail", pk=self.object.pk)
+            return redirect(f"{reverse('creator-detail', kwargs={'pk': self.object.pk})}#creator-materials")
 
         return self.render_to_response(self.get_context_data(material_form=material_form))
 
@@ -78,3 +79,62 @@ class CreatorMaterialDownloadView(View):
             pk=material_pk,
         )
         return FileResponse(material.file.open("rb"), as_attachment=False, filename=material.filename)
+
+
+class CreatorMaterialPreviewView(View):
+    http_method_names = ["get"]
+
+    def get(self, request, creator_pk, material_pk, *args, **kwargs):
+        creator = get_object_or_404(
+            get_creator_queryset_for_user(request.user),
+            pk=creator_pk,
+        )
+        material = get_object_or_404(
+            creator.materials.filter(active=True).select_related("creator", "uploaded_by"),
+            pk=material_pk,
+        )
+
+        if not material.is_previewable:
+            raise Http404("This material does not support in-browser preview.")
+
+        return render(
+            request,
+            "creators/material_preview.html",
+            {
+                "creator": creator,
+                "material": material,
+                "download_url": reverse(
+                    "creator-material-download",
+                    kwargs={"creator_pk": creator.pk, "material_pk": material.pk},
+                ),
+                "creator_detail_url": f"{reverse('creator-detail', kwargs={'pk': creator.pk})}#creator-materials",
+            },
+        )
+
+
+class CreatorMaterialDeleteView(View):
+    http_method_names = ["post"]
+
+    def post(self, request, creator_pk, material_pk, *args, **kwargs):
+        if not is_admin_user(request.user):
+            return HttpResponseForbidden("You do not have permission to delete materials.")
+
+        creator = get_object_or_404(
+            get_creator_queryset_for_user(request.user),
+            pk=creator_pk,
+        )
+        material = get_object_or_404(
+            creator.materials.filter(active=True).select_related("creator", "uploaded_by"),
+            pk=material_pk,
+        )
+
+        if material.file and material.file.name:
+            storage = material.file.storage
+            if storage.exists(material.file.name):
+                storage.delete(material.file.name)
+
+        material.active = False
+        material.save(update_fields=["active"])
+
+        messages.success(request, "Materiaal verwijderd.")
+        return redirect(f"{reverse('creator-detail', kwargs={'pk': creator.pk})}#creator-materials")

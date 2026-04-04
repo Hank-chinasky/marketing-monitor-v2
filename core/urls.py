@@ -6,7 +6,12 @@ from core.assignment_views import (
     OperatorAssignmentDeactivateView,
     OperatorAssignmentReactivateView,
 )
-from core.material_views import CreatorDetailView, CreatorMaterialDownloadView
+from core.material_views import (
+    CreatorDetailView,
+    CreatorMaterialDeleteView,
+    CreatorMaterialDownloadView,
+    CreatorMaterialPreviewView,
+)
 from core.views import (
     ChannelDetailView,
     ChannelListView,
@@ -36,6 +41,16 @@ urlpatterns = [
         "creators/<int:creator_pk>/materials/<int:material_pk>/download/",
         CreatorMaterialDownloadView.as_view(),
         name="creator-material-download",
+    ),
+    path(
+        "creators/<int:creator_pk>/materials/<int:material_pk>/preview/",
+        CreatorMaterialPreviewView.as_view(),
+        name="creator-material-preview",
+    ),
+    path(
+        "creators/<int:creator_pk>/materials/<int:material_pk>/delete/",
+        CreatorMaterialDeleteView.as_view(),
+        name="creator-material-delete",
     ),
     path("creators/<int:pk>/edit/", CreatorUpdateView.as_view(), name="creator-update"),
     path("creators/<int:pk>/network/", CreatorNetworkView.as_view(), name="creator-network"),
