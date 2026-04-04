@@ -8,6 +8,7 @@
 - Restored Traefik basic authentication for the ops environment.
 - Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
 - Fixed creator material persistence by storing uploaded media under the persistent `/app/data/media` path.
+- Fixed creator material delete flow so admin returns directly to the materials section instead of the top of the creator page.
 
 ### Changed
 - Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
@@ -17,12 +18,14 @@
 - Promoted risk/policy visibility and launch-first quick actions higher in the Instagram workspace.
 - Removed `last_operator_update` and `last_operator_update_at` from the main channel edit form so the workspace structured session becomes the primary operator handoff source.
 - Added an admin-only delete action for creator materials on the existing creator detail flow.
+- Replaced the in-page creator material modal and duplicate `Open bestand` action with a single `Bekijk groter` preview page that opens in a new tab and fits media to the viewport.
 
 ### Added
 - Added superuser access for the deployed environment.
 - Added operator user accounts and matching `Operator` model records.
 - Added the first `Creator` record and linked it to an operator for initial data validation.
 - Added structured Instagram workspace session fields on `CreatorChannel` for what was done, next action, blockers, policy-context review, and session timestamp.
+- Added a dedicated creator material preview page for image and video materials.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -42,7 +45,7 @@
 - Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
-- Added creator material tests for admin-only delete access, visible delete actions for admins, and delete denial for scoped operators.
+- Added creator material tests for admin-only delete access, visible delete actions for admins, preview-page access, anchored post-delete redirects, and delete denial for scoped operators.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 

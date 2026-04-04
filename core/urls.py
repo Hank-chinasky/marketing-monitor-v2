@@ -10,6 +10,7 @@ from core.material_views import (
     CreatorDetailView,
     CreatorMaterialDeleteView,
     CreatorMaterialDownloadView,
+    CreatorMaterialPreviewView,
 )
 from core.views import (
     ChannelDetailView,
@@ -40,6 +41,11 @@ urlpatterns = [
         "creators/<int:creator_pk>/materials/<int:material_pk>/download/",
         CreatorMaterialDownloadView.as_view(),
         name="creator-material-download",
+    ),
+    path(
+        "creators/<int:creator_pk>/materials/<int:material_pk>/preview/",
+        CreatorMaterialPreviewView.as_view(),
+        name="creator-material-preview",
     ),
     path(
         "creators/<int:creator_pk>/materials/<int:material_pk>/delete/",
