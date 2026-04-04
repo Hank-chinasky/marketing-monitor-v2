@@ -22,6 +22,7 @@
 - Added operator user accounts and matching `Operator` model records.
 - Added the first `Creator` record and linked it to an operator for initial data validation.
 - Added structured Instagram workspace session fields on `CreatorChannel` for what was done, next action, blockers, policy-context review, and session timestamp.
+- Added `ConversationThread` as an admin-seeded Mara-only workflow thread model with scoped creator anchoring, `source_system` choices, status choices, source-thread uniqueness, and no transcript/runtime fields.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -36,11 +37,13 @@
 - Added superuser access for the live environment.
 - Added operator user accounts and matching `Operator` records.
 - Added first `Creator` test record and linked it to an operator.
+- Added admin registration for `ConversationThread` so phase 1 threads can be created through Django admin only.
 
 ### Tests
 - Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
+- Added `ConversationThread` model tests for CRUD behavior, unique source-thread constraint, choices validation, nullable channel handling, and required creator anchoring.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
