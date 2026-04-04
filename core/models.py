@@ -323,3 +323,65 @@ class OperatorAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.operator} -> {self.creator} ({self.scope})"
+
+
+class ConversationThread(models.Model):
+    class SourceSystem(models.TextChoices):
+        MARA_CHAT = "mara_chat", "Mara chat"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        WAITING_ON_OPERATOR = "waiting_on_operator", "Waiting on operator"
+        WAITING_ON_CUSTOMER = "waiting_on_customer", "Waiting on customer"
+        HANDOFF_REQUIRED = "handoff_required", "Handoff required"
+        CLOSED = "closed", "Closed"
+
+    creator = models.ForeignKey(
+        Creator,
+        on_delete=models.CASCADE,
+        related_name="conversation_threads",
+    )
+    channel = models.ForeignKey(
+        CreatorChannel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="conversation_threads",
+    )
+    source_system = models.CharField(
+        max_length=32,
+        choices=SourceSystem.choices,
+        default=SourceSystem.MARA_CHAT,
+    )
+    source_thread_id = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=32,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    last_message_at = models.DateTimeField(null=True, blank=True)
+    last_operator_handoff_at = models.DateTimeField(null=True, blank=True)
+    thread_summary = models.TextField(blank=True)
+    open_loop = models.TextField(blank=True)
+    guardrails = models.TextField(blank=True)
+    risk_flags = models.TextField(blank=True)
+    last_handoff_note = models.TextField(blank=True)
+    last_approved_reply_style = models.TextField(blank=True)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("source_system", "source_thread_id"),
+                name="uniq_convthread_source_thread",
+            )
+        ]
+        indexes = [
+            models.Index(fields=("status",), name="convthread_status_idx"),
+            models.Index(fields=("last_message_at",), name="convthread_last_msg_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"

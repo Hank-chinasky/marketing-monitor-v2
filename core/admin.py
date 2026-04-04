@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from core.models import Creator, CreatorChannel, CreatorMaterial, Operator, OperatorAssignment
+from core.models import (
+    ConversationThread,
+    Creator,
+    CreatorChannel,
+    CreatorMaterial,
+    Operator,
+    OperatorAssignment,
+)
 
 
 @admin.register(Operator)
@@ -76,3 +83,31 @@ class CreatorChannelAdmin(admin.ModelAdmin):
 class OperatorAssignmentAdmin(admin.ModelAdmin):
     list_display = ("id", "operator", "creator", "scope", "starts_at", "ends_at", "active")
     search_fields = ("creator__display_name", "operator__user__username")
+
+
+@admin.register(ConversationThread)
+class ConversationThreadAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "creator",
+        "channel",
+        "source_system",
+        "source_thread_id",
+        "status",
+        "last_message_at",
+        "last_operator_handoff_at",
+        "active",
+    )
+    list_filter = ("source_system", "status", "active")
+    search_fields = (
+        "creator__display_name",
+        "channel__handle",
+        "source_thread_id",
+        "thread_summary",
+        "open_loop",
+        "guardrails",
+        "risk_flags",
+        "last_handoff_note",
+        "last_approved_reply_style",
+    )
+    autocomplete_fields = ("creator", "channel")
