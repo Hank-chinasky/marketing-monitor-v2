@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Conversation Thread</h1>
+
+<div style="margin-bottom:1rem;">
+    <a class="quick-link" href="{% url 'conversation-thread-list' %}">Terug naar conversations</a>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h2>Thread context</h2>
+        <ul class="clean">
+            <li><strong>Creator:</strong> {{ thread.creator.display_name }}</li>
+            <li><strong>Channel:</strong> {% if thread.channel %}{{ thread.channel.platform }} / {{ thread.channel.handle }}{% else %}Geen channel gekoppeld.{% endif %}</li>
+            <li><strong>Source system:</strong> {{ thread.source_system }}</li>
+            <li><strong>Status:</strong> {{ thread.status }}</li>
+            <li><strong>Source thread ID:</strong> {{ thread.source_thread_id }}</li>
+            <li><strong>Last message at:</strong> {{ thread.last_message_at|default:"-" }}</li>
+            <li><strong>Last operator handoff at:</strong> {{ thread.last_operator_handoff_at|default:"-" }}</li>
+        </ul>
+    </div>
+
+    <div class="panel">
+        <h2>Thread details</h2>
+        <ul class="clean">
+            <li><strong>Summary:</strong> {{ thread.thread_summary|default:"-"|linebreaksbr }}</li>
+            <li><strong>Open loop:</strong> {{ thread.open_loop|default:"-"|linebreaksbr }}</li>
+            <li><strong>Guardrails:</strong> {{ thread.guardrails|default:"-"|linebreaksbr }}</li>
+            <li><strong>Risk flags:</strong> {{ thread.risk_flags|default:"-"|linebreaksbr }}</li>
+            <li><strong>Last handoff note:</strong> {{ thread.last_handoff_note|default:"-"|linebreaksbr }}</li>
+            <li><strong>Last approved reply style:</strong> {{ thread.last_approved_reply_style|default:"-"|linebreaksbr }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Latest BuddyDraft</h2>
+    {% if latest_draft %}
+        <ul class="clean">
+            <li><strong>Reply text:</strong> {{ latest_draft.reply_text|linebreaksbr }}</li>
+            <li><strong>Intent:</strong> {{ latest_draft.intent }}</li>
+            <li><strong>Tone:</strong> {{ latest_draft.tone }}</li>
+            <li><strong>Confidence:</strong> {{ latest_draft.confidence|default:"-" }}</li>
+            <li><strong>Risk level:</strong> {{ latest_draft.risk_level }}</li>
+            <li><strong>Requires human attention:</strong> {{ latest_draft.requires_human_attention|yesno:"Ja,Nee" }}</li>
+            <li><strong>Handoff note:</strong> {{ latest_draft.handoff_note|default:"-"|linebreaksbr }}</li>
+            <li><strong>State:</strong> {{ latest_draft.state }}</li>
+            <li><strong>Generation source:</strong> {{ latest_draft.generation_source }}</li>
+            <li><strong>Created at:</strong> {{ latest_draft.created_at }}</li>
+        </ul>
+    {% else %}
+        <p>Geen BuddyDraft beschikbaar.</p>
+    {% endif %}
+</div>
+{% endblock %}

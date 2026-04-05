@@ -30,6 +30,8 @@
 - Added a dedicated creator material preview page for video materials.
 - Added an explicit fail-closed Mara conversation workflow profile resolver with hard workflow-only defaults for human approval and context handling.
 - Added `BuddyDraft` as a structured conversation draft model with explicit state, risk level, generation source, and human-review-oriented draft semantics.
+- Added a Mara-only Buddy draft stub service that creates conservative operator-facing `BuddyDraft` records with fail-closed source validation.
+- Added read-only conversation thread list and detail views with assignment-scoped visibility and latest-draft context rendering.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -44,16 +46,16 @@
 - Added superuser access for the live environment.
 - Added operator user accounts and matching `Operator` records.
 - Added first `Creator` test record and linked it to an operator.
-- Added admin registration for `ConversationThread` so phase 1 threads can be created through Django admin only.
 
 ### Tests
 - Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
-- Added `ConversationThread` model tests for CRUD behavior, unique source-thread constraint, choices validation, nullable channel handling, and required creator anchoring.
 - Added creator material tests for admin-only delete access, visible delete actions for admins, video preview-page access, anchored post-delete redirects, image-popup rendering, non-previewable file access, and delete denial for scoped operators.
 - Added conversation workflow profile tests for Mara defaults and unknown-source fail-closed behavior.
 - Added `BuddyDraft` model tests for creation, required thread anchoring, state/risk/source choices, explicit draft-state behavior, and conservative human-attention defaults.
+- Added Buddy draft service tests for Mara-only draft creation, deterministic stub defaults, operator assignment passthrough, thread immutability, and fail-closed unsupported-source behavior.
+- Added conversation thread view tests for scoped list/detail access, out-of-scope denial, empty-list behavior without active assignment, optional channel handling, and latest-draft detail rendering.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
