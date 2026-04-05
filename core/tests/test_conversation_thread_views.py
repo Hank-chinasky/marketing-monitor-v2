@@ -221,7 +221,8 @@ class ConversationThreadViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, latest_draft.reply_text)
         self.assertContains(response, "Use manual review before sending.")
-        self.assertContains(response, "0.500")
+        normalized_response_content = response.content.decode().replace(",", ".")
+        self.assertIn(str(latest_draft.confidence), normalized_response_content)
         self.assertNotContains(response, old_draft.reply_text)
 
     def test_detail_works_without_channel(self):
