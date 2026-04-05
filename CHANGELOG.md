@@ -44,11 +44,13 @@
 - Added superuser access for the live environment.
 - Added operator user accounts and matching `Operator` records.
 - Added first `Creator` test record and linked it to an operator.
+- Added admin registration for `ConversationThread` so phase 1 threads can be created through Django admin only.
 
 ### Tests
 - Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
+- Added `ConversationThread` model tests for CRUD behavior, unique source-thread constraint, choices validation, nullable channel handling, and required creator anchoring.
 - Added creator material tests for admin-only delete access, visible delete actions for admins, video preview-page access, anchored post-delete redirects, image-popup rendering, non-previewable file access, and delete denial for scoped operators.
 - Added conversation workflow profile tests for Mara defaults and unknown-source fail-closed behavior.
 - Added `BuddyDraft` model tests for creation, required thread anchoring, state/risk/source choices, explicit draft-state behavior, and conservative human-attention defaults.
