@@ -26,8 +26,10 @@
 - Added operator user accounts and matching `Operator` model records.
 - Added the first `Creator` record and linked it to an operator for initial data validation.
 - Added structured Instagram workspace session fields on `CreatorChannel` for what was done, next action, blockers, policy-context review, and session timestamp.
+- Added `ConversationThread` as an admin-seeded Mara-only workflow thread model with scoped creator anchoring, `source_system` choices, status choices, source-thread uniqueness, and no transcript/runtime fields.
 - Added a dedicated creator material preview page for video materials.
 - Added an explicit fail-closed Mara conversation workflow profile resolver with hard workflow-only defaults for human approval and context handling.
+- Added `BuddyDraft` as a structured conversation draft model with explicit state, risk level, generation source, and human-review-oriented draft semantics.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -49,6 +51,7 @@
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
 - Added creator material tests for admin-only delete access, visible delete actions for admins, video preview-page access, anchored post-delete redirects, image-popup rendering, non-previewable file access, and delete denial for scoped operators.
 - Added conversation workflow profile tests for Mara defaults and unknown-source fail-closed behavior.
+- Added `BuddyDraft` model tests for creation, required thread anchoring, state/risk/source choices, explicit draft-state behavior, and conservative human-attention defaults.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
