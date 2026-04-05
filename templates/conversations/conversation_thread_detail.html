@@ -36,21 +36,49 @@
 
 <div class="panel">
     <h2>Latest BuddyDraft</h2>
+
     {% if latest_draft %}
-        <ul class="clean">
-            <li><strong>Reply text:</strong> {{ latest_draft.reply_text|linebreaksbr }}</li>
-            <li><strong>Intent:</strong> {{ latest_draft.intent }}</li>
-            <li><strong>Tone:</strong> {{ latest_draft.tone }}</li>
-            <li><strong>Confidence:</strong> {{ latest_draft.confidence|default:"-" }}</li>
-            <li><strong>Risk level:</strong> {{ latest_draft.risk_level }}</li>
-            <li><strong>Requires human attention:</strong> {{ latest_draft.requires_human_attention|yesno:"Ja,Nee" }}</li>
-            <li><strong>Handoff note:</strong> {{ latest_draft.handoff_note|default:"-"|linebreaksbr }}</li>
-            <li><strong>State:</strong> {{ latest_draft.state }}</li>
-            <li><strong>Generation source:</strong> {{ latest_draft.generation_source }}</li>
-            <li><strong>Created at:</strong> {{ latest_draft.created_at }}</li>
-        </ul>
+        <div class="grid" style="margin-bottom:1rem;">
+            <div style="border:1px solid #e5e7eb; border-radius:10px; padding:1rem; background:#f8fafc;">
+                <h3 style="margin-top:0;">Draft status</h3>
+                <ul class="clean">
+                    <li><strong>State:</strong> {{ latest_draft.state }}</li>
+                    <li><strong>Generation source:</strong> {{ latest_draft.generation_source }}</li>
+                    <li><strong>Created at:</strong> {{ latest_draft.created_at }}</li>
+                    <li><strong>Requires human attention:</strong> {{ latest_draft.requires_human_attention|yesno:"Ja,Nee" }}</li>
+                </ul>
+            </div>
+
+            <div style="border:1px solid #e5e7eb; border-radius:10px; padding:1rem; background:#fff;">
+                <h3 style="margin-top:0;">Draft metadata</h3>
+                <ul class="clean">
+                    <li><strong>Intent:</strong> {{ latest_draft.intent }}</li>
+                    <li><strong>Tone:</strong> {{ latest_draft.tone }}</li>
+                    <li><strong>Confidence:</strong> {{ latest_draft.confidence|default:"-" }}</li>
+                    <li><strong>Risk level:</strong> {{ latest_draft.risk_level }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="border:1px solid #e5e7eb; border-radius:10px; padding:1rem; background:#fff; margin-bottom:1rem;">
+            <h3 style="margin-top:0;">Reply draft</h3>
+            <div>{{ latest_draft.reply_text|linebreaksbr }}</div>
+        </div>
+
+        <div style="border:1px solid #e5e7eb; border-radius:10px; padding:1rem; background:#fff;">
+            <h3 style="margin-top:0;">Handoff note</h3>
+            <div>{{ latest_draft.handoff_note|default:"-"|linebreaksbr }}</div>
+        </div>
     {% else %}
-        <p>Geen BuddyDraft beschikbaar.</p>
+        <div style="border:1px dashed #d1d5db; border-radius:10px; padding:1rem; background:#f9fafb; margin-bottom:1rem;">
+            <p style="margin:0 0 0.5rem;"><strong>Er is nog geen BuddyDraft beschikbaar.</strong></p>
+            <p class="muted" style="margin:0;">Draft-generatie volgt in een later ticket.</p>
+        </div>
     {% endif %}
+
+    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #e5e7eb;">
+        <h3 style="margin-top:0;">Volgende fase</h3>
+        <p class="muted" style="margin:0;">Draft-acties volgen in een volgende fase. Review- en goedkeurflow wordt later toegevoegd.</p>
+    </div>
 </div>
 {% endblock %}

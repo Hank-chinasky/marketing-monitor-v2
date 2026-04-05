@@ -21,6 +21,7 @@
 - Added an admin-only delete action for creator materials on the existing creator detail flow.
 - Replaced the duplicate `Open bestand` action with one clear `Bekijk groter` action for previewable materials while keeping non-previewable files accessible through `Open bestand`.
 - Returned image preview on creator materials to the in-page popup flow while keeping video preview on the dedicated preview page.
+- Improved the read-only BuddyDraft presentation on conversation detail pages with a clearer draft context block and explicit empty-state messaging.
 
 ### Added
 - Added superuser access for the deployed environment.
@@ -57,6 +58,7 @@
 - Added `BuddyDraft` model tests for creation, required thread anchoring, state/risk/source choices, explicit draft-state behavior, and conservative human-attention defaults.
 - Added Buddy draft service tests for Mara-only draft creation, deterministic stub defaults, operator assignment passthrough, thread immutability, and fail-closed unsupported-source behavior.
 - Added conversation thread view tests for scoped list/detail access, out-of-scope denial, empty-list behavior without active assignment, optional channel handling, and latest-draft detail rendering.
+- Added BuddyDraft detail UI tests for read-only latest-draft rendering, empty-state behavior, and preserved scoped detail access.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
