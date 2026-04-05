@@ -144,9 +144,9 @@ class BuddyDraftDetailUITests(TestCase):
         self.assertContains(response, "Volgende fase")
         self.assertContains(response, "Aanvullende draft-acties volgen in een volgende fase.")
         self.assertContains(response, "Reject- en verzendflow worden later toegevoegd.")
-        self.assertNotContains(response, "Reject")
-        self.assertNotContains(response, "Generate")
-        self.assertNotContains(response, "Send")
+        self.assertNotContains(response, "Genereer")
+        self.assertNotContains(response, "Verzend")
+        self.assertNotContains(response, "Markeer draft als afgekeurd")
 
     def test_detail_now_renders_real_approve_button_for_drafted_latest_draft(self):
         self.client.force_login(self.operator_user)
