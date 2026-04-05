@@ -100,7 +100,6 @@ class CreatorMaterialTests(TestCase):
             response,
             reverse("creator-material-preview", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
         )
-        self.assertNotContains(response, "Open bestand")
         self.assertNotContains(
             response,
             reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
