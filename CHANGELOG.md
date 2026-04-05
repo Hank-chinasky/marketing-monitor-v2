@@ -27,6 +27,7 @@
 - Added the first `Creator` record and linked it to an operator for initial data validation.
 - Added structured Instagram workspace session fields on `CreatorChannel` for what was done, next action, blockers, policy-context review, and session timestamp.
 - Added a dedicated creator material preview page for video materials.
+- Added an explicit fail-closed Mara conversation workflow profile resolver with hard workflow-only defaults for human approval and context handling.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -47,6 +48,7 @@
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
 - Added creator material tests for admin-only delete access, visible delete actions for admins, video preview-page access, anchored post-delete redirects, image-popup rendering, non-previewable file access, and delete denial for scoped operators.
+- Added conversation workflow profile tests for Mara defaults and unknown-source fail-closed behavior.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
