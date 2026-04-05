@@ -385,3 +385,73 @@ class ConversationThread(models.Model):
 
     def __str__(self) -> str:
         return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"
+
+
+class BuddyDraft(models.Model):
+    class State(models.TextChoices):
+        DRAFTED = "drafted", "Drafted"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    class RiskLevel(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+
+    class GenerationSource(models.TextChoices):
+        STUB = "stub", "Stub"
+        BUDDY_API = "buddy_api", "Buddy API"
+
+    thread = models.ForeignKey(
+        ConversationThread,
+        on_delete=models.CASCADE,
+        related_name="buddy_drafts",
+    )
+    reply_text = models.TextField()
+    intent = models.CharField(max_length=100)
+    tone = models.CharField(max_length=100)
+    confidence = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    risk_level = models.CharField(
+        max_length=20,
+        choices=RiskLevel.choices,
+    )
+    requires_human_attention = models.BooleanField(default=True)
+    handoff_note = models.TextField(blank=True)
+    state = models.CharField(
+        max_length=20,
+        choices=State.choices,
+        default=State.DRAFTED,
+    )
+    generation_source = models.CharField(
+        max_length=20,
+        choices=GenerationSource.choices,
+        default=GenerationSource.STUB,
+    )
+    created_for_operator = models.ForeignKey(
+        Operator,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="buddy_drafts_created_for",
+    )
+    edited_after_generation = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejected_at = models.DateTimeField(null=True, blank=True)
+
+    def is_drafted(self) -> bool:
+        return self.state == self.State.DRAFTED
+
+    def is_approved(self) -> bool:
+        return self.state == self.State.APPROVED
+
+    def is_rejected(self) -> bool:
+        return self.state == self.State.REJECTED
+
+    def __str__(self) -> str:
+        return f"{self.thread} / {self.state}"
