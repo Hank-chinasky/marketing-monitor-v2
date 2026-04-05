@@ -46,7 +46,20 @@
                     <li><strong>Generation source:</strong> {{ latest_draft.generation_source }}</li>
                     <li><strong>Created at:</strong> {{ latest_draft.created_at }}</li>
                     <li><strong>Requires human attention:</strong> {{ latest_draft.requires_human_attention|yesno:"Ja,Nee" }}</li>
+                    {% if latest_draft.approved_at %}
+                        <li><strong>Approved at:</strong> {{ latest_draft.approved_at }}</li>
+                    {% endif %}
+                    {% if latest_draft.approved_by_user %}
+                        <li><strong>Approved by:</strong> {{ latest_draft.approved_by_user }}</li>
+                    {% endif %}
                 </ul>
+
+                {% if can_approve_latest_draft %}
+                    <form method="post" action="{% url 'buddy-draft-approve' latest_draft.pk %}" style="margin-top:1rem;">
+                        {% csrf_token %}
+                        <button type="submit" class="primary-button">Markeer draft als goedgekeurd</button>
+                    </form>
+                {% endif %}
             </div>
 
             <div style="border:1px solid #e5e7eb; border-radius:10px; padding:1rem; background:#fff;">
@@ -78,7 +91,7 @@
 
     <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #e5e7eb;">
         <h3 style="margin-top:0;">Volgende fase</h3>
-        <p class="muted" style="margin:0;">Draft-acties volgen in een volgende fase. Review- en goedkeurflow wordt later toegevoegd.</p>
+        <p class="muted" style="margin:0;">Aanvullende draft-acties volgen in een volgende fase. Reject- en verzendflow worden later toegevoegd.</p>
     </div>
 </div>
 {% endblock %}

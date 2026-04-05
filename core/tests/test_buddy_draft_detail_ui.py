@@ -72,7 +72,7 @@ class BuddyDraftDetailUITests(TestCase):
             source_thread_id="mara-draft-ui-3",
         )
 
-        BuddyDraft.objects.create(
+        self.draft = BuddyDraft.objects.create(
             thread=self.thread_with_draft,
             reply_text="Dank je, ik kom hier handmatig op terug.",
             intent="follow_up",
@@ -134,7 +134,7 @@ class BuddyDraftDetailUITests(TestCase):
         self.assertContains(response, "Generation source:")
         self.assertContains(response, "stub")
 
-    def test_detail_renders_static_placeholder_text_for_later_actions(self):
+    def test_detail_renders_placeholder_text_for_remaining_actions(self):
         self.client.force_login(self.operator_user)
         response = self.client.get(
             reverse("conversation-thread-detail", kwargs={"pk": self.thread_with_draft.pk})
@@ -142,12 +142,21 @@ class BuddyDraftDetailUITests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Volgende fase")
-        self.assertContains(response, "Draft-acties volgen in een volgende fase.")
-        self.assertContains(response, "Review- en goedkeurflow wordt later toegevoegd.")
-        self.assertNotContains(response, "Approve")
+        self.assertContains(response, "Aanvullende draft-acties volgen in een volgende fase.")
+        self.assertContains(response, "Reject- en verzendflow worden later toegevoegd.")
         self.assertNotContains(response, "Reject")
         self.assertNotContains(response, "Generate")
         self.assertNotContains(response, "Send")
+
+    def test_detail_now_renders_real_approve_button_for_drafted_latest_draft(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.get(
+            reverse("conversation-thread-detail", kwargs={"pk": self.thread_with_draft.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Markeer draft als goedgekeurd")
+        self.assertContains(response, reverse("buddy-draft-approve", kwargs={"pk": self.draft.pk}))
 
     def test_existing_scope_access_remains_intact(self):
         self.client.force_login(self.admin)

@@ -7,6 +7,7 @@ from core.assignment_views import (
     OperatorAssignmentReactivateView,
 )
 from core.conversation_views import (
+    BuddyDraftApproveView,
     ConversationThreadDetailView,
     ConversationThreadListView,
 )
@@ -40,6 +41,11 @@ urlpatterns = [
     path("", OperationsDashboardView.as_view(), name="operations-dashboard"),
     path("conversations/", ConversationThreadListView.as_view(), name="conversation-thread-list"),
     path("conversations/<int:pk>/", ConversationThreadDetailView.as_view(), name="conversation-thread-detail"),
+    path(
+        "conversations/drafts/<int:pk>/approve/",
+        BuddyDraftApproveView.as_view(),
+        name="buddy-draft-approve",
+    ),
     path("creators/", CreatorListView.as_view(), name="creator-list"),
     path("creators/create/", CreatorCreateView.as_view(), name="creator-create"),
     path("creators/<int:pk>/", CreatorDetailView.as_view(), name="creator-detail"),
