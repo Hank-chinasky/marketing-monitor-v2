@@ -72,7 +72,7 @@ class CreatorMaterialTests(TestCase):
         self.assertEqual(other.media_kind, "other")
         self.assertEqual(other.extension, "pdf")
 
-    def test_scoped_operator_sees_preview_links_without_open_file_action(self):
+    def test_scoped_operator_sees_image_popup_and_video_preview_link(self):
         image = CreatorMaterial.objects.create(
             creator=self.creator,
             uploaded_by=self.admin,
@@ -90,33 +90,33 @@ class CreatorMaterialTests(TestCase):
         response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator.pk}))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "creator-material-image-preview-trigger")
+        self.assertContains(response, "creator-material-image-modal")
         self.assertContains(
             response,
-            reverse("creator-material-preview", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
+            reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
         )
         self.assertContains(
             response,
             reverse("creator-material-preview", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
         )
-        self.assertNotContains(response, "creator-material-modal")
-        self.assertNotContains(response, "creator-material-preview-trigger")
         self.assertNotContains(response, "Open bestand")
         self.assertNotContains(
             response,
             reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
         )
 
-    def test_allowed_user_can_open_material_preview_page(self):
-        image = CreatorMaterial.objects.create(
+    def test_allowed_user_can_open_video_preview_page(self):
+        video = CreatorMaterial.objects.create(
             creator=self.creator,
             uploaded_by=self.admin,
-            label="Image one",
-            file=SimpleUploadedFile("preview.jpg", b"image-bytes", content_type="image/jpeg"),
+            label="Video one",
+            file=SimpleUploadedFile("clip.mp4", b"video-bytes", content_type="video/mp4"),
         )
 
         self.client.force_login(self.operator_user)
         response = self.client.get(
-            reverse("creator-material-preview", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk})
+            reverse("creator-material-preview", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk})
         )
 
         self.assertEqual(response.status_code, 200)
@@ -124,7 +124,7 @@ class CreatorMaterialTests(TestCase):
         self.assertContains(response, "Terug naar materialen")
         self.assertContains(
             response,
-            reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
+            reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
         )
 
     def test_admin_sees_delete_action_on_creator_detail(self):
