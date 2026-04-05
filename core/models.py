@@ -439,6 +439,13 @@ class BuddyDraft(models.Model):
         blank=True,
         related_name="buddy_drafts_created_for",
     )
+    approved_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_buddy_drafts",
+    )
     edited_after_generation = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)

@@ -34,6 +34,7 @@
 - Added `BuddyDraft` as a structured conversation draft model with explicit state, risk level, generation source, and human-review-oriented draft semantics.
 - Added a Mara-only Buddy draft stub service that creates conservative operator-facing `BuddyDraft` records with fail-closed source validation.
 - Added read-only conversation thread list and detail views with assignment-scoped visibility and latest-draft context rendering.
+- Added the first BuddyDraft approval action as a small POST-only workflow step from conversation detail for admin and scoped operators, including approver attribution.
 
 ### Ops
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
@@ -59,6 +60,7 @@
 - Added Buddy draft service tests for Mara-only draft creation, deterministic stub defaults, operator assignment passthrough, thread immutability, and fail-closed unsupported-source behavior.
 - Added conversation thread view tests for scoped list/detail access, out-of-scope denial, empty-list behavior without active assignment, optional channel handling, and latest-draft detail rendering.
 - Added BuddyDraft detail UI tests for read-only latest-draft rendering, empty-state behavior, and preserved scoped detail access.
+- Added BuddyDraft approval action tests for scoped access, approved state transition, approver attribution, timestamp updates, drafted-only action visibility, and latest-draft-only approval behavior.
 
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
