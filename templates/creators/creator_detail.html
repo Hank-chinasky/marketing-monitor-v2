@@ -222,6 +222,15 @@
                             >
                                 Bekijk groter
                             </a>
+                        {% else %}
+                            <a
+                                class="quick-link"
+                                href="{% url 'creator-material-download' creator.pk material.pk %}"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                Open bestand
+                            </a>
                         {% endif %}
                         {% if can_upload_materials %}
                             <form

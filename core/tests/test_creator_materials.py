@@ -106,6 +106,24 @@ class CreatorMaterialTests(TestCase):
             reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": image.pk}),
         )
 
+    def test_scoped_operator_sees_open_file_action_for_non_previewable_material(self):
+        other = CreatorMaterial.objects.create(
+            creator=self.creator,
+            uploaded_by=self.admin,
+            label="Briefing",
+            file=SimpleUploadedFile("briefing.pdf", b"pdf-bytes", content_type="application/pdf"),
+        )
+
+        self.client.force_login(self.operator_user)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Open bestand")
+        self.assertContains(
+            response,
+            reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": other.pk}),
+        )
+
     def test_allowed_user_can_open_video_preview_page(self):
         video = CreatorMaterial.objects.create(
             creator=self.creator,
