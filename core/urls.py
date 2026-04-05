@@ -6,6 +6,10 @@ from core.assignment_views import (
     OperatorAssignmentDeactivateView,
     OperatorAssignmentReactivateView,
 )
+from core.conversation_views import (
+    ConversationThreadDetailView,
+    ConversationThreadListView,
+)
 from core.material_views import (
     CreatorDetailView,
     CreatorMaterialDeleteView,
@@ -34,6 +38,8 @@ from core.workspace_views import InstagramWorkspaceView
 urlpatterns = [
     path("healthz/", HealthzView.as_view(), name="healthz"),
     path("", OperationsDashboardView.as_view(), name="operations-dashboard"),
+    path("conversations/", ConversationThreadListView.as_view(), name="conversation-thread-list"),
+    path("conversations/<int:pk>/", ConversationThreadDetailView.as_view(), name="conversation-thread-detail"),
     path("creators/", CreatorListView.as_view(), name="creator-list"),
     path("creators/create/", CreatorCreateView.as_view(), name="creator-create"),
     path("creators/<int:pk>/", CreatorDetailView.as_view(), name="creator-detail"),

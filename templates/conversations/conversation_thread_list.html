@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Conversation Threads</h1>
+
+<div class="panel">
+    <ul class="clean">
+        {% for thread in threads %}
+            <li style="margin-bottom:0.75rem;">
+                <a href="{% url 'conversation-thread-detail' thread.pk %}">
+                    {{ thread.creator.display_name }}
+                </a>
+                — {{ thread.source_system }} / {{ thread.status }}
+                — {{ thread.source_thread_id }}
+                {% if thread.channel %}
+                    — {{ thread.channel.platform }} / {{ thread.channel.handle }}
+                {% else %}
+                    — Geen channel
+                {% endif %}
+                — Laatste bericht: {{ thread.last_message_at|default:"-" }}
+            </li>
+        {% empty %}
+            <li>Geen conversation threads.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
