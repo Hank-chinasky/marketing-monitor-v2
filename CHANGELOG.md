@@ -9,6 +9,7 @@
 - Fixed browser login flow by correcting the referrer policy that caused Django CSRF validation to fail.
 - Fixed creator material persistence by storing uploaded media under the persistent `/app/data/media` path.
 - Fixed creator material delete flow so admin returns directly to the materials section instead of the top of the creator page.
+- Fixed conversation thread view tests to accept localized BuddyDraft confidence rendering instead of assuming a dot decimal separator.
 
 ### Changed
 - Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
