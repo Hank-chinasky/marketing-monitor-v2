@@ -241,4 +241,5 @@ class ConversationThreadViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Geen BuddyDraft beschikbaar.")
+        self.assertContains(response, "Er is nog geen BuddyDraft beschikbaar.")
+        self.assertContains(response, "Draft-generatie volgt in een later ticket.")
