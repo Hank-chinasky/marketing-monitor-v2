@@ -1,0 +1,237 @@
+{% extends "shared_core/three_pane_base.html" %}
+
+{% block workspace_title %}Chats Workspace v1{% endblock %}
+{% block workspace_subtitle %}Operator-first chatwerk: policy eerst, daarna threadfocus, en rechts de overdracht/run-log kolom.{% endblock %}
+{% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
+{% block center_pane_title %}Werkvlak: threadfocus en actuele aandacht{% endblock %}
+{% block right_pane_title %}Handoff · Run log · Open issues · Quick actions · Buddy-slot{% endblock %}
+
+{% block left_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Mag ik hier werken?</h3>
+        <p>
+            <span class="badge {{ access_state.badge }}">{{ access_state.label }}</span>
+            {{ access_state.reason }}
+        </p>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Assignment status</h3>
+        <p><strong>Status:</strong> {{ assignment_context.status_label }}</p>
+        <p><strong>Scope:</strong> {{ assignment_context.scope_label }}</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Policy vóór actie</h3>
+        {% if selected_thread and selected_thread.guardrails %}
+            <div>{{ selected_thread.guardrails|linebreaksbr }}</div>
+        {% else %}
+            <div class="muted">Guardrails ontbreken. Niet starten zonder handmatige policy-check.</div>
+        {% endif %}
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Account/context</h3>
+        {% if selected_thread %}
+            <ul class="clean">
+                <li><strong>Creator:</strong> {{ selected_thread.creator.display_name }}</li>
+                <li><strong>Consent:</strong> {{ selected_thread.creator.get_consent_status_display }}</li>
+                <li><strong>Channel:</strong>
+                    {% if selected_thread.channel %}
+                        {{ selected_thread.channel.get_platform_display }} / {{ selected_thread.channel.handle }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </li>
+            </ul>
+        {% else %}
+            <div class="muted">Geen actieve thread/context.</div>
+        {% endif %}
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Scope/status & access/risk</h3>
+        {% if selected_thread %}
+            <ul class="clean">
+                <li><strong>Thread status:</strong> {{ selected_thread.get_status_display }}</li>
+                <li><strong>Source:</strong> {{ selected_thread.get_source_system_display }}</li>
+                <li><strong>Risk flags:</strong> {{ selected_thread.risk_flags|default:"-" }}</li>
+                {% if selected_thread.channel %}
+                    <li><strong>Credential status:</strong> {{ selected_thread.channel.get_credential_status_display|default:"-" }}</li>
+                    <li><strong>2FA:</strong> {{ selected_thread.channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
+                {% endif %}
+            </ul>
+        {% else %}
+            <div class="muted">Scope/risk verschijnt na threadselectie.</div>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h3 style="margin-top:0;">Completeness alerts</h3>
+        <ul class="clean">
+            {% for alert in completeness_alerts %}
+                <li><span class="badge badge-yellow">alert</span> {{ alert }}</li>
+            {% empty %}
+                <li><span class="badge badge-green">ok</span> Context is compleet voor actie.</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
+
+{% block center_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Threadselectie in werkvlak</h3>
+        {% if threads %}
+            <form method="get" style="display:flex; gap:0.65rem; align-items:center; flex-wrap:wrap;">
+                <label for="thread-select" style="margin:0;">Actieve thread</label>
+                <select id="thread-select" name="thread" style="max-width:420px;">
+                    {% for thread in threads %}
+                        <option value="{{ thread.pk }}" {% if selected_thread and selected_thread.pk == thread.pk %}selected{% endif %}>
+                            {{ thread.creator.display_name }} · {{ thread.source_thread_id }} · {{ thread.get_status_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="secondary-button">Open thread</button>
+            </form>
+        {% else %}
+            <div class="muted">Geen threads beschikbaar binnen scope.</div>
+        {% endif %}
+    </div>
+
+    {% if saved %}
+        <div class="success-panel">Handoff opgeslagen. Laatste stand en volgende stap zijn bijgewerkt.</div>
+    {% endif %}
+
+    {% if submit_error %}
+        <div class="panel" style="margin-bottom:0.75rem; border-color:#dc2626; background:#fef2f2;">
+            <strong>Afsluiten niet gelukt:</strong> {{ submit_error }}
+        </div>
+    {% endif %}
+
+    {% if selected_thread %}
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Actieve thread/context</h3>
+            <p><strong>Summary:</strong> {{ selected_thread.thread_summary|default:"-"|linebreaksbr }}</p>
+            <p><strong>Wat nu aandacht nodig heeft:</strong> {{ selected_thread.open_loop|default:"-"|linebreaksbr }}</p>
+            <p><strong>Laatste relevante status:</strong> {{ selected_thread.get_status_display }} · {{ selected_thread.last_message_at|default:"-" }}</p>
+        </div>
+
+        <div class="grid" style="margin-bottom:0.75rem;">
+            <div class="panel">
+                <h3 style="margin-top:0;">Sessie starten</h3>
+                <ol style="margin:0; padding-left:1.1rem;">
+                    <li>Scan access-state en policy (linkerkolom).</li>
+                    <li>Open de threaddetail voor volledige context.</li>
+                    <li>Controleer laatste handoff en open issues (rechterkolom).</li>
+                </ol>
+            </div>
+            <div class="panel">
+                <h3 style="margin-top:0;">Sessie afsluiten (30s handoff)</h3>
+                <p class="muted" style="margin-top:0;">Minimaal nodig: laatste stand + volgende stap.</p>
+                {% if access_state.status == "blocked" %}
+                    <p><span class="badge badge-red">blocked</span> Eerst access/context issues oplossen voordat je afsluit.</p>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                    <p>
+                        <label for="id_handoff_summary">Laatste stand (verplicht)</label>
+                        <textarea id="id_handoff_summary" name="handoff_summary" required>{{ handoff_form.handoff_summary }}</textarea>
+                    </p>
+                    <p>
+                        <label for="id_next_step">Volgende stap (verplicht)</label>
+                        <input id="id_next_step" type="text" name="next_step" value="{{ handoff_form.next_step }}" required>
+                    </p>
+                    <p>
+                        <label for="id_blocker">Blocker / issue</label>
+                        <input id="id_blocker" type="text" name="blocker" value="{{ handoff_form.blocker }}">
+                    </p>
+                    <p>
+                        <label for="id_close_signal">Afsluitsignaal</label>
+                        <select id="id_close_signal" name="close_signal">
+                            <option value="overdracht_klaar" {% if handoff_form.close_signal == "overdracht_klaar" %}selected{% endif %}>overdracht_klaar</option>
+                            <option value="review_nodig" {% if handoff_form.close_signal == "review_nodig" %}selected{% endif %}>review_nodig</option>
+                            <option value="opvolging_nodig" {% if handoff_form.close_signal == "opvolging_nodig" %}selected{% endif %}>opvolging_nodig</option>
+                        </select>
+                    </p>
+                    <button type="submit" class="primary-button" {% if access_state.status == "blocked" %}disabled{% endif %}>Sessie afsluiten & handoff opslaan</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3 style="margin-top:0;">Volgende stap (scanbaar)</h3>
+            <div style="padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc;">
+                {{ selected_thread.open_loop|default:"Nog niet vastgelegd"|linebreaksbr }}
+            </div>
+            <div class="muted" style="margin-top:0.5rem;">Deze waarde wordt bijgewerkt door de handoff-afsluitmodule.</div>
+        </div>
+    {% else %}
+        <div class="panel">
+            <span class="badge badge-yellow">alert</span> Selecteer een thread om het werkvlak te starten.
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block right_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Laatste handoff</h3>
+        {% if selected_thread %}
+            <p><strong>Handoff note:</strong><br>{{ selected_thread.last_handoff_note|default:"-"|linebreaksbr }}</p>
+            <p><strong>At:</strong> {{ selected_thread.last_operator_handoff_at|default:"-" }}</p>
+        {% else %}
+            <p class="muted">Geen handoff zonder actieve thread.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Run log samenvatting</h3>
+        <ul class="clean">
+            {% for item in run_log %}
+                <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
+            {% empty %}
+                <li class="muted">Nog geen run-log items.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Open issues</h3>
+        <ul class="clean">
+            {% for issue in open_issues %}
+                <li>{{ issue }}</li>
+            {% empty %}
+                <li class="muted">Geen open issues gedetecteerd.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Quick actions</h3>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            {% for action in quick_actions %}
+                {% if action.type == "approve" %}
+                    <form method="post" action="{% url 'buddy-draft-approve' action.draft_id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="primary-button">{{ action.label }}</button>
+                    </form>
+                {% else %}
+                    <a class="quick-link" href="{{ action.url }}">{{ action.label }}</a>
+                {% endif %}
+            {% empty %}
+                <span class="muted">Geen quick actions beschikbaar.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3 style="margin-top:0;">Buddy-slot</h3>
+        {% if latest_draft %}
+            <p><strong>Status:</strong> {{ latest_draft.get_state_display }}</p>
+            <p><strong>Intent/tone:</strong> {{ latest_draft.intent }} / {{ latest_draft.tone }}</p>
+            <p><strong>Draft:</strong><br>{{ latest_draft.reply_text|linebreaksbr }}</p>
+        {% else %}
+            <p class="muted">Buddy placeholder actief. Nog geen draft beschikbaar.</p>
+        {% endif %}
+    </div>
+{% endblock %}
