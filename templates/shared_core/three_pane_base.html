@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{% block workspace_title %}Shared Core v1{% endblock %}</h1>
+<div class="muted" style="margin-bottom:1rem;">
+    {% block workspace_subtitle %}Vaste operations-layout: links policy/context/completeness, midden werkvlak, rechts handoff/run log/issues/buddy.{% endblock %}
+</div>
+
+<div class="shared-core-shell">
+    <aside class="shared-core-pane" aria-label="Policy en context kolom">
+        <h2>{% block left_pane_title %}Policy · Context · Completeness{% endblock %}</h2>
+        {% block left_pane %}{% endblock %}
+    </aside>
+
+    <main class="shared-core-pane" aria-label="Werkvlak kolom">
+        <h2>{% block center_pane_title %}Workspace werkvlak{% endblock %}</h2>
+        {% block center_pane %}{% endblock %}
+    </main>
+
+    <aside class="shared-core-pane" aria-label="Handoff kolom">
+        <h2>{% block right_pane_title %}Handoff · Run log · Issues · Buddy{% endblock %}</h2>
+        {% block right_pane %}{% endblock %}
+    </aside>
+</div>
+{% endblock %}
