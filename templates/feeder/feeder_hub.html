@@ -1,0 +1,198 @@
+{% extends "shared_core/three_pane_base.html" %}
+
+{% block workspace_title %}Feeder Workspace v1{% endblock %}
+{% block workspace_subtitle %}Content- en opvolgwerk in één ritme: policy/context links, feeder-werkvlak midden, handoff/run-log rechts.{% endblock %}
+{% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
+{% block center_pane_title %}Werkvlak: creatorselectie, feedfocus en opvolging{% endblock %}
+{% block right_pane_title %}Handoff · Run log · Signals · Quick actions · Buddy-slot{% endblock %}
+
+{% block left_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Mag ik hier werken?</h3>
+        <p>
+            <span class="badge {{ access_state.badge }}">{{ access_state.label }}</span>
+            {{ access_state.reason }}
+        </p>
+    </div>
+
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Assignment status</h3>
+        <p><strong>Status:</strong> {{ assignment_context.status_label }}</p>
+        <p><strong>Scope:</strong> {{ assignment_context.scope_label }}</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Policy vóór actie</h3>
+        {% if selected_creator and selected_creator.consent_status == selected_creator.ConsentStatus.ACTIVE %}
+            <p>Consent is actief. Werk alleen binnen afgesproken scope en disclosure-afspraken.</p>
+        {% elif selected_creator %}
+            <p class="muted">Consent is niet actief. Escaleren voor je publicatie/actie uitvoert.</p>
+        {% else %}
+            <p class="muted">Selecteer eerst een creator.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Context</h3>
+        {% if selected_creator %}
+            <ul class="clean">
+                <li><strong>Creator:</strong> {{ selected_creator.display_name }}</li>
+                <li><strong>Primary operator:</strong> {{ selected_creator.primary_operator|default:"-" }}</li>
+                <li><strong>Content source:</strong>
+                    {% if selected_creator.content_source_url %}
+                        <a href="{{ selected_creator.content_source_url }}" target="_blank" rel="noopener">Open source</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </li>
+            </ul>
+        {% else %}
+            <div class="muted">Geen creatorcontext geladen.</div>
+        {% endif %}
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Scope & access/risk</h3>
+        {% if selected_creator %}
+            <ul class="clean">
+                <li><strong>Channels in scope:</strong> {{ channels|length }}</li>
+                <li><strong>Content ready:</strong> {{ selected_creator.get_content_ready_status_display|default:"-" }}</li>
+            </ul>
+        {% else %}
+            <div class="muted">Scopegegevens verschijnen na selectie.</div>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h3 style="margin-top:0;">Completeness alerts</h3>
+        <ul class="clean">
+            {% for alert in completeness_alerts %}
+                <li><span class="badge badge-yellow">alert</span> {{ alert }}</li>
+            {% empty %}
+                <li><span class="badge badge-green">ok</span> Context is compleet voor feeder-actie.</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
+
+{% block center_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Creatorselectie in werkvlak</h3>
+        {% if creators %}
+            <form method="get" style="display:flex; gap:0.65rem; align-items:center; flex-wrap:wrap;">
+                <label for="creator-select" style="margin:0;">Actieve creator</label>
+                <select id="creator-select" name="creator" style="max-width:420px;">
+                    {% for creator in creators %}
+                        <option value="{{ creator.pk }}" {% if selected_creator and selected_creator.pk == creator.pk %}selected{% endif %}>
+                            {{ creator.display_name }} · {{ creator.get_status_display }} · consent {{ creator.get_consent_status_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="secondary-button">Open creator</button>
+            </form>
+        {% else %}
+            <div class="muted">Geen creators binnen scope.</div>
+        {% endif %}
+    </div>
+
+    {% if selected_creator %}
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Wat live moet</h3>
+            <ul class="clean">
+                {% for item in live_now_items %}
+                    <li>{{ item }}</li>
+                {% empty %}
+                    <li class="muted">Nog geen live-acties beschikbaar.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Wat aandacht nodig heeft</h3>
+            <ul class="clean">
+                {% for item in attention_items %}
+                    <li>{{ item }}</li>
+                {% empty %}
+                    <li class="muted">Geen directe aandachtspunten.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Door naar Chats</h3>
+            <ul class="clean">
+                {% for item in chats_handoff_items %}
+                    <li><a href="{{ item.url }}">{{ item.label }}</a></li>
+                {% empty %}
+                    <li class="muted">Geen directe doorzet naar Chats nodig.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="panel">
+            <h3 style="margin-top:0;">Ritme / opvolging</h3>
+            <ul class="clean">
+                <li><strong>Laatste stand:</strong> {{ follow_up_summary.last_stand }}</li>
+                <li><strong>Volgende stap:</strong> {{ follow_up_summary.next_step }}</li>
+                <li><strong>Doorzetten bij:</strong> {{ follow_up_summary.where_next }}</li>
+            </ul>
+        </div>
+    {% else %}
+        <div class="panel">
+            <span class="badge badge-yellow">alert</span> Selecteer een creator om het feeder-werkvlak te starten.
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block right_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Laatste handoff</h3>
+        {% if relevant_handoff_channel %}
+            <p><strong>Kanaal:</strong> {{ relevant_handoff_channel.get_platform_display }} / {{ relevant_handoff_channel.handle }}</p>
+            <p><strong>Laatste stand:</strong> {{ relevant_handoff_channel.session_updated_at|default:"-" }}</p>
+            <p><strong>Volgende stap:</strong> {{ relevant_handoff_channel.session_next_action|default:"-" }}</p>
+            <p><strong>Blockers:</strong> {{ relevant_handoff_channel.session_blockers|default:"-" }}</p>
+        {% else %}
+            <p class="muted">Nog geen channel handoff-context binnen scope.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Run log samenvatting</h3>
+        <ul class="clean">
+            {% for item in run_log %}
+                <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
+            {% empty %}
+                <li class="muted">Nog geen run-log items.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Open issues/signalen</h3>
+        <ul class="clean">
+            {% for signal in open_signals %}
+                <li>{{ signal }}</li>
+            {% empty %}
+                <li class="muted">Geen open signalen gedetecteerd.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Quick actions</h3>
+        <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            {% for action in quick_actions %}
+                <a class="quick-link" href="{{ action.url }}">{{ action.label }}</a>
+            {% empty %}
+                <span class="muted">Geen quick actions beschikbaar.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3 style="margin-top:0;">Buddy-slot</h3>
+        <p class="muted">Buddy heeft een vaste plek maar is nog niet workflow-dragend in Feeder v1.</p>
+    </div>
+{% endblock %}
