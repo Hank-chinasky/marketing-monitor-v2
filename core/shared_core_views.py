@@ -1,4 +1,5 @@
 from urllib.parse import urlencode
+from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
@@ -14,6 +15,119 @@ from core.services.scope import (
     get_creator_queryset_for_user,
     get_operator_for_user,
 )
+
+
+TEMPLATES_V1 = [
+    {
+        "id": "handoff_followup",
+        "title": "Handoff follow-up update",
+        "template_type": "handoff",
+        "scope": "shared",
+        "tags": ["handoff", "next_step", "operator"],
+        "body": (
+            "Hi {creator_name},\n\n"
+            "Korte update via {platform} ({channel_handle}).\n"
+            "Laatste overdracht: {last_handoff}.\n"
+            "Volgende stap: {next_step}.\n"
+            "Content ready status: {content_ready_status}."
+        ),
+    },
+    {
+        "id": "risk_review_ping",
+        "title": "Risk review ping",
+        "template_type": "review",
+        "scope": "chats",
+        "tags": ["risk", "review", "escalation"],
+        "body": (
+            "Creator: {creator_name}\n"
+            "Platform: {platform}\n"
+            "Handle: {channel_handle}\n"
+            "Vraag: snelle review op risico/signaal, daarna next step: {next_step}."
+        ),
+    },
+    {
+        "id": "feeder_content_ready",
+        "title": "Feeder content readiness check",
+        "template_type": "feeder",
+        "scope": "feeder",
+        "tags": ["feeder", "content", "ready"],
+        "body": (
+            "Creator {creator_name}\n"
+            "Status: {content_ready_status}\n"
+            "Laatste handoff: {last_handoff}\n"
+            "Volgende stap: {next_step}"
+        ),
+    },
+]
+
+TEMPLATE_ALLOWED_PLACEHOLDERS = {
+    "creator_name",
+    "channel_handle",
+    "platform",
+    "next_step",
+    "last_handoff",
+    "content_ready_status",
+}
+PLACEHOLDER_NOISE_VALUES = {"-", "n/a", "na", "none", "null", "onbekend", "geen", "tbd"}
+
+
+def _safe_template_format(template_body: str, values: dict[str, str]) -> str:
+    result = template_body
+    for key in TEMPLATE_ALLOWED_PLACEHOLDERS:
+        value = values.get(key, "")
+        if value:
+            result = result.replace(f"{{{key}}}", str(value))
+    return result
+
+
+def is_placeholder_noise(value) -> bool:
+    if value is None:
+        return True
+    normalized = str(value).strip().lower()
+    return normalized == "" or normalized in PLACEHOLDER_NOISE_VALUES
+
+
+def get_templates_for_workspace(
+    workspace: str,
+    *,
+    query: str = "",
+    template_type: str = "",
+    tag: str = "",
+) -> list[dict[str, Any]]:
+    workspace_templates = [
+        template
+        for template in TEMPLATES_V1
+        if template["scope"] in {"shared", workspace}
+    ]
+    query_normalized = (query or "").strip().lower()
+    type_normalized = (template_type or "").strip().lower()
+    tag_normalized = (tag or "").strip().lower()
+
+    def matches(template):
+        if query_normalized and query_normalized not in template["title"].lower():
+            return False
+        if type_normalized and type_normalized != template["template_type"].lower():
+            return False
+        if tag_normalized and tag_normalized not in {
+            tag.lower() for tag in template["tags"]
+        }:
+            return False
+        return True
+
+    return [template for template in workspace_templates if matches(template)]
+
+
+def get_template_by_id_for_workspace(template_id: str, workspace: str):
+    if not template_id:
+        return None
+    return next(
+        (
+            template
+            for template in TEMPLATES_V1
+            if template["id"] == template_id and template["scope"] in {"shared", workspace}
+        ),
+        None,
+    )
 
 
 def get_active_assignment_for_user_and_creator(user, creator):
@@ -200,6 +314,42 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         run_log = []
         open_issues = []
         quick_actions = []
+        template_query = (self.request.GET.get("template_q") or "").strip()
+        template_type = (self.request.GET.get("template_type") or "").strip()
+        template_tag = (self.request.GET.get("template_tag") or "").strip()
+        template_id = (self.request.GET.get("template") or "").strip()
+        template_action = (self.request.GET.get("template_action") or "").strip()
+        templates = get_templates_for_workspace(
+            "chats",
+            query=template_query,
+            template_type=template_type,
+            tag=template_tag,
+        )
+        selected_template = get_template_by_id_for_workspace(template_id, "chats")
+        template_context_values = {}
+        if selected_thread:
+            template_context_values = {
+                "creator_name": selected_thread.creator.display_name,
+                "channel_handle": selected_thread.channel.handle if selected_thread.channel else "",
+                "platform": (
+                    selected_thread.channel.get_platform_display()
+                    if selected_thread.channel
+                    else ""
+                ),
+                "next_step": selected_thread.open_loop or "",
+                "last_handoff": selected_thread.last_handoff_note or "",
+                "content_ready_status": (
+                    selected_thread.creator.get_content_ready_status_display()
+                    if selected_thread.creator.content_ready_status
+                    else ""
+                ),
+            }
+        filled_template_body = ""
+        if selected_template:
+            filled_template_body = _safe_template_format(
+                selected_template["body"],
+                template_context_values,
+            )
 
         if selected_thread:
             run_log.append(
@@ -243,6 +393,20 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                         "draft_id": latest_draft.pk,
                     }
                 )
+        if selected_template:
+            run_log.append(
+                {
+                    "label": "Template geopend",
+                    "value": selected_template["title"],
+                }
+            )
+            if template_action == "use":
+                run_log.append(
+                    {
+                        "label": "Template gebruikt",
+                        "value": selected_template["title"],
+                    }
+                )
 
         return {
             "threads": threads,
@@ -260,6 +424,13 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 selected_thread,
                 handoff_form_data,
             ),
+            "templates": templates,
+            "template_query": template_query,
+            "template_type": template_type,
+            "template_tag": template_tag,
+            "selected_template": selected_template,
+            "filled_template_body": filled_template_body,
+            "template_action": template_action,
         }
 
     def get(self, request, *args, **kwargs):
@@ -336,7 +507,9 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         if not materials:
             alerts.append("Geen actief materiaal beschikbaar in feeder.")
 
-        channel_with_next_step = any(channel.session_next_action for channel in channels)
+        channel_with_next_step = any(
+            not is_placeholder_noise(channel.session_next_action) for channel in channels
+        )
         if not channel_with_next_step:
             alerts.append("Volgende stap ontbreekt in channel sessiecontext.")
 
@@ -434,8 +607,23 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         channels = []
         creator_threads = []
         open_signals = []
+        live_now_items = []
+        attention_items = []
+        chats_handoff_items = []
+        follow_up_summary = {}
         run_log = []
         quick_actions = []
+        template_query = (self.request.GET.get("template_q") or "").strip()
+        template_type = (self.request.GET.get("template_type") or "").strip()
+        template_tag = (self.request.GET.get("template_tag") or "").strip()
+        template_id = (self.request.GET.get("template") or "").strip()
+        template_action = (self.request.GET.get("template_action") or "").strip()
+        templates = get_templates_for_workspace(
+            "feeder",
+            query=template_query,
+            template_type=template_type,
+            tag=template_tag,
+        )
 
         assignment = get_active_assignment_for_user_and_creator(self.request.user, selected_creator)
 
@@ -463,6 +651,15 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                     ConversationThread.Status.HANDOFF_REQUIRED,
                 }
             ]
+            prioritized_threads = sorted(
+                waiting_threads,
+                key=lambda thread: (
+                    0 if thread.status == ConversationThread.Status.HANDOFF_REQUIRED else 1,
+                    0 if thread.status == ConversationThread.Status.WAITING_ON_OPERATOR else 1,
+                    -(thread.last_message_at.timestamp() if thread.last_message_at else 0),
+                    -thread.pk,
+                ),
+            )
             if waiting_threads:
                 open_signals.append(
                     f"{len(waiting_threads)} thread(s) wachten op operator/handoff in Chats."
@@ -485,11 +682,11 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             run_log.append({"label": "Actief materiaal", "value": len(materials)})
             run_log.append({"label": "Open chatthreads", "value": len(waiting_threads)})
 
-            if creator_threads:
+            if prioritized_threads:
                 quick_actions.append(
                     {
                         "label": "Open Chats workspace",
-                        "url": f"/chats/?thread={creator_threads[0].pk}",
+                        "url": f"/chats/?thread={prioritized_threads[0].pk}",
                     }
                 )
             if relevant_handoff_channel:
@@ -499,8 +696,124 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                         "url": f"/channels/{relevant_handoff_channel.pk}/",
                     }
                 )
+            live_now_items = [
+                f"Content readiness: {selected_creator.get_content_ready_status_display() or '-'}",
+                f"Actief materiaal: {len(materials)} item(s)",
+                (
+                    f"Kanaalfocus: {relevant_handoff_channel.get_platform_display()} / {relevant_handoff_channel.handle}"
+                    if relevant_handoff_channel
+                    else "Kanaalfocus: nog niet beschikbaar"
+                ),
+            ]
+            if selected_creator.content_ready_status != selected_creator.ContentReadyStatus.READY_TO_POST:
+                attention_items.append("Content staat nog niet op ready-to-post.")
+            if selected_creator.consent_status != selected_creator.ConsentStatus.ACTIVE:
+                attention_items.append("Consent is niet actief; review of escalatie nodig.")
+            if not selected_creator.content_source_url:
+                attention_items.append("Content source ontbreekt; context aanvullen.")
+            if not materials:
+                attention_items.append("Geen actief materiaal beschikbaar.")
+
+            for channel in channels:
+                if not is_placeholder_noise(channel.session_blockers):
+                    attention_items.append(
+                        f"{channel.get_platform_display()} / {channel.handle} blocker: {channel.session_blockers}"
+                    )
+                if is_placeholder_noise(channel.session_next_action):
+                    attention_items.append(
+                        f"{channel.get_platform_display()} / {channel.handle}: volgende stap ontbreekt."
+                    )
+
+            for thread in prioritized_threads:
+                chats_handoff_items.append(
+                    {
+                        "thread_id": thread.pk,
+                        "thread_ref": thread.source_thread_id,
+                        "status": thread.get_status_display(),
+                        "last_message_at": thread.last_message_at or "-",
+                    }
+                )
+
+            follow_up_summary = {
+                "pending_handoffs": sum(
+                    1
+                    for thread in waiting_threads
+                    if thread.status == ConversationThread.Status.HANDOFF_REQUIRED
+                ),
+                "waiting_operator": sum(
+                    1
+                    for thread in waiting_threads
+                    if thread.status == ConversationThread.Status.WAITING_ON_OPERATOR
+                ),
+                "next_chats_thread_id": prioritized_threads[0].pk if prioritized_threads else None,
+                "latest_status": (
+                    relevant_handoff_channel.session_updated_at if relevant_handoff_channel else "-"
+                ),
+                "next_step": (
+                    relevant_handoff_channel.session_next_action
+                    if relevant_handoff_channel
+                    and not is_placeholder_noise(relevant_handoff_channel.session_next_action)
+                    else "-"
+                ),
+                "work_target": (
+                    f"Chats thread {prioritized_threads[0].source_thread_id}"
+                    if prioritized_threads
+                    else "Geen doorzet naar Chats"
+                ),
+            }
         else:
             relevant_handoff_channel = None
+
+        selected_template = get_template_by_id_for_workspace(template_id, "feeder")
+        template_context_values = {}
+        if selected_creator:
+            template_context_values = {
+                "creator_name": selected_creator.display_name,
+                "channel_handle": (
+                    relevant_handoff_channel.handle if relevant_handoff_channel else ""
+                ),
+                "platform": (
+                    relevant_handoff_channel.get_platform_display()
+                    if relevant_handoff_channel
+                    else ""
+                ),
+                "next_step": (
+                    relevant_handoff_channel.session_next_action
+                    if relevant_handoff_channel
+                    and not is_placeholder_noise(relevant_handoff_channel.session_next_action)
+                    else ""
+                ),
+                "last_handoff": (
+                    relevant_handoff_channel.session_blockers
+                    if relevant_handoff_channel
+                    and not is_placeholder_noise(relevant_handoff_channel.session_blockers)
+                    else ""
+                ),
+                "content_ready_status": (
+                    selected_creator.get_content_ready_status_display()
+                    if selected_creator.content_ready_status
+                    else ""
+                ),
+            }
+        filled_template_body = ""
+        if selected_template:
+            filled_template_body = _safe_template_format(
+                selected_template["body"],
+                template_context_values,
+            )
+            run_log.append(
+                {
+                    "label": "Template geopend",
+                    "value": selected_template["title"],
+                }
+            )
+            if template_action == "use":
+                run_log.append(
+                    {
+                        "label": "Template gebruikt",
+                        "value": selected_template["title"],
+                    }
+                )
 
         context["creators"] = creators
         context["selected_creator"] = selected_creator
@@ -508,6 +821,10 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         context["channels"] = channels
         context["creator_threads"] = creator_threads
         context["open_signals"] = open_signals
+        context["live_now_items"] = live_now_items
+        context["attention_items"] = attention_items
+        context["chats_handoff_items"] = chats_handoff_items
+        context["follow_up_summary"] = follow_up_summary
         context["run_log"] = run_log
         context["quick_actions"] = quick_actions
         context["assignment_context"] = build_assignment_context(assignment)
@@ -522,4 +839,11 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             assignment,
             channels,
         )
+        context["templates"] = templates
+        context["template_query"] = template_query
+        context["template_type"] = template_type
+        context["template_tag"] = template_tag
+        context["selected_template"] = selected_template
+        context["filled_template_body"] = filled_template_body
+        context["template_action"] = template_action
         return context

@@ -96,43 +96,118 @@
         {% endif %}
     </div>
 
-    {% if selected_creator %}
-        <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Materiaal/feed/contextfocus</h3>
-            {% for material in materials %}
-                <div class="shared-core-item">
-                    <strong>{{ material.label|default:material.filename }}</strong><br>
-                    <span class="muted">{{ material.uploaded_at }} · {{ material.media_kind }}</span>
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Templates v1</h3>
+        <form method="get" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:0.5rem; align-items:end;">
+            <input type="hidden" name="creator" value="{% if selected_creator %}{{ selected_creator.pk }}{% endif %}">
+            <p style="margin:0;">
+                <label for="id_template_q">Zoek titel</label>
+                <input id="id_template_q" type="text" name="template_q" value="{{ template_query }}" placeholder="bijv. feeder">
+            </p>
+            <p style="margin:0;">
+                <label for="id_template_type">Type</label>
+                <input id="id_template_type" type="text" name="template_type" value="{{ template_type }}" placeholder="feeder/handoff">
+            </p>
+            <p style="margin:0;">
+                <label for="id_template_tag">Tag</label>
+                <input id="id_template_tag" type="text" name="template_tag" value="{{ template_tag }}" placeholder="content">
+            </p>
+            <button type="submit" class="secondary-button">Zoek</button>
+        </form>
+
+        <div style="margin-top:0.75rem;">
+            {% for template_item in templates %}
+                <div class="shared-core-item" style="display:flex; justify-content:space-between; gap:0.75rem;">
+                    <div>
+                        <strong>{{ template_item.title }}</strong>
+                        <div class="muted">Type: {{ template_item.template_type }} · Tags: {{ template_item.tags|join:", " }}</div>
+                    </div>
+                    <a class="quick-link" href="?creator={% if selected_creator %}{{ selected_creator.pk }}{% endif %}&template={{ template_item.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}">Open</a>
                 </div>
             {% empty %}
-                <div class="muted">Nog geen actief materiaal beschikbaar.</div>
+                <div class="muted">Geen templates binnen filter.</div>
             {% endfor %}
         </div>
 
+        {% if selected_template %}
+            <div style="margin-top:0.75rem; border-top:1px solid #e5e7eb; padding-top:0.75rem;">
+                <p style="margin:0 0 0.5rem;"><strong>Template geopend:</strong> {{ selected_template.title }}</p>
+                <p class="muted" style="margin:0 0 0.5rem;">Brontemplate</p>
+                <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ selected_template.body }}</pre>
+                <p class="muted" style="margin:0 0 0.5rem;">Duplicaat / ingevuld</p>
+                <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ filled_template_body }}</pre>
+                <a class="quick-link" href="?creator={% if selected_creator %}{{ selected_creator.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if selected_creator %}
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Wat live moet en wat aandacht nodig heeft</h3>
+            <h3 style="margin-top:0;">Wat live moet</h3>
             <ul class="clean">
-                <li><strong>Live readiness:</strong> {{ selected_creator.get_content_ready_status_display|default:"-" }}</li>
-                <li><strong>Taken/signalen:</strong> {{ open_signals|length }}</li>
-                <li><strong>Doorzetten naar chats:</strong>
-                    {% if creator_threads %}
-                        {{ creator_threads|length }} thread(s) beschikbaar
-                    {% else %}
-                        Geen thread om door te zetten
-                    {% endif %}
-                </li>
+                {% for item in live_now_items %}
+                    <li>{{ item }}</li>
+                {% empty %}
+                    <li class="muted">Nog geen live-items.</li>
+                {% endfor %}
+            </ul>
+            <div style="margin-top:0.5rem;">
+                {% for material in materials|slice:":3" %}
+                    <div class="shared-core-item">
+                        <strong>{{ material.label|default:material.filename }}</strong><br>
+                        <span class="muted">{{ material.uploaded_at }} · {{ material.media_kind }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Wat aandacht nodig heeft</h3>
+            <ul class="clean">
+                {% for item in attention_items %}
+                    <li>{{ item }}</li>
+                {% empty %}
+                    <li class="muted">Geen extra aandachtspunten.</li>
+                {% endfor %}
             </ul>
         </div>
 
-        <div class="panel">
-            <h3 style="margin-top:0;">Ritme/opvolging (compact)</h3>
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Door naar Chats</h3>
             <ul class="clean">
-                {% for thread in creator_threads %}
-                    <li>{{ thread.source_thread_id }} · {{ thread.get_status_display }} · {{ thread.last_message_at|default:"-" }}</li>
+                {% for item in chats_handoff_items %}
+                    <li>
+                        <a href="/chats/?thread={{ item.thread_id }}">{{ item.thread_ref }}</a>
+                        · {{ item.status }} · {{ item.last_message_at }}
+                    </li>
                 {% empty %}
-                    <li class="muted">Geen actieve thread-ritme-items.</li>
+                    <li class="muted">Geen chats-handoff items.</li>
                 {% endfor %}
             </ul>
+            {% if follow_up_summary %}
+                <p class="muted" style="margin-bottom:0;">
+                    Handoff required: {{ follow_up_summary.pending_handoffs }} ·
+                    Waiting on operator: {{ follow_up_summary.waiting_operator }}
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="panel">
+            <h3 style="margin-top:0;">Ritme / opvolging</h3>
+            <ul class="clean">
+                <li><strong>Laatste stand:</strong> {{ follow_up_summary.latest_status|default:"-" }}</li>
+                <li><strong>Volgende stap:</strong> {{ follow_up_summary.next_step|default:"-" }}</li>
+                <li><strong>Vervolgwerk zit in:</strong> {{ follow_up_summary.work_target|default:"-" }}</li>
+                <li><strong>Taken/signalen:</strong> {{ open_signals|length }}</li>
+            </ul>
+            {% for thread in creator_threads|slice:":5" %}
+                <div class="shared-core-item">
+                    <strong>{{ thread.source_thread_id }}</strong><br>
+                    <span class="muted">{{ thread.get_status_display }} · {{ thread.last_message_at|default:"-" }}</span>
+                </div>
+            {% empty %}
+                <div class="muted">Geen actieve thread-ritme-items.</div>
+            {% endfor %}
         </div>
     {% else %}
         <div class="panel">

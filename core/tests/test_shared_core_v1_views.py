@@ -86,6 +86,16 @@ class SharedCoreV1ViewsTests(TestCase):
             risk_flags="",
             last_handoff_note="Need manual approval before final reply.",
         )
+        self.handoff_thread = ConversationThread.objects.create(
+            creator=self.creator,
+            channel=self.newer_channel,
+            source_thread_id="priority-handoff-thread",
+            status=ConversationThread.Status.HANDOFF_REQUIRED,
+            open_loop="Escalate to chat operator now.",
+            guardrails="Keep message concise.",
+            risk_flags="",
+            last_handoff_note="Ready for urgent handoff.",
+        )
         BuddyDraft.objects.create(
             thread=self.thread,
             reply_text="Dankjewel! We komen morgen met update.",
@@ -138,6 +148,131 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(chats, "Assignment status")
         self.assertContains(chats, "Completeness alerts")
 
+    def test_feeder_keeps_operator_first_four_center_blocks(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertContains(response, "Wat live moet")
+        self.assertContains(response, "Wat aandacht nodig heeft")
+        self.assertContains(response, "Door naar Chats")
+        self.assertContains(response, "Ritme / opvolging")
+
+    def test_feeder_chats_quick_action_prioritizes_handoff_required(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertContains(response, f"/chats/?thread={self.handoff_thread.pk}")
+        self.assertEqual(
+            response.context["follow_up_summary"]["next_chats_thread_id"],
+            self.handoff_thread.pk,
+        )
+
+    def test_feeder_placeholder_noise_filter_ignores_blocker_placeholders(self):
+        self.channel.session_blockers = "n/a"
+        self.channel.save(update_fields=["session_blockers"])
+        self.newer_channel.session_blockers = "-"
+        self.newer_channel.save(update_fields=["session_blockers"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertNotContains(response, "blocker: n/a")
+        self.assertNotContains(response, "blocker: -")
+
+    def test_feeder_ritme_opvolging_shows_status_step_and_work_target(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertContains(response, "Laatste stand:")
+        self.assertContains(response, "Volgende stap:")
+        self.assertContains(response, "Vervolgwerk zit in:")
+
+    def test_templates_are_reachable_from_chats_and_feeder(self):
+        self.client.force_login(self.user)
+        chats = self.client.get(reverse("chat-hub"))
+        feeder = self.client.get(reverse("feeder-hub"))
+
+        self.assertContains(chats, "Templates v1")
+        self.assertContains(chats, "Handoff follow-up update")
+        self.assertContains(feeder, "Templates v1")
+        self.assertContains(feeder, "Feeder content readiness check")
+
+    def test_template_list_search_supports_title_type_and_tag_in_chats(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "thread": self.thread.pk,
+                "template_q": "handoff",
+                "template_type": "handoff",
+                "template_tag": "operator",
+            },
+        )
+
+        self.assertContains(response, "Handoff follow-up update")
+        self.assertNotContains(response, "Risk review ping")
+
+    def test_template_open_and_duplicate_fill_in_chats(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "thread": self.thread.pk,
+                "template": "handoff_followup",
+            },
+        )
+
+        self.assertContains(response, "Template geopend:")
+        self.assertContains(response, "Handoff follow-up update")
+        self.assertContains(response, "Korte update via Instagram (shared-core-channel).")
+        self.assertContains(response, "Volgende stap: Reply with updated delivery date..")
+
+    def test_template_usage_is_visible_in_chat_run_log_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "thread": self.thread.pk,
+                "template": "handoff_followup",
+                "template_action": "use",
+            },
+        )
+
+        self.assertContains(response, "Template geopend")
+        self.assertContains(response, "Template gebruikt")
+
+    def test_template_open_fill_and_run_log_visibility_in_feeder(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("feeder-hub"),
+            {
+                "creator": self.creator.pk,
+                "template": "feeder_content_ready",
+                "template_action": "use",
+            },
+        )
+
+        self.assertContains(response, "Template geopend:")
+        self.assertContains(response, "Feeder content readiness check")
+        self.assertContains(response, "Status: Ready to post")
+        self.assertContains(response, "Template gebruikt")
+
+    def test_feeder_template_fill_ignores_placeholder_noise_values(self):
+        self.newer_channel.session_next_action = "n/a"
+        self.newer_channel.session_blockers = "-"
+        self.newer_channel.save(update_fields=["session_next_action", "session_blockers"])
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("feeder-hub"),
+            {
+                "creator": self.creator.pk,
+                "template": "feeder_content_ready",
+            },
+        )
+
+        self.assertNotContains(response, "Laatste handoff: -")
+        self.assertNotContains(response, "Volgende stap: n/a")
+
     def test_assignment_scope_status_is_rendered_in_chats_and_feeder(self):
         self.client.force_login(self.user)
 
@@ -181,7 +316,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.thread.save(update_fields=["open_loop"])
 
         self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"))
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertContains(response, "review_needed")
         self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
@@ -191,7 +326,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.thread.save(update_fields=["last_handoff_note"])
 
         self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"))
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertContains(response, "review_needed")
         self.assertContains(response, "Laatste handoff-status ontbreekt.")
@@ -203,7 +338,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.thread.save(update_fields=["guardrails", "open_loop", "last_handoff_note"])
 
         self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"))
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertContains(response, "Guardrails ontbreken; policy-context is onvolledig.")
         self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
@@ -224,6 +359,17 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertContains(response, "Content source URL ontbreekt.")
         self.assertContains(response, "Content ready status ontbreekt.")
+        self.assertContains(response, "Volgende stap ontbreekt in channel sessiecontext.")
+
+    def test_feeder_completeness_treats_placeholder_next_steps_as_missing(self):
+        self.channel.session_next_action = "-"
+        self.channel.save(update_fields=["session_next_action"])
+        self.newer_channel.session_next_action = "n/a"
+        self.newer_channel.save(update_fields=["session_next_action"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
         self.assertContains(response, "Volgende stap ontbreekt in channel sessiecontext.")
 
     def test_feeder_handoff_runlog_and_channel_quick_action_use_same_relevant_channel(self):
@@ -247,7 +393,7 @@ class SharedCoreV1ViewsTests(TestCase):
 
     def test_next_step_prefills_from_current_open_loop(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"))
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertContains(response, 'name="next_step" value="Reply with updated delivery date."')
 
