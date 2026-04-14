@@ -319,16 +319,6 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 class FeederHubView(LoginRequiredMixin, TemplateView):
     template_name = "feeder/feeder_hub.html"
 
-    def _has_meaningful_text(self, value):
-        if value is None:
-            return False
-
-        normalized = str(value).strip()
-        if not normalized:
-            return False
-
-        return normalized not in {"-", "—", "n/a", "N/A", "none", "None"}
-
     def _build_completeness_alerts(self, selected_creator, channels, materials):
         if not selected_creator:
             return ["Geen creator geselecteerd."]
@@ -346,9 +336,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         if not materials:
             alerts.append("Geen actief materiaal beschikbaar in feeder.")
 
-        channel_with_next_step = any(
-            self._has_meaningful_text(channel.session_next_action) for channel in channels
-        )
+        channel_with_next_step = any(channel.session_next_action for channel in channels)
         if not channel_with_next_step:
             alerts.append("Volgende stap ontbreekt in channel sessiecontext.")
 
@@ -422,26 +410,6 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             ),
         )
 
-    def _get_chat_handoff_threads(self, creator_threads):
-        priority = {
-            ConversationThread.Status.HANDOFF_REQUIRED: 0,
-            ConversationThread.Status.WAITING_ON_OPERATOR: 1,
-        }
-
-        handoff_threads = [
-            thread
-            for thread in creator_threads
-            if thread.status in priority
-        ]
-        return sorted(
-            handoff_threads,
-            key=lambda thread: (
-                priority[thread.status],
-                -(thread.last_message_at.timestamp() if thread.last_message_at else float("-inf")),
-                -thread.pk,
-            ),
-        )
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -468,14 +436,6 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         open_signals = []
         run_log = []
         quick_actions = []
-        live_now_items = []
-        attention_items = []
-        chats_handoff_items = []
-        follow_up_summary = {
-            "last_stand": "-",
-            "next_step": "-",
-            "where_next": "-",
-        }
 
         assignment = get_active_assignment_for_user_and_creator(self.request.user, selected_creator)
 
@@ -495,7 +455,14 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 .order_by("-last_message_at", "-id")[:20]
             )
 
-            waiting_threads = self._get_chat_handoff_threads(creator_threads)
+            waiting_threads = [
+                thread
+                for thread in creator_threads
+                if thread.status in {
+                    ConversationThread.Status.WAITING_ON_OPERATOR,
+                    ConversationThread.Status.HANDOFF_REQUIRED,
+                }
+            ]
             if waiting_threads:
                 open_signals.append(
                     f"{len(waiting_threads)} thread(s) wachten op operator/handoff in Chats."
@@ -505,39 +472,6 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 open_signals.append("Niet alle content staat op 'ready to post'.")
 
             relevant_handoff_channel = self._select_latest_handoff_channel(channels)
-
-            if selected_creator.content_ready_status == selected_creator.ContentReadyStatus.READY_TO_POST:
-                live_now_items.append("Content readiness staat op ready to post.")
-            else:
-                live_now_items.append("Content readiness staat nog niet op ready to post.")
-
-            if relevant_handoff_channel and self._has_meaningful_text(
-                relevant_handoff_channel.session_next_action
-            ):
-                live_now_items.append(
-                    f"Eerstvolgende live-actie: {relevant_handoff_channel.session_next_action}"
-                )
-            elif materials:
-                live_now_items.append("Er is actief materiaal; bepaal live-volgorde in deze sessie.")
-            else:
-                live_now_items.append("Geen actief materiaal om nu live te zetten.")
-
-            if relevant_handoff_channel and self._has_meaningful_text(
-                relevant_handoff_channel.session_blockers
-            ):
-                attention_items.append(
-                    f"Blocker ({relevant_handoff_channel.handle}): {relevant_handoff_channel.session_blockers}"
-                )
-            attention_items.extend(open_signals)
-
-            for thread in waiting_threads:
-                chats_handoff_items.append(
-                    {
-                        "label": f"{thread.source_thread_id} · {thread.get_status_display()}",
-                        "url": f"/chats/?thread={thread.pk}",
-                    }
-                )
-
             run_log.append(
                 {
                     "label": "Laatste channel update",
@@ -551,11 +485,11 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             run_log.append({"label": "Actief materiaal", "value": len(materials)})
             run_log.append({"label": "Open chatthreads", "value": len(waiting_threads)})
 
-            if chats_handoff_items:
+            if creator_threads:
                 quick_actions.append(
                     {
                         "label": "Open Chats workspace",
-                        "url": chats_handoff_items[0]["url"],
+                        "url": f"/chats/?thread={creator_threads[0].pk}",
                     }
                 )
             if relevant_handoff_channel:
@@ -565,18 +499,6 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                         "url": f"/channels/{relevant_handoff_channel.pk}/",
                     }
                 )
-
-                follow_up_summary = {
-                    "last_stand": relevant_handoff_channel.session_updated_at or "-",
-                    "next_step": (
-                        relevant_handoff_channel.session_next_action
-                        if self._has_meaningful_text(relevant_handoff_channel.session_next_action)
-                        else "-"
-                    ),
-                    "where_next": (
-                        f"{relevant_handoff_channel.get_platform_display()} / {relevant_handoff_channel.handle}"
-                    ),
-                }
         else:
             relevant_handoff_channel = None
 
@@ -588,10 +510,6 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         context["open_signals"] = open_signals
         context["run_log"] = run_log
         context["quick_actions"] = quick_actions
-        context["live_now_items"] = live_now_items
-        context["attention_items"] = attention_items
-        context["chats_handoff_items"] = chats_handoff_items
-        context["follow_up_summary"] = follow_up_summary
         context["assignment_context"] = build_assignment_context(assignment)
         context["relevant_handoff_channel"] = relevant_handoff_channel
         context["completeness_alerts"] = self._build_completeness_alerts(

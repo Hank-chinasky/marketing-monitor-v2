@@ -98,44 +98,40 @@
 
     {% if selected_creator %}
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Wat live moet</h3>
-            <ul class="clean">
-                {% for item in live_now_items %}
-                    <li>{{ item }}</li>
-                {% empty %}
-                    <li class="muted">Nog geen live-acties beschikbaar.</li>
-                {% endfor %}
-            </ul>
+            <h3 style="margin-top:0;">Materiaal/feed/contextfocus</h3>
+            {% for material in materials %}
+                <div class="shared-core-item">
+                    <strong>{{ material.label|default:material.filename }}</strong><br>
+                    <span class="muted">{{ material.uploaded_at }} · {{ material.media_kind }}</span>
+                </div>
+            {% empty %}
+                <div class="muted">Nog geen actief materiaal beschikbaar.</div>
+            {% endfor %}
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Wat aandacht nodig heeft</h3>
+            <h3 style="margin-top:0;">Wat live moet en wat aandacht nodig heeft</h3>
             <ul class="clean">
-                {% for item in attention_items %}
-                    <li>{{ item }}</li>
-                {% empty %}
-                    <li class="muted">Geen directe aandachtspunten.</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Door naar Chats</h3>
-            <ul class="clean">
-                {% for item in chats_handoff_items %}
-                    <li><a href="{{ item.url }}">{{ item.label }}</a></li>
-                {% empty %}
-                    <li class="muted">Geen directe doorzet naar Chats nodig.</li>
-                {% endfor %}
+                <li><strong>Live readiness:</strong> {{ selected_creator.get_content_ready_status_display|default:"-" }}</li>
+                <li><strong>Taken/signalen:</strong> {{ open_signals|length }}</li>
+                <li><strong>Doorzetten naar chats:</strong>
+                    {% if creator_threads %}
+                        {{ creator_threads|length }} thread(s) beschikbaar
+                    {% else %}
+                        Geen thread om door te zetten
+                    {% endif %}
+                </li>
             </ul>
         </div>
 
         <div class="panel">
-            <h3 style="margin-top:0;">Ritme / opvolging</h3>
+            <h3 style="margin-top:0;">Ritme/opvolging (compact)</h3>
             <ul class="clean">
-                <li><strong>Laatste stand:</strong> {{ follow_up_summary.last_stand }}</li>
-                <li><strong>Volgende stap:</strong> {{ follow_up_summary.next_step }}</li>
-                <li><strong>Doorzetten bij:</strong> {{ follow_up_summary.where_next }}</li>
+                {% for thread in creator_threads %}
+                    <li>{{ thread.source_thread_id }} · {{ thread.get_status_display }} · {{ thread.last_message_at|default:"-" }}</li>
+                {% empty %}
+                    <li class="muted">Geen actieve thread-ritme-items.</li>
+                {% endfor %}
             </ul>
         </div>
     {% else %}

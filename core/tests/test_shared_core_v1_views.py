@@ -81,22 +81,10 @@ class SharedCoreV1ViewsTests(TestCase):
             channel=self.channel,
             source_thread_id="shared-core-thread",
             status=ConversationThread.Status.WAITING_ON_OPERATOR,
-            last_message_at=timezone.now(),
             open_loop="Reply with updated delivery date.",
             guardrails="No promises without confirmed date.",
             risk_flags="",
             last_handoff_note="Need manual approval before final reply.",
-        )
-        self.handoff_thread = ConversationThread.objects.create(
-            creator=self.creator,
-            channel=self.newer_channel,
-            source_thread_id="handoff-priority-thread",
-            status=ConversationThread.Status.HANDOFF_REQUIRED,
-            last_message_at=timezone.now() - timedelta(hours=2),
-            open_loop="Escalate to chat operator before publishing.",
-            guardrails="Escalate risky sentiment first.",
-            risk_flags="",
-            last_handoff_note="Needs direct operator handoff.",
         )
         BuddyDraft.objects.create(
             thread=self.thread,
@@ -149,62 +137,6 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(chats, "Mag ik hier werken?")
         self.assertContains(chats, "Assignment status")
         self.assertContains(chats, "Completeness alerts")
-
-    def test_feeder_still_shows_left_column_access_and_completeness_modules(self):
-        self.client.force_login(self.user)
-        feeder = self.client.get(reverse("feeder-hub"))
-
-        self.assertContains(feeder, "Mag ik hier werken?")
-        self.assertContains(feeder, "Assignment status")
-        self.assertContains(feeder, "Policy vóór actie")
-        self.assertContains(feeder, "Context")
-        self.assertContains(feeder, "Scope & access/risk")
-        self.assertContains(feeder, "Completeness alerts")
-
-    def test_feeder_renders_operator_first_center_sections(self):
-        self.client.force_login(self.user)
-        feeder = self.client.get(reverse("feeder-hub"))
-
-        self.assertContains(feeder, "Wat live moet")
-        self.assertContains(feeder, "Wat aandacht nodig heeft")
-        self.assertContains(feeder, "Door naar Chats")
-        self.assertContains(feeder, "Ritme / opvolging")
-
-    def test_feeder_center_sections_render_live_attention_and_chat_handoff_items(self):
-        self.creator.content_ready_status = Creator.ContentReadyStatus.BLOCKED
-        self.creator.save(update_fields=["content_ready_status"])
-        self.client.force_login(self.user)
-        feeder = self.client.get(reverse("feeder-hub"))
-
-        self.assertContains(feeder, "Content readiness staat nog niet op ready to post.")
-        self.assertContains(feeder, "Blocker (recent-handoff-channel): Awaiting creator approval.")
-        self.assertContains(feeder, "handoff-priority-thread")
-        self.assertContains(feeder, f"/chats/?thread={self.handoff_thread.pk}")
-
-    def test_feeder_attention_filters_placeholder_blockers(self):
-        self.newer_channel.session_blockers = "-"
-        self.newer_channel.save(update_fields=["session_blockers"])
-        self.client.force_login(self.user)
-        feeder = self.client.get(reverse("feeder-hub"))
-
-        self.assertNotContains(feeder, "Blocker (recent-handoff-channel): -")
-
-    def test_feeder_quick_action_to_chats_targets_handoff_priority_item(self):
-        self.client.force_login(self.user)
-        feeder = self.client.get(reverse("feeder-hub"))
-
-        self.assertContains(feeder, f'href="/chats/?thread={self.handoff_thread.pk}"')
-        self.assertEqual(feeder.context["quick_actions"][0]["url"], f"/chats/?thread={self.handoff_thread.pk}")
-
-    def test_feeder_right_column_keeps_handoff_runlog_signals_and_buddy_modules(self):
-        self.client.force_login(self.user)
-        feeder = self.client.get(reverse("feeder-hub"))
-
-        self.assertContains(feeder, "Laatste handoff")
-        self.assertContains(feeder, "Run log samenvatting")
-        self.assertContains(feeder, "Open issues/signalen")
-        self.assertContains(feeder, "Quick actions")
-        self.assertContains(feeder, "Buddy-slot")
 
     def test_assignment_scope_status_is_rendered_in_chats_and_feeder(self):
         self.client.force_login(self.user)
@@ -304,14 +236,6 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.context["relevant_handoff_channel"].pk, self.newer_channel.pk)
         self.assertEqual(response.context["run_log"][0]["value"], self.newer_channel.session_updated_at)
-
-    def test_feeder_follow_up_next_step_filters_placeholder_values(self):
-        self.newer_channel.session_next_action = "-"
-        self.newer_channel.save(update_fields=["session_next_action"])
-        self.client.force_login(self.user)
-        response = self.client.get(reverse("feeder-hub"))
-
-        self.assertContains(response, "<strong>Volgende stap:</strong> -", html=True)
 
     def test_chat_hub_shows_operator_flow_modules(self):
         self.client.force_login(self.user)
