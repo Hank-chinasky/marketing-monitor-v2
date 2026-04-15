@@ -1,21 +1,23 @@
-from urllib.parse import urlencode
 from typing import Any
+from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
+from django.core.exceptions import ValidationError
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.views import View
 from django.views.generic import TemplateView
 
 from core.conversation_views import get_latest_buddy_draft, get_scoped_conversation_thread_queryset
-from core.models import ConversationThread, CreatorMaterial, OperatorAssignment
+from core.models import Approval, ConversationThread, CreatorMaterial, OperatorAssignment
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_channel_queryset_for_user,
     get_creator_queryset_for_user,
     get_operator_for_user,
 )
-
 
 TEMPLATES_V1 = [
     {
@@ -95,9 +97,7 @@ def get_templates_for_workspace(
     tag: str = "",
 ) -> list[dict[str, Any]]:
     workspace_templates = [
-        template
-        for template in TEMPLATES_V1
-        if template["scope"] in {"shared", workspace}
+        template for template in TEMPLATES_V1 if template["scope"] in {"shared", workspace}
     ]
     query_normalized = (query or "").strip().lower()
     type_normalized = (template_type or "").strip().lower()
@@ -109,7 +109,7 @@ def get_templates_for_workspace(
         if type_normalized and type_normalized != template["template_type"].lower():
             return False
         if tag_normalized and tag_normalized not in {
-            tag.lower() for tag in template["tags"]
+            item.lower() for item in template["tags"]
         }:
             return False
         return True
@@ -127,6 +127,13 @@ def get_template_by_id_for_workspace(template_id: str, workspace: str):
             if template["id"] == template_id and template["scope"] in {"shared", workspace}
         ),
         None,
+    )
+
+
+def get_scoped_approval_queryset(user):
+    return (
+        Approval.objects.filter(creator__in=get_creator_queryset_for_user(user))
+        .select_related("creator", "thread", "requested_by", "decided_by")
     )
 
 
@@ -159,6 +166,33 @@ def build_assignment_context(assignment):
         "status_label": "actieve assignment",
         "scope_label": assignment.get_scope_display(),
     }
+
+
+def append_approval_event(run_log, approvals, event_name, approval_id):
+    if not str(approval_id or "").isdigit():
+        return
+
+    approval = next(
+        (item for item in approvals if item.pk == int(approval_id)),
+        None,
+    )
+    if not approval:
+        return
+
+    label = {
+        "created": "Approval aangemaakt",
+        "approved": "Approval goedgekeurd",
+        "rejected": "Approval afgewezen",
+    }.get((event_name or "").strip())
+    if not label:
+        return
+
+    run_log.append(
+        {
+            "label": label,
+            "value": approval.get_approval_type_display(),
+        }
+    )
 
 
 class ChatHubView(LoginRequiredMixin, TemplateView):
@@ -272,14 +306,14 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         return selected_thread
 
-
     def _build_handoff_form_data(self, selected_thread, posted_values=None):
         if posted_values is not None:
             return {
                 "handoff_summary": posted_values.get("handoff_summary", ""),
                 "next_step": posted_values.get("next_step", ""),
                 "blocker": posted_values.get("blocker", ""),
-                "close_signal": posted_values.get("close_signal", "overdracht_klaar") or "overdracht_klaar",
+                "close_signal": posted_values.get("close_signal", "overdracht_klaar")
+                or "overdracht_klaar",
             }
 
         return {
@@ -314,6 +348,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         run_log = []
         open_issues = []
         quick_actions = []
+
         template_query = (self.request.GET.get("template_q") or "").strip()
         template_type = (self.request.GET.get("template_type") or "").strip()
         template_tag = (self.request.GET.get("template_tag") or "").strip()
@@ -326,6 +361,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             tag=template_tag,
         )
         selected_template = get_template_by_id_for_workspace(template_id, "chats")
+
         template_context_values = {}
         if selected_thread:
             template_context_values = {
@@ -344,11 +380,20 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                     else ""
                 ),
             }
+
         filled_template_body = ""
         if selected_template:
             filled_template_body = _safe_template_format(
                 selected_template["body"],
                 template_context_values,
+            )
+
+        approvals = []
+        if selected_thread:
+            approvals = list(
+                get_scoped_approval_queryset(self.request.user)
+                .filter(thread=selected_thread)
+                .order_by("-created_at", "-id")
             )
 
         if selected_thread:
@@ -393,6 +438,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                         "draft_id": latest_draft.pk,
                     }
                 )
+
         if selected_template:
             run_log.append(
                 {
@@ -407,6 +453,13 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                         "value": selected_template["title"],
                     }
                 )
+
+        append_approval_event(
+            run_log,
+            approvals,
+            self.request.GET.get("approval_event"),
+            self.request.GET.get("approval_id"),
+        )
 
         return {
             "threads": threads,
@@ -431,17 +484,22 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "selected_template": selected_template,
             "filled_template_body": filled_template_body,
             "template_action": template_action,
+            "approvals": approvals,
+            "approval_type_choices": Approval.Type.choices,
         }
 
     def get(self, request, *args, **kwargs):
-        return self.render_to_response(self._build_context(thread_source="get", fallback_to_first=True))
+        return self.render_to_response(
+            self._build_context(thread_source="get", fallback_to_first=True)
+        )
 
     def post(self, request, *args, **kwargs):
         posted_values = {
             "handoff_summary": (request.POST.get("handoff_summary") or "").strip(),
             "next_step": (request.POST.get("next_step") or "").strip(),
             "blocker": (request.POST.get("blocker") or "").strip(),
-            "close_signal": (request.POST.get("close_signal") or "").strip() or "overdracht_klaar",
+            "close_signal": (request.POST.get("close_signal") or "").strip()
+            or "overdracht_klaar",
         }
         context = self._build_context(
             handoff_form_data=posted_values,
@@ -455,7 +513,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             return self.render_to_response(context)
 
         if context["access_state"]["status"] == "blocked":
-            context["submit_error"] = "Handoff afsluiten is geblokkeerd: los eerst access/context issues op."
+            context["submit_error"] = (
+                "Handoff afsluiten is geblokkeerd: los eerst access/context issues op."
+            )
             return self.render_to_response(context)
 
         handoff_summary = posted_values["handoff_summary"]
@@ -464,7 +524,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         close_signal = posted_values["close_signal"]
 
         if not handoff_summary or not next_step:
-            context["submit_error"] = "Laatste stand en volgende stap zijn verplicht om af te sluiten."
+            context["submit_error"] = (
+                "Laatste stand en volgende stap zijn verplicht om af te sluiten."
+            )
             return self.render_to_response(context)
 
         selected_thread.last_handoff_note = (
@@ -591,7 +653,9 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             .select_related("primary_operator")
             .order_by("display_name")
         )
-        channels_qs = get_channel_queryset_for_user(self.request.user).select_related("creator")
+        channels_qs = get_channel_queryset_for_user(self.request.user).select_related(
+            "creator"
+        )
 
         selected_creator = None
         selected_creator_param = (self.request.GET.get("creator") or "").strip()
@@ -613,6 +677,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         follow_up_summary = {}
         run_log = []
         quick_actions = []
+
         template_query = (self.request.GET.get("template_q") or "").strip()
         template_type = (self.request.GET.get("template_type") or "").strip()
         template_tag = (self.request.GET.get("template_tag") or "").strip()
@@ -625,7 +690,11 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             tag=template_tag,
         )
 
-        assignment = get_active_assignment_for_user_and_creator(self.request.user, selected_creator)
+        assignment = get_active_assignment_for_user_and_creator(
+            self.request.user,
+            selected_creator,
+        )
+        relevant_handoff_channel = None
 
         if selected_creator:
             materials = list(
@@ -636,7 +705,9 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 .select_related("uploaded_by")
                 .order_by("-uploaded_at", "-id")[:30]
             )
-            channels = list(channels_qs.filter(creator=selected_creator).order_by("platform", "handle"))
+            channels = list(
+                channels_qs.filter(creator=selected_creator).order_by("platform", "handle")
+            )
             creator_threads = list(
                 get_scoped_conversation_thread_queryset(self.request.user)
                 .filter(creator=selected_creator, active=True)
@@ -646,7 +717,8 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             waiting_threads = [
                 thread
                 for thread in creator_threads
-                if thread.status in {
+                if thread.status
+                in {
                     ConversationThread.Status.WAITING_ON_OPERATOR,
                     ConversationThread.Status.HANDOFF_REQUIRED,
                 }
@@ -665,7 +737,10 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                     f"{len(waiting_threads)} thread(s) wachten op operator/handoff in Chats."
                 )
 
-            if selected_creator.content_ready_status != selected_creator.ContentReadyStatus.READY_TO_POST:
+            if (
+                selected_creator.content_ready_status
+                != selected_creator.ContentReadyStatus.READY_TO_POST
+            ):
                 open_signals.append("Niet alle content staat op 'ready to post'.")
 
             relevant_handoff_channel = self._select_latest_handoff_channel(channels)
@@ -696,16 +771,22 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                         "url": f"/channels/{relevant_handoff_channel.pk}/",
                     }
                 )
+
             live_now_items = [
                 f"Content readiness: {selected_creator.get_content_ready_status_display() or '-'}",
                 f"Actief materiaal: {len(materials)} item(s)",
                 (
-                    f"Kanaalfocus: {relevant_handoff_channel.get_platform_display()} / {relevant_handoff_channel.handle}"
+                    f"Kanaalfocus: {relevant_handoff_channel.get_platform_display()} / "
+                    f"{relevant_handoff_channel.handle}"
                     if relevant_handoff_channel
                     else "Kanaalfocus: nog niet beschikbaar"
                 ),
             ]
-            if selected_creator.content_ready_status != selected_creator.ContentReadyStatus.READY_TO_POST:
+
+            if (
+                selected_creator.content_ready_status
+                != selected_creator.ContentReadyStatus.READY_TO_POST
+            ):
                 attention_items.append("Content staat nog niet op ready-to-post.")
             if selected_creator.consent_status != selected_creator.ConsentStatus.ACTIVE:
                 attention_items.append("Consent is niet actief; review of escalatie nodig.")
@@ -717,11 +798,13 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             for channel in channels:
                 if not is_placeholder_noise(channel.session_blockers):
                     attention_items.append(
-                        f"{channel.get_platform_display()} / {channel.handle} blocker: {channel.session_blockers}"
+                        f"{channel.get_platform_display()} / {channel.handle} blocker: "
+                        f"{channel.session_blockers}"
                     )
                 if is_placeholder_noise(channel.session_next_action):
                     attention_items.append(
-                        f"{channel.get_platform_display()} / {channel.handle}: volgende stap ontbreekt."
+                        f"{channel.get_platform_display()} / {channel.handle}: "
+                        "volgende stap ontbreekt."
                     )
 
             for thread in prioritized_threads:
@@ -747,7 +830,9 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 ),
                 "next_chats_thread_id": prioritized_threads[0].pk if prioritized_threads else None,
                 "latest_status": (
-                    relevant_handoff_channel.session_updated_at if relevant_handoff_channel else "-"
+                    relevant_handoff_channel.session_updated_at
+                    if relevant_handoff_channel
+                    else "-"
                 ),
                 "next_step": (
                     relevant_handoff_channel.session_next_action
@@ -761,17 +846,21 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                     else "Geen doorzet naar Chats"
                 ),
             }
-        else:
-            relevant_handoff_channel = None
+
+        approvals = []
+        if selected_creator:
+            approvals = list(
+                get_scoped_approval_queryset(self.request.user)
+                .filter(creator=selected_creator, thread__isnull=True)
+                .order_by("-created_at", "-id")
+            )
 
         selected_template = get_template_by_id_for_workspace(template_id, "feeder")
         template_context_values = {}
         if selected_creator:
             template_context_values = {
                 "creator_name": selected_creator.display_name,
-                "channel_handle": (
-                    relevant_handoff_channel.handle if relevant_handoff_channel else ""
-                ),
+                "channel_handle": relevant_handoff_channel.handle if relevant_handoff_channel else "",
                 "platform": (
                     relevant_handoff_channel.get_platform_display()
                     if relevant_handoff_channel
@@ -795,6 +884,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                     else ""
                 ),
             }
+
         filled_template_body = ""
         if selected_template:
             filled_template_body = _safe_template_format(
@@ -814,6 +904,13 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                         "value": selected_template["title"],
                     }
                 )
+
+        append_approval_event(
+            run_log,
+            approvals,
+            self.request.GET.get("approval_event"),
+            self.request.GET.get("approval_id"),
+        )
 
         context["creators"] = creators
         context["selected_creator"] = selected_creator
@@ -846,4 +943,130 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         context["selected_template"] = selected_template
         context["filled_template_body"] = filled_template_body
         context["template_action"] = template_action
+        context["approvals"] = approvals
+        context["approval_type_choices"] = Approval.Type.choices
         return context
+
+
+class ApprovalCreateView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        workspace = (request.POST.get("workspace") or "").strip()
+        approval_type = (request.POST.get("approval_type") or "").strip()
+        summary = (request.POST.get("summary") or "").strip()
+
+        if approval_type not in {choice[0] for choice in Approval.Type.choices}:
+            raise Http404
+
+        if workspace == "chats":
+            thread_id = (request.POST.get("thread") or "").strip()
+            if not thread_id.isdigit():
+                raise Http404
+
+            thread = get_object_or_404(
+                get_scoped_conversation_thread_queryset(request.user).select_related("creator"),
+                pk=int(thread_id),
+            )
+
+            creator_param = (request.POST.get("creator") or "").strip()
+            if creator_param:
+                if not creator_param.isdigit() or int(creator_param) != thread.creator_id:
+                    raise Http404
+
+            approval = Approval.objects.create(
+                creator=thread.creator,
+                thread=thread,
+                approval_type=approval_type,
+                summary=summary,
+                requested_by=request.user,
+            )
+            query = urlencode(
+                {
+                    "thread": thread.pk,
+                    "approval_event": "created",
+                    "approval_id": approval.pk,
+                }
+            )
+            return redirect(f"{reverse('chat-hub')}?{query}")
+
+        if workspace == "feeder":
+            creator_id = (request.POST.get("creator") or "").strip()
+            if not creator_id.isdigit():
+                raise Http404
+            if (request.POST.get("thread") or "").strip():
+                raise Http404
+
+            creator = get_object_or_404(
+                get_creator_queryset_for_user(request.user),
+                pk=int(creator_id),
+            )
+
+            approval = Approval.objects.create(
+                creator=creator,
+                approval_type=approval_type,
+                summary=summary,
+                requested_by=request.user,
+            )
+            query = urlencode(
+                {
+                    "creator": creator.pk,
+                    "approval_event": "created",
+                    "approval_id": approval.pk,
+                }
+            )
+            return redirect(f"{reverse('feeder-hub')}?{query}")
+
+        raise Http404
+
+
+class ApprovalActionBaseView(LoginRequiredMixin, View):
+    event_name = ""
+
+    def get_approval(self, request, pk):
+        return get_object_or_404(get_scoped_approval_queryset(request.user), pk=pk)
+
+    def apply_action(self, approval, user):
+        raise NotImplementedError
+
+    def post(self, request, pk, *args, **kwargs):
+        approval = self.get_approval(request, pk)
+
+        if approval.status != Approval.Status.PENDING:
+            raise Http404
+
+        try:
+            self.apply_action(approval, request.user)
+        except ValidationError as exc:
+            raise Http404 from exc
+
+        if approval.thread_id:
+            query = urlencode(
+                {
+                    "thread": approval.thread_id,
+                    "approval_event": self.event_name,
+                    "approval_id": approval.pk,
+                }
+            )
+            return redirect(f"{reverse('chat-hub')}?{query}")
+
+        query = urlencode(
+            {
+                "creator": approval.creator_id,
+                "approval_event": self.event_name,
+                "approval_id": approval.pk,
+            }
+        )
+        return redirect(f"{reverse('feeder-hub')}?{query}")
+
+
+class ApprovalApproveView(ApprovalActionBaseView):
+    event_name = "approved"
+
+    def apply_action(self, approval, user):
+        approval.approve(user)
+
+
+class ApprovalRejectView(ApprovalActionBaseView):
+    event_name = "rejected"
+
+    def apply_action(self, approval, user):
+        approval.reject(user)

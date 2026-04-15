@@ -387,6 +387,97 @@ class ConversationThread(models.Model):
         return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"
 
 
+class Approval(models.Model):
+    class Type(models.TextChoices):
+        CONTENT_APPROVAL = "content_approval", "Content approval"
+        ACTION_APPROVAL = "action_approval", "Action approval"
+        ACCESS_EXCEPTION = "access_exception", "Access exception"
+
+    class Status(models.TextChoices):
+        NOT_REQUIRED = "not_required", "Not required"
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        EXPIRED = "expired", "Expired"
+
+    creator = models.ForeignKey(
+        Creator,
+        on_delete=models.CASCADE,
+        related_name="approvals",
+    )
+    thread = models.ForeignKey(
+        ConversationThread,
+        on_delete=models.CASCADE,
+        related_name="approvals",
+        null=True,
+        blank=True,
+    )
+    approval_type = models.CharField(max_length=32, choices=Type.choices)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    summary = models.CharField(max_length=255, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="requested_approvals",
+    )
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="decided_approvals",
+        null=True,
+        blank=True,
+    )
+    expires_at = models.DateTimeField(null=True, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=("creator", "status"), name="approval_creator_status_idx"),
+            models.Index(fields=("thread", "status"), name="approval_thread_status_idx"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.thread_id and self.creator_id and self.thread.creator_id != self.creator_id:
+            raise ValidationError(
+                {
+                    "thread": "Approval thread must belong to the same creator as the approval.",
+                    "creator": "Approval creator must match the thread creator.",
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def approve(self, user):
+        if self.status != self.Status.PENDING:
+            raise ValidationError("Approval can only be approved from pending.")
+
+        self.status = self.Status.APPROVED
+        self.decided_by = user
+        self.decided_at = timezone.now()
+        self.save(update_fields=["status", "decided_by", "decided_at"])
+
+    def reject(self, user):
+        if self.status != self.Status.PENDING:
+            raise ValidationError("Approval can only be rejected from pending.")
+
+        self.status = self.Status.REJECTED
+        self.decided_by = user
+        self.decided_at = timezone.now()
+        self.save(update_fields=["status", "decided_by", "decided_at"])
+
+    def __str__(self) -> str:
+        target = self.thread.source_thread_id if self.thread else self.creator.display_name
+        return f"{self.get_approval_type_display()} / {self.get_status_display()} / {target}"
+
+
 class BuddyDraft(models.Model):
     class State(models.TextChoices):
         DRAFTED = "drafted", "Drafted"

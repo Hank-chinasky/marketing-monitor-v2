@@ -17,7 +17,13 @@ from core.material_views import (
     CreatorMaterialDownloadView,
     CreatorMaterialPreviewView,
 )
-from core.shared_core_views import ChatHubView, FeederHubView
+from core.shared_core_views import (
+    ApprovalApproveView,
+    ApprovalCreateView,
+    ApprovalRejectView,
+    ChatHubView,
+    FeederHubView,
+)
 from core.views import (
     ChannelDetailView,
     ChannelListView,
@@ -42,8 +48,23 @@ urlpatterns = [
     path("", OperationsDashboardView.as_view(), name="operations-dashboard"),
     path("chats/", ChatHubView.as_view(), name="chat-hub"),
     path("feeder/", FeederHubView.as_view(), name="feeder-hub"),
+    path("approvals/create/", ApprovalCreateView.as_view(), name="approval-create"),
+    path(
+        "approvals/<int:pk>/approve/",
+        ApprovalApproveView.as_view(),
+        name="approval-approve",
+    ),
+    path(
+        "approvals/<int:pk>/reject/",
+        ApprovalRejectView.as_view(),
+        name="approval-reject",
+    ),
     path("conversations/", ConversationThreadListView.as_view(), name="conversation-thread-list"),
-    path("conversations/<int:pk>/", ConversationThreadDetailView.as_view(), name="conversation-thread-detail"),
+    path(
+        "conversations/<int:pk>/",
+        ConversationThreadDetailView.as_view(),
+        name="conversation-thread-detail",
+    ),
     path(
         "conversations/drafts/<int:pk>/approve/",
         BuddyDraftApproveView.as_view(),
