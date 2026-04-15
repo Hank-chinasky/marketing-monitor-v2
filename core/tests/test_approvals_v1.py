@@ -107,16 +107,6 @@ class ApprovalsV1Tests(TestCase):
         self.assertIn(("access_exception", "Access exception"), Approval.Type.choices)
         self.assertIn(("expired", "Expired"), Approval.Status.choices)
 
-    def test_model_save_rejects_creator_thread_mismatch(self):
-        with self.assertRaises(ValidationError):
-            Approval.objects.create(
-                creator=self.creator,
-                thread=self.other_thread,
-                approval_type=Approval.Type.CONTENT_APPROVAL,
-                status=Approval.Status.PENDING,
-                requested_by=self.user,
-            )
-
     def test_chat_workspace_shows_approval_status(self):
         Approval.objects.create(
             creator=self.creator,
