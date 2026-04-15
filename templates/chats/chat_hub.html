@@ -269,6 +269,71 @@
         </div>
     </div>
 
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Approvals v1</h3>
+        {% if selected_thread %}
+            <form method="post" action="{% url 'approval-create' %}" style="margin-bottom:0.75rem;">
+                {% csrf_token %}
+                <input type="hidden" name="workspace" value="chats">
+                <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                <p>
+                    <label for="id_chat_approval_type">Type</label>
+                    <select id="id_chat_approval_type" name="approval_type" required>
+                        {% for value, label in approval_type_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </p>
+                <p>
+                    <label for="id_chat_approval_summary">Korte samenvatting</label>
+                    <input id="id_chat_approval_summary" type="text" name="summary" placeholder="Waarom is goedkeuring nodig?">
+                </p>
+                <button type="submit" class="secondary-button">Approval aanmaken</button>
+            </form>
+
+            <ul class="clean">
+                {% for approval in approvals %}
+                    <li style="margin-bottom:0.65rem;">
+                        <div>
+                            {% if approval.status == "approved" %}
+                                <span class="badge badge-green">{{ approval.get_status_display }}</span>
+                            {% elif approval.status == "pending" %}
+                                <span class="badge badge-yellow">{{ approval.get_status_display }}</span>
+                            {% elif approval.status == "not_required" %}
+                                <span class="badge">{{ approval.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge badge-red">{{ approval.get_status_display }}</span>
+                            {% endif %}
+                            <strong>{{ approval.get_approval_type_display }}</strong>
+                        </div>
+                        {% if approval.summary %}
+                            <div class="muted">{{ approval.summary }}</div>
+                        {% endif %}
+                        <div class="muted">Aangemaakt door {{ approval.requested_by }} · {{ approval.created_at }}</div>
+                        {% if approval.status == "pending" %}
+                            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                                <form method="post" action="{% url 'approval-approve' approval.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="primary-button">Goedkeuren</button>
+                                </form>
+                                <form method="post" action="{% url 'approval-reject' approval.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="secondary-button">Afwijzen</button>
+                                </form>
+                            </div>
+                        {% elif approval.decided_by %}
+                            <div class="muted">Beslist door {{ approval.decided_by }} · {{ approval.decided_at|default:"-" }}</div>
+                        {% endif %}
+                    </li>
+                {% empty %}
+                    <li class="muted">Nog geen approvals op deze thread.</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="muted">Selecteer eerst een thread om approvals te zien of aan te maken.</p>
+        {% endif %}
+    </div>
+
     <div class="panel">
         <h3 style="margin-top:0;">Buddy-slot</h3>
         {% if latest_draft %}
