@@ -145,6 +145,82 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
     }
 
 
+def build_feeder_buddy_assist_snapshot(
+    selected_creator,
+    relevant_handoff_channel,
+    follow_up_summary,
+    completeness_alerts,
+):
+    if not selected_creator:
+        return {
+            "creator_summary": "Geen creator geselecteerd.",
+            "missing_context": ["Creator ontbreekt in selectie."],
+            "next_step": "Selecteer eerst een creator.",
+            "session_brief": "Geen sessiebrief beschikbaar zonder creator.",
+            "condensed_handoff": "",
+            "has_handoff": False,
+        }
+
+    missing_context = list(completeness_alerts or [])
+    if not relevant_handoff_channel:
+        missing_context.append("Kanaalhandoff ontbreekt.")
+
+    if (
+        follow_up_summary
+        and follow_up_summary.get("next_chats_thread_id")
+        and not is_placeholder_noise(follow_up_summary.get("work_target"))
+    ):
+        next_step = f"Zet door naar {follow_up_summary['work_target']}."
+    elif relevant_handoff_channel and not is_placeholder_noise(
+        relevant_handoff_channel.session_next_action
+    ):
+        next_step = _condense_text(relevant_handoff_channel.session_next_action, limit=220)
+    else:
+        next_step = "Nog geen concrete volgende stap vastgelegd."
+
+    handoff_text = ""
+    if relevant_handoff_channel and not is_placeholder_noise(
+        relevant_handoff_channel.session_blockers
+    ):
+        handoff_text = relevant_handoff_channel.session_blockers
+    elif relevant_handoff_channel and not is_placeholder_noise(
+        relevant_handoff_channel.session_next_action
+    ):
+        handoff_text = relevant_handoff_channel.session_next_action
+
+    condensed_handoff = _condense_text(handoff_text, limit=220)
+    has_handoff = bool(condensed_handoff)
+
+    session_brief_parts = [
+        (
+            f"Creator: {selected_creator.display_name}"
+            if selected_creator.display_name
+            else "Creator: -"
+        ),
+        (
+            "Content status: "
+            f"{selected_creator.get_content_ready_status_display() or '-'}"
+        ),
+        (
+            f"Laatste feeder handoff: {relevant_handoff_channel.session_updated_at}"
+            if relevant_handoff_channel and relevant_handoff_channel.session_updated_at
+            else "Laatste feeder handoff: -"
+        ),
+    ]
+
+    return {
+        "creator_summary": (
+            f"{selected_creator.display_name} · "
+            f"{selected_creator.get_content_ready_status_display() or 'status onbekend'}"
+        ),
+        "missing_context": missing_context,
+        "next_step": next_step,
+        "session_brief": " · ".join(session_brief_parts),
+        "condensed_handoff": condensed_handoff,
+        "has_handoff": has_handoff,
+    }
+
+
 def get_templates_for_workspace(
     workspace: str,
     *,
@@ -611,6 +687,22 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 class FeederHubView(LoginRequiredMixin, TemplateView):
     template_name = "feeder/feeder_hub.html"
 
+    def _build_context(
+        self,
+        *,
+        selected_creator,
+        relevant_handoff_channel,
+        follow_up_summary,
+        completeness_alerts,
+    ):
+        buddy_assist = build_feeder_buddy_assist_snapshot(
+            selected_creator,
+            relevant_handoff_channel,
+            follow_up_summary,
+            completeness_alerts,
+        )
+        return {"buddy_assist": buddy_assist}
+
     def _build_completeness_alerts(self, selected_creator, channels, materials):
         if not selected_creator:
             return ["Geen creator geselecteerd."]
@@ -989,6 +1081,14 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             selected_creator,
             channels,
             materials,
+        )
+        context.update(
+            self._build_context(
+                selected_creator=selected_creator,
+                relevant_handoff_channel=relevant_handoff_channel,
+                follow_up_summary=follow_up_summary,
+                completeness_alerts=context["completeness_alerts"],
+            )
         )
         context["access_state"] = self._build_access_state(
             selected_creator,
