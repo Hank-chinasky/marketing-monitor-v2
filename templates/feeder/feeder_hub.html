@@ -329,5 +329,24 @@
     <div class="panel">
         <h3 style="margin-top:0;">Buddy-slot</h3>
         <p class="muted">Buddy heeft een vaste plek maar is nog niet workflow-dragend in Feeder v1.</p>
+        <p><strong>Korte creator-samenvatting:</strong> {{ buddy_assist.creator_summary }}</p>
+        <p><strong>Ontbrekende velden/contextgaten:</strong></p>
+        <ul class="clean">
+            {% for alert in buddy_assist.missing_context %}
+                <li>{{ alert }}</li>
+            {% empty %}
+                <li class="muted">Geen kritieke contextgaten gedetecteerd.</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Voorgestelde volgende stap:</strong> {{ buddy_assist.next_step }}</p>
+        <p><strong>Compacte sessiebrief:</strong> {{ buddy_assist.session_brief }}</p>
+        <p>
+            <strong>Gecondenseerde laatste handoff:</strong>
+            {% if buddy_assist.has_handoff %}
+                {{ buddy_assist.condensed_handoff }}
+            {% else %}
+                Niet beschikbaar.
+            {% endif %}
+        </p>
     </div>
 {% endblock %}

@@ -187,6 +187,93 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Volgende stap:")
         self.assertContains(response, "Vervolgwerk zit in:")
 
+    def test_feeder_buddy_slot_is_visible_and_renders_without_crash(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Buddy-slot")
+        self.assertContains(response, "Korte creator-samenvatting")
+        self.assertContains(response, "Ontbrekende velden/contextgaten")
+        self.assertContains(response, "Voorgestelde volgende stap")
+        self.assertContains(response, "Compacte sessiebrief")
+        self.assertContains(response, "Wat live moet")
+        self.assertContains(response, "Wat aandacht nodig heeft")
+        self.assertContains(response, "Door naar Chats")
+        self.assertContains(response, "Ritme / opvolging")
+
+    def test_feeder_buddy_slot_handles_missing_context(self):
+        self.creator.content_source_url = ""
+        self.creator.content_ready_status = ""
+        self.creator.save(update_fields=["content_source_url", "content_ready_status"])
+        self.channel.session_next_action = ""
+        self.channel.session_blockers = ""
+        self.channel.save(update_fields=["session_next_action", "session_blockers"])
+        self.newer_channel.session_next_action = ""
+        self.newer_channel.session_blockers = "-"
+        self.newer_channel.save(update_fields=["session_next_action", "session_blockers"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Content source URL ontbreekt.")
+        self.assertContains(response, "Content ready status ontbreekt.")
+        self.assertContains(response, "Volgende stap ontbreekt in channel sessiecontext.")
+        self.assertContains(response, "Gecondenseerde laatste handoff:")
+        self.assertContains(response, "Niet beschikbaar.")
+
+    def test_feeder_buddy_slot_shows_condensed_handoff_when_available(self):
+        self.newer_channel.session_blockers = (
+            "Creator wacht op korte planning en bevestiging van publicatiemoment."
+        )
+        self.newer_channel.session_next_action = "Plan conceptpost en bevestig timing."
+        self.newer_channel.save(update_fields=["session_blockers", "session_next_action"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Shared Core Creator · Ready to post")
+        self.assertContains(response, "Plan conceptpost en bevestig timing.")
+        self.assertContains(response, "Gecondenseerde laatste handoff")
+        self.assertContains(
+            response,
+            "Creator wacht op korte planning en bevestiging van publicatiemoment.",
+        )
+
+    def test_feeder_buddy_slot_uses_next_step_as_handoff_fallback(self):
+        self.newer_channel.session_blockers = ""
+        self.newer_channel.session_next_action = "Werk caption uit en plan uploadmoment."
+        self.newer_channel.save(update_fields=["session_blockers", "session_next_action"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Gecondenseerde laatste handoff")
+        self.assertContains(response, "Werk caption uit en plan uploadmoment.")
+        self.assertNotContains(response, "Niet beschikbaar.")
+
+    def test_feeder_buddy_slot_get_is_read_only_without_side_effects_or_chats_strings(self):
+        before_status = self.creator.content_ready_status
+        before_next_step = self.newer_channel.session_next_action
+        before_blockers = self.newer_channel.session_blockers
+        before_material_count = CreatorMaterial.objects.count()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.creator.refresh_from_db()
+        self.newer_channel.refresh_from_db()
+        self.assertEqual(self.creator.content_ready_status, before_status)
+        self.assertEqual(self.newer_channel.session_next_action, before_next_step)
+        self.assertEqual(self.newer_channel.session_blockers, before_blockers)
+        self.assertEqual(CreatorMaterial.objects.count(), before_material_count)
+        self.assertNotContains(response, "Korte threadsamenvatting")
+        self.assertNotContains(response, "Open thread detail")
+
     def test_templates_are_reachable_from_chats_and_feeder(self):
         self.client.force_login(self.user)
         chats = self.client.get(reverse("chat-hub"))
@@ -272,6 +359,32 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertNotContains(response, "Laatste handoff: -")
         self.assertNotContains(response, "Volgende stap: n/a")
+
+    def test_chat_buddy_slot_renders_assist_sections(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertContains(response, "Buddy-slot")
+        self.assertContains(response, "Korte threadsamenvatting")
+        self.assertContains(response, "Ontbrekende velden")
+        self.assertContains(response, "Voorgestelde volgende stap")
+        self.assertContains(response, "Compacte sessiebrief")
+        self.assertContains(response, "Shared Core Creator")
+        self.assertContains(response, "Reply with updated delivery date.")
+
+    def test_chat_buddy_assist_signals_missing_context_when_thread_is_incomplete(self):
+        self.thread.guardrails = ""
+        self.thread.open_loop = ""
+        self.thread.last_handoff_note = ""
+        self.thread.save(update_fields=["guardrails", "open_loop", "last_handoff_note"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertContains(response, "Guardrails ontbreken; policy-context is onvolledig.")
+        self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
+        self.assertContains(response, "Laatste handoff-status ontbreekt.")
+        self.assertContains(response, "Nog geen volgende stap vastgelegd.")
 
     def test_assignment_scope_status_is_rendered_in_chats_and_feeder(self):
         self.client.force_login(self.user)
@@ -416,7 +529,6 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, 'name="blocker" value="Nog blocker"')
         self.assertContains(response, 'option value="review_nodig" selected')
 
-
     def test_get_fallback_still_selects_first_thread(self):
         self.client.force_login(self.user)
         response = self.client.get(f"{reverse('chat-hub')}?thread=invalid")
@@ -524,65 +636,3 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, 'name="next_step" value="Geen"')
         self.assertContains(response, 'name="blocker" value="Nog iets"')
         self.assertContains(response, 'option value="review_nodig" selected')
-
-    def test_buddy_slot_is_visible_and_renders_without_crash(self):
-        self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Buddy-slot")
-        self.assertContains(response, "Korte threadsamenvatting")
-        self.assertContains(response, "Ontbrekende velden/contextgaten")
-        self.assertContains(response, "Voorgestelde volgende stap")
-        self.assertContains(response, "Compacte sessiebrief")
-
-    def test_buddy_slot_handles_missing_handoff_and_context(self):
-        self.thread.thread_summary = ""
-        self.thread.open_loop = ""
-        self.thread.last_handoff_note = ""
-        self.thread.save(update_fields=["thread_summary", "open_loop", "last_handoff_note"])
-
-        self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Threadsamenvatting ontbreekt.")
-        self.assertContains(response, "Voorgestelde volgende stap ontbreekt.")
-        self.assertContains(response, "Gecondenseerde laatste handoff:</strong> Niet beschikbaar.")
-
-    def test_buddy_slot_shows_condensed_handoff_when_available(self):
-        self.thread.thread_summary = "Klant vraagt om terugkoppeling op de status."
-        self.thread.open_loop = "Stuur bevestiging en vraag om voorkeursmoment."
-        self.thread.last_handoff_note = (
-            "Laatste stand: klant heeft update gelezen en wacht op bevestiging. "
-            "Volgende stap: korte bevestiging sturen met haalbare timing."
-        )
-        self.thread.save(update_fields=["thread_summary", "open_loop", "last_handoff_note"])
-
-        self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Klant vraagt om terugkoppeling op de status.")
-        self.assertContains(response, "Stuur bevestiging en vraag om voorkeursmoment.")
-        self.assertContains(response, "Gecondenseerde laatste handoff")
-        self.assertContains(response, "Laatste stand: klant heeft update gelezen")
-
-    def test_buddy_slot_get_is_read_only_without_status_writes_or_side_effects(self):
-        before_open_loop = self.thread.open_loop
-        before_handoff = self.thread.last_handoff_note
-        before_status = self.thread.status
-        before_handoff_at = self.thread.last_operator_handoff_at
-        before_material_count = CreatorMaterial.objects.count()
-
-        self.client.force_login(self.user)
-        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
-
-        self.assertEqual(response.status_code, 200)
-        self.thread.refresh_from_db()
-        self.assertEqual(self.thread.open_loop, before_open_loop)
-        self.assertEqual(self.thread.last_handoff_note, before_handoff)
-        self.assertEqual(self.thread.status, before_status)
-        self.assertEqual(self.thread.last_operator_handoff_at, before_handoff_at)
-        self.assertEqual(CreatorMaterial.objects.count(), before_material_count)
-        self.assertNotContains(response, "Feeder content readiness check")
