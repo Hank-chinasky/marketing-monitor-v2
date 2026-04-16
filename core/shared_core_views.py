@@ -359,7 +359,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             query=template_query,
             template_type=template_type,
             tag=template_tag,
-        )
+        )[:50]
         selected_template = get_template_by_id_for_workspace(template_id, "chats")
 
         template_context_values = {}
@@ -688,7 +688,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             query=template_query,
             template_type=template_type,
             tag=template_tag,
-        )
+        )[:50]
 
         assignment = get_active_assignment_for_user_and_creator(
             self.request.user,
