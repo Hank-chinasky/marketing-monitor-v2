@@ -336,12 +336,21 @@
 
     <div class="panel">
         <h3 style="margin-top:0;">Buddy-slot</h3>
-        {% if latest_draft %}
-            <p><strong>Status:</strong> {{ latest_draft.get_state_display }}</p>
-            <p><strong>Intent/tone:</strong> {{ latest_draft.intent }} / {{ latest_draft.tone }}</p>
-            <p><strong>Draft:</strong><br>{{ latest_draft.reply_text|linebreaksbr }}</p>
+        <p><strong>Korte threadsamenvatting:</strong><br>{{ buddy_assist.thread_summary|linebreaksbr }}</p>
+        <p><strong>Ontbrekende velden/contextgaten:</strong></p>
+        <ul class="clean">
+            {% for gap in buddy_assist.missing_context %}
+                <li>{{ gap }}</li>
+            {% empty %}
+                <li class="muted">Geen directe contextgaten gedetecteerd.</li>
+            {% endfor %}
+        </ul>
+        <p><strong>Voorgestelde volgende stap:</strong><br>{{ buddy_assist.next_step|linebreaksbr }}</p>
+        <p><strong>Compacte sessiebrief:</strong><br>{{ buddy_assist.session_brief|linebreaksbr }}</p>
+        {% if buddy_assist.has_handoff %}
+            <p><strong>Gecondenseerde laatste handoff:</strong><br>{{ buddy_assist.condensed_handoff|linebreaksbr }}</p>
         {% else %}
-            <p class="muted">Buddy placeholder actief. Nog geen draft beschikbaar.</p>
+            <p class="muted"><strong>Gecondenseerde laatste handoff:</strong> Niet beschikbaar.</p>
         {% endif %}
     </div>
 {% endblock %}
