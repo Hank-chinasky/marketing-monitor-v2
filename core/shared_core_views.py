@@ -89,6 +89,62 @@ def is_placeholder_noise(value) -> bool:
     return normalized == "" or normalized in PLACEHOLDER_NOISE_VALUES
 
 
+def _condense_text(value: str, *, limit: int = 180) -> str:
+    text = " ".join(str(value or "").split())
+    if not text:
+        return ""
+    if len(text) <= limit:
+        return text
+    return f"{text[: limit - 1].rstrip()}…"
+
+
+def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
+    if not selected_thread:
+        return {
+            "thread_summary": "Geen actieve thread geselecteerd.",
+            "missing_context": ["Thread ontbreekt in selectie."],
+            "next_step": "Selecteer eerst een thread.",
+            "session_brief": "Geen sessiebrief beschikbaar zonder thread.",
+            "condensed_handoff": "",
+            "has_handoff": False,
+        }
+
+    missing_context = []
+    if completeness_alerts:
+        missing_context.extend(completeness_alerts)
+
+    if is_placeholder_noise(selected_thread.thread_summary):
+        missing_context.append("Threadsamenvatting ontbreekt.")
+    if is_placeholder_noise(selected_thread.open_loop):
+        missing_context.append("Voorgestelde volgende stap ontbreekt.")
+
+    condensed_handoff = ""
+    has_handoff = not is_placeholder_noise(selected_thread.last_handoff_note)
+    if has_handoff:
+        condensed_handoff = _condense_text(selected_thread.last_handoff_note, limit=220)
+
+    session_brief_parts = [
+        f"Status: {selected_thread.get_status_display()}",
+        f"Bron: {selected_thread.get_source_system_display()}",
+        (
+            f"Laatste operator-handoff: {selected_thread.last_operator_handoff_at}"
+            if selected_thread.last_operator_handoff_at
+            else "Laatste operator-handoff: -"
+        ),
+    ]
+
+    return {
+        "thread_summary": _condense_text(selected_thread.thread_summary, limit=220)
+        or "Nog geen threadsamenvatting beschikbaar.",
+        "missing_context": missing_context,
+        "next_step": _condense_text(selected_thread.open_loop, limit=220)
+        or "Nog geen volgende stap vastgelegd.",
+        "session_brief": " · ".join(session_brief_parts),
+        "condensed_handoff": condensed_handoff,
+        "has_handoff": has_handoff,
+    }
+
+
 def get_templates_for_workspace(
     workspace: str,
     *,
@@ -344,6 +400,8 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         )
         access_state = self._build_access_state(selected_thread, assignment)
         latest_draft = get_latest_buddy_draft(selected_thread) if selected_thread else None
+        completeness_alerts = self._build_completeness_alerts(selected_thread)
+        buddy_assist = build_buddy_assist_snapshot(selected_thread, completeness_alerts)
 
         run_log = []
         open_issues = []
@@ -465,7 +523,8 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "threads": threads,
             "selected_thread": selected_thread,
             "latest_draft": latest_draft,
-            "completeness_alerts": self._build_completeness_alerts(selected_thread),
+            "completeness_alerts": completeness_alerts,
+            "buddy_assist": buddy_assist,
             "assignment_context": build_assignment_context(assignment),
             "access_state": access_state,
             "run_log": run_log,

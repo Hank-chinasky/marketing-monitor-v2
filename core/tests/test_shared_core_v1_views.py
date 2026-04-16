@@ -524,3 +524,65 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, 'name="next_step" value="Geen"')
         self.assertContains(response, 'name="blocker" value="Nog iets"')
         self.assertContains(response, 'option value="review_nodig" selected')
+
+    def test_buddy_slot_is_visible_and_renders_without_crash(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Buddy-slot")
+        self.assertContains(response, "Korte threadsamenvatting")
+        self.assertContains(response, "Ontbrekende velden/contextgaten")
+        self.assertContains(response, "Voorgestelde volgende stap")
+        self.assertContains(response, "Compacte sessiebrief")
+
+    def test_buddy_slot_handles_missing_handoff_and_context(self):
+        self.thread.thread_summary = ""
+        self.thread.open_loop = ""
+        self.thread.last_handoff_note = ""
+        self.thread.save(update_fields=["thread_summary", "open_loop", "last_handoff_note"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Threadsamenvatting ontbreekt.")
+        self.assertContains(response, "Voorgestelde volgende stap ontbreekt.")
+        self.assertContains(response, "Gecondenseerde laatste handoff:</strong> Niet beschikbaar.")
+
+    def test_buddy_slot_shows_condensed_handoff_when_available(self):
+        self.thread.thread_summary = "Klant vraagt om terugkoppeling op de status."
+        self.thread.open_loop = "Stuur bevestiging en vraag om voorkeursmoment."
+        self.thread.last_handoff_note = (
+            "Laatste stand: klant heeft update gelezen en wacht op bevestiging. "
+            "Volgende stap: korte bevestiging sturen met haalbare timing."
+        )
+        self.thread.save(update_fields=["thread_summary", "open_loop", "last_handoff_note"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Klant vraagt om terugkoppeling op de status.")
+        self.assertContains(response, "Stuur bevestiging en vraag om voorkeursmoment.")
+        self.assertContains(response, "Gecondenseerde laatste handoff")
+        self.assertContains(response, "Laatste stand: klant heeft update gelezen")
+
+    def test_buddy_slot_get_is_read_only_without_status_writes_or_side_effects(self):
+        before_open_loop = self.thread.open_loop
+        before_handoff = self.thread.last_handoff_note
+        before_status = self.thread.status
+        before_handoff_at = self.thread.last_operator_handoff_at
+        before_material_count = CreatorMaterial.objects.count()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.thread.refresh_from_db()
+        self.assertEqual(self.thread.open_loop, before_open_loop)
+        self.assertEqual(self.thread.last_handoff_note, before_handoff)
+        self.assertEqual(self.thread.status, before_status)
+        self.assertEqual(self.thread.last_operator_handoff_at, before_handoff_at)
+        self.assertEqual(CreatorMaterial.objects.count(), before_material_count)
+        self.assertNotContains(response, "Feeder content readiness check")
