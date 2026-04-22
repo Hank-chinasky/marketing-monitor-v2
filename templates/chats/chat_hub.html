@@ -155,10 +155,15 @@
 
     {% if selected_thread %}
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Actieve thread/context</h3>
-            <p><strong>Summary:</strong> {{ selected_thread.thread_summary|default:"-"|linebreaksbr }}</p>
-            <p><strong>Wat nu aandacht nodig heeft:</strong> {{ selected_thread.open_loop|default:"-"|linebreaksbr }}</p>
-            <p><strong>Laatste relevante status:</strong> {{ selected_thread.get_status_display }} · {{ selected_thread.last_message_at|default:"-" }}</p>
+            <h3 style="margin-top:0;">Top chat focus</h3>
+            <ul class="clean">
+                {% for focus_item in chat_focus_items %}
+                    <li style="margin-bottom:0.45rem;">
+                        <strong>{{ focus_item.label }}:</strong><br>
+                        {{ focus_item.value|linebreaksbr }}
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
 
         <div class="grid" style="margin-bottom:0.75rem;">
@@ -207,7 +212,7 @@
         <div class="panel">
             <h3 style="margin-top:0;">Volgende stap (scanbaar)</h3>
             <div style="padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc;">
-                {{ selected_thread.open_loop|default:"Nog niet vastgelegd"|linebreaksbr }}
+                {{ next_step_scan|linebreaksbr }}
             </div>
             <div class="muted" style="margin-top:0.5rem;">Deze waarde wordt bijgewerkt door de handoff-afsluitmodule.</div>
         </div>
@@ -222,8 +227,8 @@
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Laatste handoff</h3>
         {% if selected_thread %}
-            <p><strong>Handoff note:</strong><br>{{ selected_thread.last_handoff_note|default:"-"|linebreaksbr }}</p>
-            <p><strong>At:</strong> {{ selected_thread.last_operator_handoff_at|default:"-" }}</p>
+            <p><strong>Scan:</strong><br>{{ latest_handoff_scan.summary|linebreaksbr }}</p>
+            <p><strong>At:</strong> {{ latest_handoff_scan.at }}</p>
         {% else %}
             <p class="muted">Geen handoff zonder actieve thread.</p>
         {% endif %}

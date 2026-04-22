@@ -502,6 +502,7 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertContains(response, "Sessie starten")
         self.assertContains(response, "Sessie afsluiten")
+        self.assertContains(response, "Top chat focus")
         self.assertContains(response, "Volgende stap (scanbaar)")
 
     def test_next_step_prefills_from_current_open_loop(self):
@@ -613,6 +614,59 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertIsNotNone(self.thread.last_operator_handoff_at)
         self.assertContains(response, "Handoff opgeslagen")
         self.assertContains(response, "Morgen opvolgen of klant heeft gereageerd.")
+        self.assertContains(response, "Top chat focus")
+
+    def test_chat_hub_scan_context_is_present_in_template_and_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Top chat focus")
+        self.assertContains(response, "Creator")
+        self.assertContains(response, "Thread")
+        self.assertContains(response, "Threadsamenvatting")
+        self.assertContains(response, "Laatste statusmoment")
+        self.assertContains(response, "Laatste handoff")
+        self.assertIn("chat_focus_items", response.context)
+        self.assertIn("latest_handoff_scan", response.context)
+        self.assertIn("next_step_scan", response.context)
+        self.assertTrue(response.context["chat_focus_items"])
+        self.assertEqual(
+            response.context["latest_handoff_scan"]["summary"],
+            "Need manual approval before final reply.",
+        )
+        self.assertEqual(
+            response.context["next_step_scan"],
+            "Reply with updated delivery date.",
+        )
+
+    def test_chat_hub_scan_context_fallback_without_thread(self):
+        ConversationThread.objects.filter(creator=self.creator).delete()
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["chat_focus_items"], [])
+        self.assertEqual(
+            response.context["latest_handoff_scan"]["summary"],
+            "Geen actieve handoff beschikbaar zonder thread.",
+        )
+        self.assertEqual(
+            response.context["next_step_scan"],
+            "Nog geen volgende stap beschikbaar zonder thread.",
+        )
+        self.assertContains(response, "Selecteer een thread om het werkvlak te starten.")
+
+    def test_chat_right_column_handoff_and_issues_are_directly_scannable(self):
+        self.thread.risk_flags = "High-risk sentiment requires review."
+        self.thread.save(update_fields=["risk_flags"])
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertContains(response, "<strong>Scan:</strong>", html=True)
+        self.assertContains(response, "Need manual approval before final reply.")
+        self.assertContains(response, "High-risk sentiment requires review.")
+        self.assertContains(response, "Open loop: Reply with updated delivery date.")
 
     def test_blocked_state_rejects_handoff_submit_and_keeps_values(self):
         self.client.force_login(self.admin_user)

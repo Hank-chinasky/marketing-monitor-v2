@@ -455,6 +455,56 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "close_signal": "overdracht_klaar",
         }
 
+
+    def _build_chat_scan_context(self, selected_thread):
+        if not selected_thread:
+            return {
+                "chat_focus_items": [],
+                "latest_handoff_scan": {
+                    "summary": "Geen actieve handoff beschikbaar zonder thread.",
+                    "at": "-",
+                },
+                "next_step_scan": "Nog geen volgende stap beschikbaar zonder thread.",
+            }
+
+        chat_focus_items = [
+            {
+                "label": "Creator",
+                "value": selected_thread.creator.display_name or "-",
+            },
+            {
+                "label": "Thread",
+                "value": selected_thread.source_thread_id or "-",
+            },
+            {
+                "label": "Threadsamenvatting",
+                "value": _condense_text(selected_thread.thread_summary, limit=220)
+                or "Nog geen threadsamenvatting vastgelegd.",
+            },
+            {
+                "label": "Laatste statusmoment",
+                "value": (
+                    f"{selected_thread.get_status_display()} · "
+                    f"{selected_thread.last_message_at or '-'}"
+                ),
+            },
+        ]
+
+        latest_handoff_scan = {
+            "summary": _condense_text(selected_thread.last_handoff_note, limit=260)
+            or "Nog geen handoff-note beschikbaar.",
+            "at": selected_thread.last_operator_handoff_at or "-",
+        }
+        next_step_scan = _condense_text(selected_thread.open_loop, limit=260) or (
+            "Nog geen volgende stap vastgelegd."
+        )
+
+        return {
+            "chat_focus_items": chat_focus_items,
+            "latest_handoff_scan": latest_handoff_scan,
+            "next_step_scan": next_step_scan,
+        }
+
     def _build_context(
         self,
         *,
@@ -478,6 +528,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         latest_draft = get_latest_buddy_draft(selected_thread) if selected_thread else None
         completeness_alerts = self._build_completeness_alerts(selected_thread)
         buddy_assist = build_buddy_assist_snapshot(selected_thread, completeness_alerts)
+        chat_scan_context = self._build_chat_scan_context(selected_thread)
 
         run_log = []
         open_issues = []
@@ -557,6 +608,14 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 open_issues.append(f"Open loop: {selected_thread.open_loop}")
             if latest_draft and latest_draft.requires_human_attention:
                 open_issues.append("BuddyDraft vereist human attention.")
+            if access_state["status"] == "review_needed":
+                open_issues.extend(
+                    [
+                        item
+                        for item in completeness_alerts
+                        if item not in open_issues
+                    ]
+                )
 
             quick_actions.append(
                 {
@@ -601,6 +660,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "latest_draft": latest_draft,
             "completeness_alerts": completeness_alerts,
             "buddy_assist": buddy_assist,
+            "chat_focus_items": chat_scan_context["chat_focus_items"],
+            "latest_handoff_scan": chat_scan_context["latest_handoff_scan"],
+            "next_step_scan": chat_scan_context["next_step_scan"],
             "assignment_context": build_assignment_context(assignment),
             "access_state": access_state,
             "run_log": run_log,
