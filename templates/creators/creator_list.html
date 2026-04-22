@@ -1,16 +1,769 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Creators</h1>
+<style>
+    .creator-queue {
+        display: grid;
+        gap: 1rem;
+    }
 
-<ul>
-    {% for creator in creators %}
-        <li>
-            <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
-            — {{ creator.status }} / {{ creator.consent_status }}
-        </li>
-    {% empty %}
-        <li>Geen creators.</li>
-    {% endfor %}
-</ul>
+    .creator-queue__hero,
+    .creator-queue__section,
+    .creator-queue__empty {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .creator-queue__hero {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .creator-queue__hero-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: start;
+    }
+
+    .creator-queue__eyebrow {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+    }
+
+    .creator-queue__title {
+        margin: 0;
+        font-size: 1.7rem;
+        line-height: 1.15;
+        color: #0f172a;
+    }
+
+    .creator-queue__intro {
+        margin: 0.5rem 0 0;
+        max-width: 70ch;
+        color: #475569;
+        line-height: 1.55;
+    }
+
+    .creator-queue__hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .creator-queue__button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .creator-queue__button--primary {
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+    .creator-queue__button--primary:hover {
+        background: #1e40af;
+        color: #ffffff;
+    }
+
+    .creator-queue__button--secondary {
+        background: #f8fafc;
+        border-color: #dbe2ea;
+        color: #0f172a;
+    }
+
+    .creator-queue__button--secondary:hover {
+        background: #eef2f7;
+        color: #0f172a;
+    }
+
+    .creator-queue__summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .creator-queue__summary-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+    }
+
+    .creator-queue__summary-label {
+        font-size: 0.82rem;
+        color: #64748b;
+        margin-bottom: 0.35rem;
+    }
+
+    .creator-queue__summary-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+
+    .creator-queue__summary-note {
+        margin-top: 0.3rem;
+        font-size: 0.82rem;
+        color: #64748b;
+    }
+
+    .creator-queue__section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: start;
+        margin-bottom: 0.9rem;
+    }
+
+    .creator-queue__section-title {
+        margin: 0;
+        font-size: 1.05rem;
+        color: #0f172a;
+    }
+
+    .creator-queue__section-copy {
+        margin: 0.35rem 0 0;
+        color: #64748b;
+        line-height: 1.5;
+    }
+
+    .creator-queue__section-meta {
+        color: #64748b;
+        font-size: 0.92rem;
+        white-space: nowrap;
+    }
+
+    .creator-queue__pill-row {
+        display: flex;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .creator-queue__pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.5rem;
+        padding: 0.65rem 0.95rem;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 700;
+        border: 1px solid transparent;
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .creator-queue__pill:hover {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .creator-queue__pill.is-active {
+        color: #ffffff;
+    }
+
+    .creator-queue__pill--attention {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .creator-queue__pill--attention.is-active {
+        background: #b91c1c;
+    }
+
+    .creator-queue__pill--all {
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    .creator-queue__pill--all.is-active {
+        background: #1d4ed8;
+    }
+
+    .creator-queue__pill--warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .creator-queue__pill--warning.is-active {
+        background: #d97706;
+    }
+
+    .creator-queue__filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .creator-queue__field {
+        display: grid;
+        gap: 0.4rem;
+    }
+
+    .creator-queue__field label {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .creator-queue__field input,
+    .creator-queue__field select {
+        width: 100%;
+        min-height: 2.7rem;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #0f172a;
+        box-sizing: border-box;
+    }
+
+    .creator-queue__field input:focus,
+    .creator-queue__field select:focus {
+        outline: 2px solid rgba(29, 78, 216, 0.16);
+        outline-offset: 0;
+        border-color: #93c5fd;
+    }
+
+    .creator-queue__filter-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .creator-queue__table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #ffffff;
+    }
+
+    .creator-queue__table {
+        width: 100%;
+        min-width: 1080px;
+        border-collapse: collapse;
+    }
+
+    .creator-queue__table thead th {
+        text-align: left;
+        font-size: 0.82rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #64748b;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0.9rem 1rem;
+        vertical-align: top;
+    }
+
+    .creator-queue__table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #eef2f7;
+        vertical-align: top;
+        color: #0f172a;
+    }
+
+    .creator-queue__table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .creator-queue__table tbody tr.is-attention {
+        background: #fffaf5;
+    }
+
+    .creator-queue__creator-name {
+        display: inline-block;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        text-decoration: none;
+        margin-bottom: 0.35rem;
+    }
+
+    .creator-queue__creator-name:hover {
+        color: #1d4ed8;
+    }
+
+    .creator-queue__subtle {
+        color: #64748b;
+        line-height: 1.45;
+        font-size: 0.92rem;
+    }
+
+    .creator-queue__meta-stack {
+        display: grid;
+        gap: 0.3rem;
+    }
+
+    .creator-queue__badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.35rem;
+    }
+
+    .creator-queue__badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.7rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .creator-queue__badge--green {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .creator-queue__badge--yellow {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .creator-queue__badge--red {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .creator-queue__badge--blue {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .creator-queue__priority {
+        display: grid;
+        gap: 0.5rem;
+    }
+
+    .creator-queue__priority-label {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        min-height: 1.9rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 800;
+    }
+
+    .creator-queue__priority-label.is-attention {
+        background: #fff7ed;
+        color: #9a3412;
+        border: 1px solid #fdba74;
+    }
+
+    .creator-queue__priority-label.is-calm {
+        background: #ecfdf5;
+        color: #166534;
+        border: 1px solid #86efac;
+    }
+
+    .creator-queue__next-step {
+        max-width: 28ch;
+        line-height: 1.5;
+    }
+
+    .creator-queue__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 120px;
+    }
+
+    .creator-queue__action-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.2rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+        background: #f8fafc;
+        border: 1px solid #dbe2ea;
+        color: #0f172a;
+    }
+
+    .creator-queue__action-link:hover {
+        background: #eef2f7;
+        color: #0f172a;
+    }
+
+    .creator-queue__empty h2 {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        color: #0f172a;
+    }
+
+    .creator-queue__empty p {
+        margin: 0;
+        color: #64748b;
+        line-height: 1.55;
+        max-width: 60ch;
+    }
+
+    @media (max-width: 720px) {
+        .creator-queue__hero-top,
+        .creator-queue__section-head {
+            flex-direction: column;
+        }
+
+        .creator-queue__section-meta {
+            white-space: normal;
+        }
+
+        .creator-queue__hero-actions,
+        .creator-queue__filter-actions {
+            width: 100%;
+        }
+
+        .creator-queue__button,
+        .creator-queue__filter-actions .creator-queue__button,
+        .creator-queue__action-link {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="creator-queue">
+    <section class="creator-queue__hero">
+        <div class="creator-queue__hero-top">
+            <div>
+                <div class="creator-queue__eyebrow">Creators</div>
+                <h1 class="creator-queue__title">Operationele creators queue</h1>
+                <p class="creator-queue__intro">
+                    Rustige werkvolgorde voor operators: aandacht eerst, daarna pas de rest.
+                    Geen directory-first overzicht, maar een priority-first queue met owner,
+                    status, laatste update en volgende stap.
+                </p>
+            </div>
+
+            <div class="creator-queue__hero-actions">
+                {% if request.user.is_staff or request.user.is_superuser %}
+                    <a class="creator-queue__button creator-queue__button--primary" href="{% url 'creator-create' %}">
+                        Nieuwe creator
+                    </a>
+                {% endif %}
+                <a class="creator-queue__button creator-queue__button--secondary" href="{% url 'creator-list' %}">
+                    Reset filters
+                </a>
+            </div>
+        </div>
+
+        <div class="creator-queue__summary-grid">
+            <div class="creator-queue__summary-card">
+                <div class="creator-queue__summary-label">Totaal in scope</div>
+                <div class="creator-queue__summary-value">{{ summary.total_creators }}</div>
+            </div>
+
+            <div class="creator-queue__summary-card">
+                <div class="creator-queue__summary-label">Zichtbaar nu</div>
+                <div class="creator-queue__summary-value">{{ visible_count }}</div>
+                <div class="creator-queue__summary-note">{{ current_preset_label }}</div>
+            </div>
+
+            <div class="creator-queue__summary-card">
+                <div class="creator-queue__summary-label">Aandacht nodig</div>
+                <div class="creator-queue__summary-value">{{ summary.attention_count }}</div>
+            </div>
+
+            <div class="creator-queue__summary-card">
+                <div class="creator-queue__summary-label">Zonder owner</div>
+                <div class="creator-queue__summary-value">{{ summary.unassigned_count }}</div>
+            </div>
+
+            <div class="creator-queue__summary-card">
+                <div class="creator-queue__summary-label">Consent issues</div>
+                <div class="creator-queue__summary-value">{{ summary.consent_issue_count }}</div>
+            </div>
+
+            <div class="creator-queue__summary-card">
+                <div class="creator-queue__summary-label">Niet actief</div>
+                <div class="creator-queue__summary-value">{{ summary.paused_count }}</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="creator-queue__section">
+        <div class="creator-queue__section-head">
+            <div>
+                <h2 class="creator-queue__section-title">Quick filters</h2>
+                <p class="creator-queue__section-copy">
+                    Snelle selectie op de bestaande queue-logica, zonder de werkvolgorde te wijzigen.
+                </p>
+            </div>
+        </div>
+
+        <div class="creator-queue__pill-row">
+            <a
+                href="{% url 'creator-list' %}?preset=attention"
+                class="creator-queue__pill creator-queue__pill--attention {% if active_preset == 'attention' %}is-active{% endif %}"
+            >
+                Aandacht eerst ({{ preset_counts.attention }})
+            </a>
+
+            <a
+                href="{% url 'creator-list' %}?preset=all"
+                class="creator-queue__pill creator-queue__pill--all {% if active_preset == 'all' %}is-active{% endif %}"
+            >
+                Alle creators ({{ preset_counts.all }})
+            </a>
+
+            <a
+                href="{% url 'creator-list' %}?preset=unassigned"
+                class="creator-queue__pill creator-queue__pill--warning {% if active_preset == 'unassigned' %}is-active{% endif %}"
+            >
+                Zonder owner ({{ preset_counts.unassigned }})
+            </a>
+
+            <a
+                href="{% url 'creator-list' %}?preset=consent"
+                class="creator-queue__pill creator-queue__pill--warning {% if active_preset == 'consent' %}is-active{% endif %}"
+            >
+                Consent issues ({{ preset_counts.consent }})
+            </a>
+
+            <a
+                href="{% url 'creator-list' %}?preset=paused"
+                class="creator-queue__pill creator-queue__pill--warning {% if active_preset == 'paused' %}is-active{% endif %}"
+            >
+                Niet actief ({{ preset_counts.paused }})
+            </a>
+        </div>
+    </section>
+
+    <section class="creator-queue__section">
+        <div class="creator-queue__section-head">
+            <div>
+                <h2 class="creator-queue__section-title">Filters</h2>
+                <p class="creator-queue__section-copy">
+                    Verfijn de huidige selectie zonder de priority-first queue te veranderen.
+                </p>
+            </div>
+        </div>
+
+        <form method="get" class="creator-queue__filters">
+            <input type="hidden" name="preset" value="{{ active_preset }}">
+
+            <div class="creator-queue__field">
+                <label for="id_q">Zoeken</label>
+                <input
+                    id="id_q"
+                    type="text"
+                    name="q"
+                    value="{{ search_query }}"
+                    placeholder="Naam, legal name, notities"
+                >
+            </div>
+
+            <div class="creator-queue__field">
+                <label for="id_status">Status</label>
+                <select id="id_status" name="status">
+                    <option value="">Alle statussen</option>
+                    {% for value, label in status_options %}
+                        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="creator-queue__field">
+                <label for="id_consent_status">Consent status</label>
+                <select id="id_consent_status" name="consent_status">
+                    <option value="">Alle consent statussen</option>
+                    {% for value, label in consent_status_options %}
+                        <option value="{{ value }}" {% if current_consent_status == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="creator-queue__filter-actions">
+                <button type="submit" class="creator-queue__button creator-queue__button--primary">
+                    Filter
+                </button>
+
+                <a href="{% url 'creator-list' %}" class="creator-queue__button creator-queue__button--secondary">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </section>
+
+    {% if creator_rows %}
+        <section class="creator-queue__section">
+            <div class="creator-queue__section-head">
+                <div>
+                    <h2 class="creator-queue__section-title">Priority-first werkvolgorde</h2>
+                    <p class="creator-queue__section-copy">
+                        De bestaande queue-logica blijft leidend; deze weergave maakt die alleen rustiger en scanbaarder.
+                    </p>
+                </div>
+
+                <div class="creator-queue__section-meta">
+                    Preset: <strong>{{ current_preset_label }}</strong> · {{ visible_count }} zichtbaar
+                </div>
+            </div>
+
+            <div class="creator-queue__table-wrap">
+                <table class="creator-queue__table">
+                    <thead>
+                        <tr>
+                            <th>Creator</th>
+                            <th>Prioriteit & signalen</th>
+                            <th>Owner / assignment</th>
+                            <th>Content</th>
+                            <th>Laatste update</th>
+                            <th>Volgende stap</th>
+                            <th>Acties</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in creator_rows %}
+                            <tr{% if row.needs_attention %} class="is-attention"{% endif %}>
+                                <td>
+                                    <a class="creator-queue__creator-name" href="{% url 'creator-detail' row.creator.pk %}">
+                                        {{ row.creator.display_name }}
+                                    </a>
+
+                                    {% if row.creator.legal_name and row.creator.legal_name != row.creator.display_name %}
+                                        <div class="creator-queue__subtle">{{ row.creator.legal_name }}</div>
+                                    {% endif %}
+
+                                    <div class="creator-queue__badge-row">
+                                        {% if row.creator.status == "active" %}
+                                            <span class="creator-queue__badge creator-queue__badge--green">active</span>
+                                        {% else %}
+                                            <span class="creator-queue__badge creator-queue__badge--yellow">{{ row.creator.status }}</span>
+                                        {% endif %}
+
+                                        {% if row.creator.consent_status == "active" %}
+                                            <span class="creator-queue__badge creator-queue__badge--green">consent ok</span>
+                                        {% else %}
+                                            <span class="creator-queue__badge creator-queue__badge--yellow">
+                                                consent {{ row.creator.consent_status }}
+                                            </span>
+                                        {% endif %}
+
+                                        <span class="creator-queue__badge creator-queue__badge--blue">
+                                            {{ row.active_channel_count }} actieve channels
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="creator-queue__priority">
+                                        {% if row.needs_attention %}
+                                            <span class="creator-queue__priority-label is-attention">Aandacht nu</span>
+                                        {% else %}
+                                            <span class="creator-queue__priority-label is-calm">Rustig</span>
+                                        {% endif %}
+
+                                        {% if row.issue_badges %}
+                                            <div class="creator-queue__badge-row">
+                                                {% for badge in row.issue_badges %}
+                                                    {% if badge == "needs reset" %}
+                                                        <span class="creator-queue__badge creator-queue__badge--red">{{ badge }}</span>
+                                                    {% else %}
+                                                        <span class="creator-queue__badge creator-queue__badge--yellow">{{ badge }}</span>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="creator-queue__subtle">Geen open kanaalsignalen.</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="creator-queue__meta-stack">
+                                        <div><strong>{{ row.primary_owner_label }}</strong></div>
+                                        <div class="creator-queue__subtle">{{ row.assignment_label }}</div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="creator-queue__meta-stack">
+                                        <div><strong>{{ row.content_status_label }}</strong></div>
+                                        <div class="creator-queue__subtle">
+                                            {{ row.active_channel_count }} actieve channels in scope
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    {% if row.last_update_at %}
+                                        <div><strong>{{ row.last_update_at|date:"d-m-Y H:i" }}</strong></div>
+                                        {% if row.last_update_excerpt %}
+                                            <div class="creator-queue__subtle" style="margin-top: 0.35rem;">
+                                                {{ row.last_update_excerpt|truncatechars:110 }}
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="creator-queue__subtle">Nog geen update vastgelegd.</div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <div class="creator-queue__next-step">
+                                        {{ row.next_step }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="creator-queue__actions">
+                                        <a class="creator-queue__action-link" href="{% url 'creator-detail' row.creator.pk %}">
+                                            Open creator
+                                        </a>
+
+                                        {% if request.user.is_staff or request.user.is_superuser %}
+                                            <a class="creator-queue__action-link" href="{% url 'creator-update' row.creator.pk %}">
+                                                Bewerken
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% else %}
+        <section class="creator-queue__empty">
+            <h2>Geen creators zichtbaar</h2>
+            <p>
+                Er zijn geen creators zichtbaar binnen deze filters of scope. Reset de filters
+                of controleer of er actieve assignments of creators binnen bereik zijn.
+            </p>
+        </section>
+    {% endif %}
+</div>
 {% endblock %}
