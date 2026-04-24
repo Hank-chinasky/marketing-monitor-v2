@@ -148,14 +148,41 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(chats, "Assignment status")
         self.assertContains(chats, "Completeness alerts")
 
-    def test_feeder_keeps_operator_first_four_center_blocks(self):
+    def test_feeder_keeps_operator_first_five_center_blocks(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("feeder-hub"))
 
         self.assertContains(response, "Wat live moet")
         self.assertContains(response, "Wat aandacht nodig heeft")
+        self.assertContains(response, "Content/context vóór actie")
         self.assertContains(response, "Door naar Chats")
         self.assertContains(response, "Ritme / opvolging")
+
+    def test_feeder_pre_action_context_block_renders_scanable_items(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Content/context vóór actie")
+        self.assertContains(response, "Content status")
+        self.assertContains(response, "Content source")
+        self.assertContains(response, "Laatste materiaal")
+        self.assertContains(response, "Kanaalfocus")
+        self.assertContains(response, "https://example.com/source")
+        self.assertContains(response, "Feeder item")
+        self.assertContains(response, "recent-handoff-channel")
+
+    def test_feeder_pre_action_context_handles_missing_material_and_channels(self):
+        CreatorMaterial.objects.filter(creator=self.creator).delete()
+        CreatorChannel.objects.filter(creator=self.creator).delete()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"), {"creator": self.creator.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Content/context vóór actie")
+        self.assertContains(response, "Geen actief materiaal beschikbaar.")
+        self.assertContains(response, "Geen kanaal in scope.")
 
     def test_feeder_chats_quick_action_prioritizes_handoff_required(self):
         self.client.force_login(self.user)
@@ -199,6 +226,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Compacte sessiebrief")
         self.assertContains(response, "Wat live moet")
         self.assertContains(response, "Wat aandacht nodig heeft")
+        self.assertContains(response, "Content/context vóór actie")
         self.assertContains(response, "Door naar Chats")
         self.assertContains(response, "Ritme / opvolging")
 
