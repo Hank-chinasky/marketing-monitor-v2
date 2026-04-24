@@ -143,6 +143,7 @@
     {% if selected_creator %}
         <div class="panel" style="margin-bottom:0.75rem;">
             <h3 style="margin-top:0;">Wat live moet</h3>
+            <p class="muted" style="margin-top:0;">Dit blok toont wat nu direct publiceer- of feederwaardig is.</p>
             <ul class="clean">
                 {% for item in live_now_items %}
                     <li>{{ item }}</li>
@@ -156,12 +157,15 @@
                         <strong>{{ material.label|default:material.filename }}</strong><br>
                         <span class="muted">{{ material.uploaded_at }} · {{ material.media_kind }}</span>
                     </div>
+                {% empty %}
+                    <div class="muted">Nog geen materiaal zichtbaar in deze selectie.</div>
                 {% endfor %}
             </div>
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
             <h3 style="margin-top:0;">Wat aandacht nodig heeft</h3>
+            <p class="muted" style="margin-top:0;">Hier staan blokkades en punten die eerst opgelost moeten worden.</p>
             <ul class="clean">
                 {% for item in attention_items %}
                     <li>{{ item }}</li>
@@ -172,7 +176,53 @@
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Content/context vóór actie</h3>
+            <p class="muted" style="margin-top:0;">Dit is de minimale context die je vóór feeder-actie eerst moet scannen.</p>
+            <ul class="clean">
+                <li>
+                    <strong>Content status:</strong>
+                    {% if selected_creator.content_ready_status %}
+                        {{ selected_creator.get_content_ready_status_display }}
+                    {% else %}
+                        onbekend
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>Content source:</strong>
+                    {% if selected_creator.content_source_url %}
+                        <a href="{{ selected_creator.content_source_url }}" target="_blank" rel="noopener">
+                            {{ selected_creator.content_source_url }}
+                        </a>
+                    {% else %}
+                        Content source ontbreekt.
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>Laatste materiaal:</strong>
+                    {% for material in materials|slice:":1" %}
+                        {{ material.label|default:material.filename }} · {{ material.uploaded_at }}
+                    {% empty %}
+                        Geen actief materiaal beschikbaar.
+                    {% endfor %}
+                </li>
+                <li>
+                    <strong>Kanaalfocus:</strong>
+                    {% if relevant_handoff_channel %}
+                        {{ relevant_handoff_channel.get_platform_display }} / {{ relevant_handoff_channel.handle }}
+                    {% elif channels %}
+                        {% for channel in channels|slice:":1" %}
+                            {{ channel.get_platform_display }} / {{ channel.handle }}
+                        {% endfor %}
+                    {% else %}
+                        Geen kanaal in scope.
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+
+        <div class="panel" style="margin-bottom:0.75rem;">
             <h3 style="margin-top:0;">Door naar Chats</h3>
+            <p class="muted" style="margin-top:0;">Laat hier zien welke items nu logisch moeten doorstromen naar Chats.</p>
             <ul class="clean">
                 {% for item in chats_handoff_items %}
                     <li>
@@ -193,6 +243,7 @@
 
         <div class="panel">
             <h3 style="margin-top:0;">Ritme / opvolging</h3>
+            <p class="muted" style="margin-top:0;">Maak hier scanbaar wat de laatste stand is en waar het vervolgwerk nu zit.</p>
             <ul class="clean">
                 <li><strong>Laatste stand:</strong> {{ follow_up_summary.latest_status|default:"-" }}</li>
                 <li><strong>Volgende stap:</strong> {{ follow_up_summary.next_step|default:"-" }}</li>
