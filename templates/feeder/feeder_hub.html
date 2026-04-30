@@ -142,6 +142,24 @@
 
     {% if selected_creator %}
         <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Feeder scan</h3>
+            <p class="muted" style="margin-top:0;">Compacte operator-scan op basis van de huidige feeder-context.</p>
+            <ul class="clean">
+                {% for item in feeder_focus_items %}
+                    <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
+                {% empty %}
+                    <li class="muted">Geen feeder scan-context beschikbaar.</li>
+                {% endfor %}
+            </ul>
+            <ul class="clean">
+                <li><strong>Laatste feeder-handoff:</strong> {{ latest_feeder_handoff_scan.channel }} · {{ latest_feeder_handoff_scan.status }}</li>
+                <li><strong>Handoff blocker:</strong> {{ latest_feeder_handoff_scan.blocker }}</li>
+                <li><strong>Volgende operatoractie:</strong> {{ next_operator_action_scan }}</li>
+                <li><strong>Chats-handoff scan:</strong> {{ chats_handoff_scan.count }} item(s) · {{ chats_handoff_scan.target }}</li>
+            </ul>
+        </div>
+
+        <div class="panel" style="margin-bottom:0.75rem;">
             <h3 style="margin-top:0;">Wat live moet</h3>
             <p class="muted" style="margin-top:0;">Dit blok toont wat nu direct publiceer- of feederwaardig is.</p>
             <ul class="clean">

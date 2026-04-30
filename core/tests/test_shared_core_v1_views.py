@@ -172,6 +172,30 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Feeder item")
         self.assertContains(response, "recent-handoff-channel")
 
+    def test_feeder_scan_context_is_present_in_template_and_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"), {"creator": self.creator.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Feeder scan")
+        self.assertContains(response, "Live focus")
+        self.assertContains(response, "Laatste feeder-handoff")
+        self.assertContains(response, "Volgende operatoractie")
+        self.assertContains(response, "Chats-handoff scan")
+        self.assertIn("feeder_focus_items", response.context)
+        self.assertIn("latest_feeder_handoff_scan", response.context)
+        self.assertIn("next_operator_action_scan", response.context)
+        self.assertIn("chats_handoff_scan", response.context)
+        self.assertEqual(
+            response.context["latest_feeder_handoff_scan"]["channel"],
+            "TikTok / recent-handoff-channel",
+        )
+        self.assertEqual(
+            response.context["next_operator_action_scan"],
+            "Escalate risky comments to Chats.",
+        )
+        self.assertEqual(response.context["chats_handoff_scan"]["count"], 2)
+
     def test_feeder_pre_action_context_handles_missing_material_and_channels(self):
         CreatorMaterial.objects.filter(creator=self.creator).delete()
         CreatorChannel.objects.filter(creator=self.creator).delete()

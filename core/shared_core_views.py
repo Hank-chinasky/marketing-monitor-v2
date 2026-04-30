@@ -858,6 +858,66 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             ),
         )
 
+    def _build_feeder_scan_context(
+        self,
+        *,
+        live_now_items,
+        attention_items,
+        chats_handoff_items,
+        follow_up_summary,
+        run_log,
+        relevant_handoff_channel,
+        completeness_alerts,
+        access_state,
+    ):
+        feeder_focus_items = [
+            {"label": "Access", "value": access_state.get("label", "-")},
+            {
+                "label": "Live focus",
+                "value": live_now_items[0] if live_now_items else "Geen live focus beschikbaar.",
+            },
+            {
+                "label": "Aandacht",
+                "value": attention_items[0] if attention_items else "Geen extra aandachtspunten.",
+            },
+        ]
+
+        latest_feeder_handoff_scan = {
+            "channel": (
+                f"{relevant_handoff_channel.get_platform_display()} / {relevant_handoff_channel.handle}"
+                if relevant_handoff_channel
+                else "Geen channel handoff-context binnen scope."
+            ),
+            "status": follow_up_summary.get("latest_status", "-"),
+            "blocker": (
+                relevant_handoff_channel.session_blockers
+                if relevant_handoff_channel
+                and not is_placeholder_noise(relevant_handoff_channel.session_blockers)
+                else "-"
+            ),
+        }
+
+        next_operator_action_scan = follow_up_summary.get("next_step") or "-"
+        if next_operator_action_scan == "-":
+            if completeness_alerts:
+                next_operator_action_scan = completeness_alerts[0]
+            elif run_log:
+                next_operator_action_scan = f"Scan {run_log[-1]['label']}."
+            else:
+                next_operator_action_scan = "Geen volgende operatoractie beschikbaar."
+
+        chats_handoff_scan = {
+            "count": len(chats_handoff_items),
+            "target": follow_up_summary.get("work_target") or "Geen doorzet naar Chats",
+        }
+
+        return {
+            "feeder_focus_items": feeder_focus_items,
+            "latest_feeder_handoff_scan": latest_feeder_handoff_scan,
+            "next_operator_action_scan": next_operator_action_scan,
+            "chats_handoff_scan": chats_handoff_scan,
+        }
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -1144,6 +1204,23 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             channels,
             materials,
         )
+        context["access_state"] = self._build_access_state(
+            selected_creator,
+            assignment,
+            channels,
+        )
+        context.update(
+            self._build_feeder_scan_context(
+                live_now_items=live_now_items,
+                attention_items=attention_items,
+                chats_handoff_items=chats_handoff_items,
+                follow_up_summary=follow_up_summary,
+                run_log=run_log,
+                relevant_handoff_channel=relevant_handoff_channel,
+                completeness_alerts=context["completeness_alerts"],
+                access_state=context["access_state"],
+            )
+        )
         context.update(
             self._build_context(
                 selected_creator=selected_creator,
@@ -1151,11 +1228,6 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 follow_up_summary=follow_up_summary,
                 completeness_alerts=context["completeness_alerts"],
             )
-        )
-        context["access_state"] = self._build_access_state(
-            selected_creator,
-            assignment,
-            channels,
         )
         context["templates"] = templates
         context["template_query"] = template_query
