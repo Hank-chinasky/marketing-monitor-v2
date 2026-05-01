@@ -165,3 +165,13 @@ De gekozen configuratie is bewust conservatief gehouden, zodat de eerste live de
 - weinig verborgen aannames bevat
 - aansluit op de bestaande Traefik-infrastructuur
 - later nog verder verfijnd kan worden zonder nu onnodig risico te nemen
+
+## 2026-05-01 — Feeder Workspace v1 scan-context live
+
+- Vorige live commit: `d464ce8`
+- Nieuwe live commit: `ce2d966`
+- Deploytype: Feeder Workspace v1 scan-context + docs
+- Migrations: geen
+- Routing/settings/compose: geen wijzigingen
+- Healthcheck: groen
+- UI-smoke: groen
