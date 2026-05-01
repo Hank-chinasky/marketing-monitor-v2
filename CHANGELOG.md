@@ -140,3 +140,35 @@ Creator now stores:
 - Confirmed locally that multiple files can be selected and uploaded in one submit.
 - Confirmed locally that preview-first materials rendering works in the site UI.
 - Confirmed locally that scoped operators can still see uploaded materials.
+
+
+## Feeder Workspace v1 scan-context
+
+### Added
+- Added compact Feeder scan context in `FeederHubView` for:
+  - feeder focus
+  - latest feeder handoff
+  - next operator action
+  - Chats handoff scan
+- Added a compact Feeder scan block to `templates/feeder/feeder_hub.html`.
+- Added regression coverage for Feeder scan context in `core/tests/test_shared_core_v1_views.py`.
+
+### Changed
+- Improved Feeder Workspace scanability inside the existing 3-pane shell.
+- Made current focus, handoff state, next operator action, and Chats handoff signal easier to read for operators.
+
+### Guardrails
+- No model changes.
+- No migrations.
+- No routing/url changes.
+- No settings/env changes.
+- No Docker/Compose/VPS/deploy changes.
+- No approvals action logic changes.
+- No buddy expansion.
+- No docs/changelog files were included in the code-slice itself.
+
+### Tested
+- `python manage.py test core.tests.test_shared_core_v1_views.SharedCoreV1ViewsTests.test_feeder_scan_context_is_present_in_template_and_context`
+- `python manage.py test core.tests.test_shared_core_v1_views`
+- `python manage.py makemigrations --check`
+- `python manage.py test core.tests.test_shared_core_v1_views core.tests.test_approvals_v1`
