@@ -19,6 +19,23 @@ class AdminOnlyMixin(AccessMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
+class AdminOrOperatorProfileRequiredMixin(AccessMixin):
+    """
+    Allows admins and users with an Operator profile.
+
+    Intended only for read-only operator overview pages.
+    Do not use for operator create/update/reset/toggle actions.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        if is_admin_user(request.user):
+            return super().dispatch(request, *args, **kwargs)
+
+        if get_operator_for_user(request.user) is not None:
+            return super().dispatch(request, *args, **kwargs)
+
+        raise PermissionDenied("Admin or operator access required.")
+
+
 class AdminDeleteOnlyMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not is_admin_user(request.user):

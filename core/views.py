@@ -27,6 +27,7 @@ from core.forms import (
 )
 from core.mixins import (
     AdminOnlyMixin,
+    AdminOrOperatorProfileRequiredMixin,
     ScopedAssignmentQuerysetMixin,
     ScopedChannelQuerysetMixin,
     ScopedCreatorQuerysetMixin,
@@ -753,7 +754,7 @@ class OperatorToggleActiveView(LoginRequiredMixin, AdminOnlyMixin, View):
         return HttpResponseRedirect(next_url)
 
 
-class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
+class OperatorListView(LoginRequiredMixin, AdminOrOperatorProfileRequiredMixin, ListView):
     model = Operator
     template_name = "operators/operator_list.html"
     context_object_name = "operators"
@@ -813,6 +814,7 @@ class OperatorListView(LoginRequiredMixin, AdminOnlyMixin, ListView):
 
         context["operator_rows"] = operator_rows
         context["search_query"] = (self.request.GET.get("q") or "").strip()
+        context["can_manage_operators"] = is_admin_user(self.request.user)
         context["current_full_path"] = self.request.get_full_path()
         context["status_changed"] = self.request.GET.get("status_changed") == "1"
         context["changed_operator"] = (self.request.GET.get("operator") or "").strip()

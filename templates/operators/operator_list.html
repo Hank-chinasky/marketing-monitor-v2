@@ -3,12 +3,18 @@
 {% block content %}
 <h1>Operators</h1>
 <p class="muted">
-    Beheer hier operators, accountstatus, assignments en wachtwoordreset.
+    {% if can_manage_operators %}
+        Beheer hier operators, accountstatus, assignments en wachtwoordreset.
+    {% else %}
+        Scan hier operators, assignments en primary creators. Beheeracties zijn admin-only.
+    {% endif %}
 </p>
 
-<div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-    <a class="primary-button" href="{% url 'operator-create' %}">Nieuwe operator</a>
-</div>
+{% if can_manage_operators %}
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a class="primary-button" href="{% url 'operator-create' %}">Nieuwe operator</a>
+    </div>
+{% endif %}
 
 {% if status_changed %}
     <div class="success-panel">
@@ -66,16 +72,22 @@
                     <th style="padding: 0.8rem 0.5rem;">Status</th>
                     <th style="padding: 0.8rem 0.5rem;">Actieve assignments</th>
                     <th style="padding: 0.8rem 0.5rem;">Primary creators</th>
-                    <th style="padding: 0.8rem 0.5rem;">Acties</th>
+                    {% if can_manage_operators %}
+                        <th style="padding: 0.8rem 0.5rem;">Acties</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for row in operator_rows %}
                     <tr style="border-bottom: 1px solid #eee; vertical-align: top;">
                         <td style="padding: 0.9rem 0.5rem; font-size: 1rem; font-weight: 700;">
-                            <a href="{% url 'operator-update' row.operator.pk %}">
+                            {% if can_manage_operators %}
+                                <a href="{% url 'operator-update' row.operator.pk %}">
+                                    {{ row.operator }}
+                                </a>
+                            {% else %}
                                 {{ row.operator }}
-                            </a>
+                            {% endif %}
                         </td>
                         <td style="padding: 0.9rem 0.5rem;">
                             {{ row.user.username }}
@@ -112,27 +124,29 @@
                                 <span class="muted">-</span>
                             {% endif %}
                         </td>
-                        <td style="padding: 0.9rem 0.5rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start;">
-                                <a class="quick-link" href="{% url 'operator-update' row.operator.pk %}">Bewerk</a>
-                                <a class="quick-link" href="{% url 'operator-reset-password' row.operator.pk %}">Reset wachtwoord</a>
-                                <form method="post" action="{% url 'operator-toggle-active' row.operator.pk %}" style="margin: 0;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ current_full_path }}">
-                                    <button
-                                        type="submit"
-                                        class="secondary-button"
-                                        style="padding: 0.45rem 0.75rem;"
-                                    >
-                                        {% if row.user.is_active %}Blokkeer{% else %}Deblokkeer{% endif %}
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
+                        {% if can_manage_operators %}
+                            <td style="padding: 0.9rem 0.5rem;">
+                                <div style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start;">
+                                    <a class="quick-link" href="{% url 'operator-update' row.operator.pk %}">Bewerk</a>
+                                    <a class="quick-link" href="{% url 'operator-reset-password' row.operator.pk %}">Reset wachtwoord</a>
+                                    <form method="post" action="{% url 'operator-toggle-active' row.operator.pk %}" style="margin: 0;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ current_full_path }}">
+                                        <button
+                                            type="submit"
+                                            class="secondary-button"
+                                            style="padding: 0.45rem 0.75rem;"
+                                        >
+                                            {% if row.user.is_active %}Blokkeer{% else %}Deblokkeer{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        {% endif %}
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" style="padding: 1rem 0.5rem;" class="muted">
+                        <td colspan="{% if can_manage_operators %}7{% else %}6{% endif %}" style="padding: 1rem 0.5rem;" class="muted">
                             Geen operators.
                         </td>
                     </tr>
