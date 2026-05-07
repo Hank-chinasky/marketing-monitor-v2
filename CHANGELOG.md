@@ -142,7 +142,12 @@ Creator now stores:
 - Confirmed locally that scoped operators can still see uploaded materials.
 
 
+
 ## Feeder Workspace v1 scan-context
+
+### Status
+- Live bevestigd op 2026-04-24 als kleine Feeder Workspace v1-verdiepingsslice.
+- De slice bleef binnen de bestaande Mara Ops-lijn: shared core → chats → feeder → templates/approvals → buddy.
 
 ### Added
 - Added compact Feeder scan context in `FeederHubView` for:
@@ -156,19 +161,35 @@ Creator now stores:
 ### Changed
 - Improved Feeder Workspace scanability inside the existing 3-pane shell.
 - Made current focus, handoff state, next operator action, and Chats handoff signal easier to read for operators.
+- Het operationele middenvlak van **Feeder Workspace v1** maakt nu explicieter zichtbaar:
+  - wat live moet
+  - wat aandacht nodig heeft
+  - content/context vóór actie
+  - door naar chats
+  - ritme / opvolging
+- De wijziging is bewust klein gehouden en blijft binnen de bestaande Feeder Workspace v1-scope.
 
 ### Guardrails
 - No model changes.
 - No migrations.
 - No routing/url changes.
 - No settings/env changes.
-- No Docker/Compose/VPS/deploy changes.
+- No Docker/Compose/VPS/deploy changes in the code-slice itself.
 - No approvals action logic changes.
 - No buddy expansion.
-- No docs/changelog files were included in the code-slice itself.
+- No docs/changelog files were included in the original code-slice itself; this changelog update documents the slice afterwards.
 
 ### Tested
 - `python manage.py test core.tests.test_shared_core_v1_views.SharedCoreV1ViewsTests.test_feeder_scan_context_is_present_in_template_and_context`
 - `python manage.py test core.tests.test_shared_core_v1_views`
 - `python manage.py makemigrations --check`
 - `python manage.py test core.tests.test_shared_core_v1_views core.tests.test_approvals_v1`
+- Korte runtime/smoke check uitgevoerd op `/feeder/`
+- Korte regressiecheck uitgevoerd op `/chats/`
+
+### Deploy
+- VPS app-repo bevestigd op `/opt/commandcenter/apps/creatorworkboard-ops`
+- VPS `main` bijgewerkt naar de gemergede feeder-slice
+- `web` service opnieuw gebouwd en gestart via de bestaande stackflow
+- Container healthy bevestigd
+- Live bevestigd op basis van uitgevoerde operator smoke check
