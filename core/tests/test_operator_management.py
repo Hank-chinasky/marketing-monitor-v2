@@ -31,6 +31,12 @@ class OperatorManagementTests(TestCase):
         )
         self.operator = Operator.objects.create(user=self.operator_user)
 
+        self.plain_user = User.objects.create_user(
+            username="plain-user",
+            password="x",
+            is_active=True,
+        )
+
         self.creator = Creator.objects.create(
             display_name="Creator One",
             legal_name="Creator One BV",
@@ -48,15 +54,43 @@ class OperatorManagementTests(TestCase):
             active=True,
         )
 
-    def test_operator_list_requires_admin(self):
+    def test_operator_can_open_operator_list_without_management_actions(self):
         self.client.force_login(self.operator_user)
         response = self.client.get(reverse("operator-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.operator_user.username)
+        self.assertNotContains(response, "Nieuwe operator")
+        self.assertNotContains(
+            response,
+            reverse("operator-update", kwargs={"pk": self.operator.pk}),
+        )
+        self.assertNotContains(
+            response,
+            reverse("operator-reset-password", kwargs={"pk": self.operator.pk}),
+        )
+        self.assertNotContains(
+            response,
+            reverse("operator-toggle-active", kwargs={"pk": self.operator.pk}),
+        )
+        self.assertNotContains(response, "Bewerk")
+        self.assertNotContains(response, "Reset wachtwoord")
+        self.assertNotContains(response, "Blokkeer")
+
+    def test_operator_list_blocks_plain_user_without_operator_profile(self):
+        self.client.force_login(self.plain_user)
+        response = self.client.get(reverse("operator-list"))
+
         self.assertEqual(response.status_code, 403)
+
+    def test_operator_list_redirects_anonymous_user(self):
+        response = self.client.get(reverse("operator-list"))
+
+        self.assertEqual(response.status_code, 302)
 
     def test_admin_can_open_operator_list_and_sees_edit_actions(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("operator-list"))
-
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.operator_user.username)
         self.assertContains(response, reverse("operator-update", kwargs={"pk": self.operator.pk}))
@@ -145,6 +179,29 @@ class OperatorManagementTests(TestCase):
 
         self.operator_user.refresh_from_db()
         self.assertTrue(self.operator_user.check_password("NieuwSterkWachtwoord123"))
+
+    def test_operator_management_actions_remain_admin_only_for_operator(self):
+        self.client.force_login(self.operator_user)
+
+        management_urls = [
+            reverse("operator-create"),
+            reverse("operator-update", kwargs={"pk": self.operator.pk}),
+            reverse("operator-reset-password", kwargs={"pk": self.operator.pk}),
+        ]
+
+        for url in management_urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            reverse("operator-toggle-active", kwargs={"pk": self.operator.pk}),
+            data={"next": reverse("operator-list")},
+        )
+        self.assertEqual(response.status_code, 403)
+
+        self.operator_user.refresh_from_db()
+        self.assertTrue(self.operator_user.is_active)
 
     def test_operator_create_page_has_real_back_button(self):
         self.client.force_login(self.admin)
