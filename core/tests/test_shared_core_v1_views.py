@@ -196,6 +196,25 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertEqual(response.context["chats_handoff_scan"]["count"], 2)
 
+    def test_feeder_scan_next_operator_action_uses_actionable_completeness_fallback(self):
+        self.creator.content_source_url = ""
+        self.creator.save(update_fields=["content_source_url"])
+
+        self.channel.session_next_action = ""
+        self.channel.save(update_fields=["session_next_action"])
+        self.newer_channel.session_next_action = ""
+        self.newer_channel.save(update_fields=["session_next_action"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"), {"creator": self.creator.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["next_operator_action_scan"],
+            "Los eerst op: Content source URL ontbreekt.",
+        )
+        self.assertContains(response, "Los eerst op: Content source URL ontbreekt.")
+
     def test_feeder_pre_action_context_handles_missing_material_and_channels(self):
         CreatorMaterial.objects.filter(creator=self.creator).delete()
         CreatorChannel.objects.filter(creator=self.creator).delete()

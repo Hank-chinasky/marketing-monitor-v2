@@ -900,7 +900,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         next_operator_action_scan = follow_up_summary.get("next_step") or "-"
         if next_operator_action_scan == "-":
             if completeness_alerts:
-                next_operator_action_scan = completeness_alerts[0]
+                next_operator_action_scan = f"Los eerst op: {completeness_alerts[0]}"
             elif run_log:
                 next_operator_action_scan = f"Scan {run_log[-1]['label']}."
             else:
