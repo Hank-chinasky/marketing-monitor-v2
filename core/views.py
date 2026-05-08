@@ -766,6 +766,12 @@ class OperatorListView(LoginRequiredMixin, AdminOrOperatorProfileRequiredMixin, 
             .order_by("user__first_name", "user__last_name", "user__username")
         )
 
+        if not is_admin_user(self.request.user):
+            operator = get_operator_for_user(self.request.user)
+            if operator is None:
+                return qs.none()
+            qs = qs.filter(pk=operator.pk)
+
         q = (self.request.GET.get("q") or "").strip()
         if q:
             qs = qs.filter(
