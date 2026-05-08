@@ -31,6 +31,16 @@ class OperatorManagementTests(TestCase):
         )
         self.operator = Operator.objects.create(user=self.operator_user)
 
+        self.other_operator_user = User.objects.create_user(
+            username="other-operator",
+            email="other-operator@example.com",
+            password="x",
+            first_name="Other",
+            last_name="Operator",
+            is_active=True,
+        )
+        self.other_operator = Operator.objects.create(user=self.other_operator_user)
+
         self.plain_user = User.objects.create_user(
             username="plain-user",
             password="x",
@@ -60,6 +70,9 @@ class OperatorManagementTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.operator_user.username)
+        self.assertNotContains(response, self.other_operator_user.username)
+        self.assertNotContains(response, self.other_operator_user.email)
+        self.assertEqual(list(response.context["operators"]), [self.operator])
         self.assertNotContains(response, "Nieuwe operator")
         self.assertNotContains(
             response,
@@ -93,6 +106,7 @@ class OperatorManagementTests(TestCase):
         response = self.client.get(reverse("operator-list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.operator_user.username)
+        self.assertContains(response, self.other_operator_user.username)
         self.assertContains(response, reverse("operator-update", kwargs={"pk": self.operator.pk}))
         self.assertContains(
             response,
