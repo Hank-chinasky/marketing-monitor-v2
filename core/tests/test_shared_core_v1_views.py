@@ -455,7 +455,11 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Guardrails ontbreken; policy-context is onvolledig.")
         self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
         self.assertContains(response, "Laatste handoff-status ontbreekt.")
-        self.assertContains(response, "Nog geen volgende stap vastgelegd.")
+        self.assertContains(response, "Los eerst op: Volgende stap ontbreekt (open loop leeg).")
+        self.assertEqual(
+            response.context["next_step_scan"],
+            "Los eerst op: Volgende stap ontbreekt (open loop leeg).",
+        )
 
     def test_assignment_scope_status_is_rendered_in_chats_and_feeder(self):
         self.client.force_login(self.user)

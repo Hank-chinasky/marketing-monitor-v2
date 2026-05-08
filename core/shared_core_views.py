@@ -496,7 +496,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "at": selected_thread.last_operator_handoff_at or "-",
         }
         next_step_scan = _condense_text(selected_thread.open_loop, limit=260) or (
-            "Nog geen volgende stap vastgelegd."
+            "Los eerst op: Volgende stap ontbreekt (open loop leeg)."
         )
 
         return {
