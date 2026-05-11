@@ -341,6 +341,14 @@
 
     <div class="panel">
         <h3 style="margin-top:0;">Buddy-slot</h3>
+        <p><strong>Context prefill:</strong></p>
+        <ul class="clean">
+            {% for item in buddy_assist.context_prefill %}
+                <li><strong>{{ item.label }}:</strong> {{ item.value|linebreaksbr }}</li>
+            {% empty %}
+                <li class="muted">Geen context prefill beschikbaar.</li>
+            {% endfor %}
+        </ul>
         <p><strong>Korte threadsamenvatting:</strong><br>{{ buddy_assist.thread_summary|linebreaksbr }}</p>
         <p><strong>Ontbrekende velden/contextgaten:</strong></p>
         <ul class="clean">
