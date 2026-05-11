@@ -398,6 +398,14 @@
     <div class="panel">
         <h3 style="margin-top:0;">Buddy-slot</h3>
         <p class="muted">Buddy heeft een vaste plek maar is nog niet workflow-dragend in Feeder v1.</p>
+        <p><strong>Context prefill:</strong></p>
+        <ul class="clean">
+            {% for item in buddy_assist.context_prefill %}
+                <li><strong>{{ item.label }}:</strong> {{ item.value|linebreaksbr }}</li>
+            {% empty %}
+                <li class="muted">Geen context prefill beschikbaar.</li>
+            {% endfor %}
+        </ul>
         <p><strong>Korte creator-samenvatting:</strong> {{ buddy_assist.creator_summary }}</p>
         <p><strong>Ontbrekende velden/contextgaten:</strong></p>
         <ul class="clean">

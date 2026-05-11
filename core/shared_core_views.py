@@ -98,6 +98,12 @@ def _condense_text(value: str, *, limit: int = 180) -> str:
     return f"{text[: limit - 1].rstrip()}…"
 
 
+def _append_context_prefill_item(items, label: str, value, *, limit: int = 220) -> None:
+    if is_placeholder_noise(value):
+        return
+    items.append({"label": label, "value": _condense_text(value, limit=limit)})
+
+
 def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
     if not selected_thread:
         return {
@@ -107,6 +113,7 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
             "session_brief": "Geen sessiebrief beschikbaar zonder thread.",
             "condensed_handoff": "",
             "has_handoff": False,
+            "context_prefill": [],
         }
 
     missing_context = []
@@ -122,6 +129,31 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
     has_handoff = not is_placeholder_noise(selected_thread.last_handoff_note)
     if has_handoff:
         condensed_handoff = _condense_text(selected_thread.last_handoff_note, limit=220)
+
+    context_prefill = []
+    _append_context_prefill_item(
+        context_prefill,
+        "Creator",
+        selected_thread.creator.display_name,
+    )
+    if selected_thread.channel:
+        channel = selected_thread.channel
+        _append_context_prefill_item(
+            context_prefill,
+            "Channel",
+            f"{channel.get_platform_display()} / {channel.handle}",
+        )
+        _append_context_prefill_item(context_prefill, "Profile URL", channel.profile_url)
+        _append_context_prefill_item(
+            context_prefill,
+            "Access notes",
+            channel.access_profile_notes or channel.access_notes,
+        )
+    _append_context_prefill_item(
+        context_prefill,
+        "Guardrails",
+        selected_thread.guardrails,
+    )
 
     session_brief_parts = [
         f"Status: {selected_thread.get_status_display()}",
@@ -142,6 +174,7 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
         "session_brief": " · ".join(session_brief_parts),
         "condensed_handoff": condensed_handoff,
         "has_handoff": has_handoff,
+        "context_prefill": context_prefill,
     }
 
 
@@ -159,6 +192,7 @@ def build_feeder_buddy_assist_snapshot(
             "session_brief": "Geen sessiebrief beschikbaar zonder creator.",
             "condensed_handoff": "",
             "has_handoff": False,
+            "context_prefill": [],
         }
 
     missing_context = list(completeness_alerts or [])
@@ -191,6 +225,39 @@ def build_feeder_buddy_assist_snapshot(
     condensed_handoff = _condense_text(handoff_text, limit=220)
     has_handoff = bool(condensed_handoff)
 
+    context_prefill = []
+    _append_context_prefill_item(context_prefill, "Creator", selected_creator.display_name)
+    _append_context_prefill_item(
+        context_prefill,
+        "Content status",
+        selected_creator.get_content_ready_status_display(),
+    )
+    _append_context_prefill_item(
+        context_prefill,
+        "Content source",
+        selected_creator.content_source_url,
+    )
+    if relevant_handoff_channel:
+        _append_context_prefill_item(
+            context_prefill,
+            "Channel",
+            (
+                f"{relevant_handoff_channel.get_platform_display()} / "
+                f"{relevant_handoff_channel.handle}"
+            ),
+        )
+        _append_context_prefill_item(
+            context_prefill,
+            "Profile URL",
+            relevant_handoff_channel.profile_url,
+        )
+        _append_context_prefill_item(
+            context_prefill,
+            "Access notes",
+            relevant_handoff_channel.access_profile_notes
+            or relevant_handoff_channel.access_notes,
+        )
+
     session_brief_parts = [
         (
             f"Creator: {selected_creator.display_name}"
@@ -218,6 +285,7 @@ def build_feeder_buddy_assist_snapshot(
         "session_brief": " · ".join(session_brief_parts),
         "condensed_handoff": condensed_handoff,
         "has_handoff": has_handoff,
+        "context_prefill": context_prefill,
     }
 
 

@@ -45,6 +45,8 @@ class SharedCoreV1ViewsTests(TestCase):
             creator=self.creator,
             platform=CreatorChannel.Platform.INSTAGRAM,
             handle="shared-core-channel",
+            profile_url="https://example.com/shared-core-channel",
+            access_notes="Use operator direct access only.",
             status=CreatorChannel.Status.ACTIVE,
             access_mode=CreatorChannel.AccessMode.OPERATOR_DIRECT,
             recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
@@ -58,6 +60,8 @@ class SharedCoreV1ViewsTests(TestCase):
             creator=self.creator,
             platform=CreatorChannel.Platform.TIKTOK,
             handle="recent-handoff-channel",
+            profile_url="https://example.com/recent-handoff-channel",
+            access_profile_notes="Use approved device profile.",
             status=CreatorChannel.Status.ACTIVE,
             access_mode=CreatorChannel.AccessMode.OPERATOR_DIRECT,
             recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
@@ -273,6 +277,27 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Door naar Chats")
         self.assertContains(response, "Ritme / opvolging")
 
+    def test_feeder_buddy_slot_shows_context_prefill_for_selected_creator(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"), {"creator": self.creator.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Context prefill")
+        self.assertContains(response, "Shared Core Creator")
+        self.assertContains(response, "Ready to post")
+        self.assertContains(response, "https://example.com/source")
+        self.assertContains(response, "TikTok / recent-handoff-channel")
+        self.assertContains(response, "https://example.com/recent-handoff-channel")
+        self.assertContains(response, "Use approved device profile.")
+        self.assertIn(
+            {"label": "Content status", "value": "Ready to post"},
+            response.context["buddy_assist"]["context_prefill"],
+        )
+        self.assertIn(
+            {"label": "Channel", "value": "TikTok / recent-handoff-channel"},
+            response.context["buddy_assist"]["context_prefill"],
+        )
+
     def test_feeder_buddy_slot_handles_missing_context(self):
         self.creator.content_source_url = ""
         self.creator.content_ready_status = ""
@@ -442,6 +467,33 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Compacte sessiebrief")
         self.assertContains(response, "Shared Core Creator")
         self.assertContains(response, "Reply with updated delivery date.")
+
+    def test_chat_buddy_slot_shows_context_prefill_for_selected_thread(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Context prefill")
+        self.assertContains(response, "Creator")
+        self.assertContains(response, "Shared Core Creator")
+        self.assertContains(response, "Instagram / shared-core-channel")
+        self.assertContains(response, "https://example.com/shared-core-channel")
+        self.assertContains(response, "Use operator direct access only.")
+        self.assertContains(response, "Guardrails")
+        self.assertContains(response, "No promises without confirmed date.")
+        self.assertNotContains(response, "Out Scope Creator")
+        self.assertIn(
+            {"label": "Creator", "value": "Shared Core Creator"},
+            response.context["buddy_assist"]["context_prefill"],
+        )
+        self.assertIn(
+            {"label": "Channel", "value": "Instagram / shared-core-channel"},
+            response.context["buddy_assist"]["context_prefill"],
+        )
+        self.assertIn(
+            {"label": "Guardrails", "value": "No promises without confirmed date."},
+            response.context["buddy_assist"]["context_prefill"],
+        )
 
     def test_chat_buddy_assist_signals_missing_context_when_thread_is_incomplete(self):
         self.thread.guardrails = ""
