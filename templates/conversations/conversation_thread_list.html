@@ -3,6 +3,10 @@
 {% block content %}
 <h1>Conversation Threads</h1>
 
+<div style="margin-bottom:1rem;">
+    <a class="quick-link" href="{% url 'conversation-thread-create' %}">Nieuwe conversation thread</a>
+</div>
+
 <div class="panel">
     <ul class="clean">
         {% for thread in threads %}

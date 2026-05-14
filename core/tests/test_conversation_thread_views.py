@@ -30,6 +30,11 @@ class ConversationThreadViewTests(TestCase):
             is_active=True,
         )
         self.no_assignment_operator = Operator.objects.create(user=self.no_assignment_user)
+        self.unsupported_user = User.objects.create_user(
+            username="unsupported-thread-views",
+            password="x",
+            is_active=True,
+        )
 
         self.creator_in_scope = Creator.objects.create(
             display_name="In Scope Creator",
@@ -55,6 +60,12 @@ class ConversationThreadViewTests(TestCase):
             status=Creator.Status.ACTIVE,
             consent_status=Creator.ConsentStatus.ACTIVE,
         )
+        self.creator_second_in_scope = Creator.objects.create(
+            display_name="Second In Scope Creator",
+            legal_name="Second In Scope Creator BV",
+            status=Creator.Status.ACTIVE,
+            consent_status=Creator.ConsentStatus.ACTIVE,
+        )
 
         self.channel = CreatorChannel.objects.create(
             creator=self.creator_in_scope,
@@ -64,11 +75,35 @@ class ConversationThreadViewTests(TestCase):
             access_mode=CreatorChannel.AccessMode.OPERATOR_DIRECT,
             recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
         )
+        self.out_of_scope_channel = CreatorChannel.objects.create(
+            creator=self.creator_out_of_scope,
+            platform=CreatorChannel.Platform.TIKTOK,
+            handle="outscope_creator",
+            status=CreatorChannel.Status.ACTIVE,
+            access_mode=CreatorChannel.AccessMode.OPERATOR_DIRECT,
+            recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
+        )
+        self.second_in_scope_channel = CreatorChannel.objects.create(
+            creator=self.creator_second_in_scope,
+            platform=CreatorChannel.Platform.TIKTOK,
+            handle="second_inscope_creator",
+            status=CreatorChannel.Status.ACTIVE,
+            access_mode=CreatorChannel.AccessMode.OPERATOR_DIRECT,
+            recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
+        )
 
         now = timezone.now()
         OperatorAssignment.objects.create(
             operator=self.operator,
             creator=self.creator_in_scope,
+            scope=OperatorAssignment.Scope.FULL_MANAGEMENT,
+            starts_at=now - timedelta(days=1),
+            ends_at=None,
+            active=True,
+        )
+        OperatorAssignment.objects.create(
+            operator=self.operator,
+            creator=self.creator_second_in_scope,
             scope=OperatorAssignment.Scope.FULL_MANAGEMENT,
             starts_at=now - timedelta(days=1),
             ends_at=None,
@@ -122,6 +157,25 @@ class ConversationThreadViewTests(TestCase):
             source_thread_id="mara-no-channel",
             thread_summary="No channel thread.",
         )
+
+    def _thread_form_data(self, **overrides):
+        data = {
+            "creator": str(self.creator_in_scope.pk),
+            "channel": str(self.channel.pk),
+            "source_system": ConversationThread.SourceSystem.MARA_CHAT,
+            "source_thread_id": "manual-thread-new",
+            "status": ConversationThread.Status.ACTIVE,
+            "last_message_at": "",
+            "thread_summary": "Manual intake summary.",
+            "open_loop": "Manual next step.",
+            "guardrails": "Manual guardrails.",
+            "risk_flags": "",
+            "last_handoff_note": "Manual handoff.",
+            "last_approved_reply_style": "Warm and concise.",
+            "active": "on",
+        }
+        data.update({key: str(value) for key, value in overrides.items()})
+        return data
 
     def test_admin_sees_thread_list(self):
         self.client.force_login(self.admin)
@@ -243,3 +297,178 @@ class ConversationThreadViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Er is nog geen BuddyDraft beschikbaar.")
         self.assertContains(response, "Draft-generatie volgt in een later ticket.")
+
+    def test_admin_can_create_thread(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("conversation-thread-create"),
+            self._thread_form_data(source_thread_id="admin-created-thread"),
+        )
+
+        thread = ConversationThread.objects.get(source_thread_id="admin-created-thread")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("conversation-thread-detail", kwargs={"pk": thread.pk}))
+        self.assertEqual(thread.creator, self.creator_in_scope)
+        self.assertEqual(thread.channel, self.channel)
+
+    def test_admin_can_update_thread(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse("conversation-thread-update", kwargs={"pk": self.thread_in_scope.pk}),
+            self._thread_form_data(
+                source_thread_id=self.thread_in_scope.source_thread_id,
+                thread_summary="Admin updated summary.",
+                open_loop="Admin updated next step.",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.thread_in_scope.refresh_from_db()
+        self.assertEqual(self.thread_in_scope.thread_summary, "Admin updated summary.")
+        self.assertEqual(self.thread_in_scope.open_loop, "Admin updated next step.")
+
+    def test_operator_can_create_thread_for_creator_within_scope(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("conversation-thread-create"),
+            self._thread_form_data(source_thread_id="operator-created-thread"),
+        )
+
+        thread = ConversationThread.objects.get(source_thread_id="operator-created-thread")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(thread.creator, self.creator_in_scope)
+        self.assertEqual(thread.channel, self.channel)
+
+    def test_operator_can_update_thread_within_scope(self):
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("conversation-thread-update", kwargs={"pk": self.thread_in_scope.pk}),
+            self._thread_form_data(
+                source_thread_id=self.thread_in_scope.source_thread_id,
+                thread_summary="Operator updated summary.",
+                open_loop="Operator updated next step.",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.thread_in_scope.refresh_from_db()
+        self.assertEqual(self.thread_in_scope.thread_summary, "Operator updated summary.")
+        self.assertEqual(self.thread_in_scope.open_loop, "Operator updated next step.")
+
+    def test_operator_cannot_create_thread_for_creator_outside_scope(self):
+        before_count = ConversationThread.objects.count()
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("conversation-thread-create"),
+            self._thread_form_data(
+                creator=self.creator_out_of_scope.pk,
+                channel="",
+                source_thread_id="operator-outscope-creator-thread",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ConversationThread.objects.count(), before_count)
+        self.assertFalse(
+            ConversationThread.objects.filter(
+                source_thread_id="operator-outscope-creator-thread"
+            ).exists()
+        )
+
+    def test_operator_cannot_link_channel_outside_scope(self):
+        before_count = ConversationThread.objects.count()
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("conversation-thread-create"),
+            self._thread_form_data(
+                channel=self.out_of_scope_channel.pk,
+                source_thread_id="operator-outscope-channel-thread",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ConversationThread.objects.count(), before_count)
+        self.assertFalse(
+            ConversationThread.objects.filter(
+                source_thread_id="operator-outscope-channel-thread"
+            ).exists()
+        )
+
+    def test_operator_cannot_link_channel_from_other_creator(self):
+        before_count = ConversationThread.objects.count()
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("conversation-thread-create"),
+            self._thread_form_data(
+                channel=self.second_in_scope_channel.pk,
+                source_thread_id="operator-wrong-creator-channel-thread",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ConversationThread.objects.count(), before_count)
+        self.assertFalse(
+            ConversationThread.objects.filter(
+                source_thread_id="operator-wrong-creator-channel-thread"
+            ).exists()
+        )
+
+    def test_operator_cannot_update_thread_outside_scope(self):
+        old_summary = self.thread_out_of_scope.thread_summary
+        self.client.force_login(self.operator_user)
+        response = self.client.post(
+            reverse("conversation-thread-update", kwargs={"pk": self.thread_out_of_scope.pk}),
+            self._thread_form_data(
+                creator=self.creator_out_of_scope.pk,
+                channel="",
+                source_thread_id=self.thread_out_of_scope.source_thread_id,
+                thread_summary="Should not be saved.",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.thread_out_of_scope.refresh_from_db()
+        self.assertEqual(self.thread_out_of_scope.thread_summary, old_summary)
+
+    def test_unsupported_authenticated_account_gets_no_create_or_update_access(self):
+        before_count = ConversationThread.objects.count()
+        old_summary = self.thread_in_scope.thread_summary
+        self.client.force_login(self.unsupported_user)
+
+        create_get = self.client.get(reverse("conversation-thread-create"))
+        create_post = self.client.post(
+            reverse("conversation-thread-create"),
+            self._thread_form_data(source_thread_id="unsupported-created-thread"),
+        )
+        update_get = self.client.get(
+            reverse("conversation-thread-update", kwargs={"pk": self.thread_in_scope.pk})
+        )
+        update_post = self.client.post(
+            reverse("conversation-thread-update", kwargs={"pk": self.thread_in_scope.pk}),
+            self._thread_form_data(
+                source_thread_id=self.thread_in_scope.source_thread_id,
+                thread_summary="Unsupported update should not save.",
+            ),
+        )
+
+        self.assertEqual(create_get.status_code, 403)
+        self.assertEqual(create_post.status_code, 403)
+        self.assertEqual(update_get.status_code, 403)
+        self.assertEqual(update_post.status_code, 403)
+        self.assertEqual(ConversationThread.objects.count(), before_count)
+        self.thread_in_scope.refresh_from_db()
+        self.assertEqual(self.thread_in_scope.thread_summary, old_summary)
+        self.assertFalse(
+            ConversationThread.objects.filter(source_thread_id="unsupported-created-thread").exists()
+        )
+
+    def test_anonymous_user_gets_redirect_for_create_and_update(self):
+        create_response = self.client.get(reverse("conversation-thread-create"))
+        update_response = self.client.get(
+            reverse("conversation-thread-update", kwargs={"pk": self.thread_in_scope.pk})
+        )
+
+        self.assertNotEqual(create_response.status_code, 200)
+        self.assertEqual(create_response.status_code, 302)
+        self.assertNotEqual(update_response.status_code, 200)
+        self.assertEqual(update_response.status_code, 302)

@@ -1,10 +1,13 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, ListView
+from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from core.forms import ConversationThreadForm
 from core.models import BuddyDraft, ConversationThread
 from core.services.scope import get_creator_queryset_for_user
 
@@ -57,6 +60,42 @@ class ConversationThreadDetailView(LoginRequiredMixin, DetailView):
             latest_draft and latest_draft.state == BuddyDraft.State.DRAFTED
         )
         return context
+
+
+class ConversationThreadManualIntakeMixin:
+    model = ConversationThread
+    form_class = ConversationThreadForm
+    template_name = "conversations/conversation_thread_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not get_creator_queryset_for_user(request.user).exists():
+            raise PermissionDenied("No scoped creator access for manual thread intake.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("conversation-thread-detail", kwargs={"pk": self.object.pk})
+
+
+class ConversationThreadCreateView(
+    LoginRequiredMixin,
+    ConversationThreadManualIntakeMixin,
+    CreateView,
+):
+    pass
+
+
+class ConversationThreadUpdateView(
+    LoginRequiredMixin,
+    ConversationThreadManualIntakeMixin,
+    UpdateView,
+):
+    def get_queryset(self):
+        return get_scoped_conversation_thread_queryset(self.request.user)
 
 
 class BuddyDraftApproveView(LoginRequiredMixin, View):

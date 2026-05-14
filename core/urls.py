@@ -8,8 +8,10 @@ from core.assignment_views import (
 )
 from core.conversation_views import (
     BuddyDraftApproveView,
+    ConversationThreadCreateView,
     ConversationThreadDetailView,
     ConversationThreadListView,
+    ConversationThreadUpdateView,
 )
 from core.material_views import (
     CreatorDetailView,
@@ -61,9 +63,19 @@ urlpatterns = [
     ),
     path("conversations/", ConversationThreadListView.as_view(), name="conversation-thread-list"),
     path(
+        "conversations/create/",
+        ConversationThreadCreateView.as_view(),
+        name="conversation-thread-create",
+    ),
+    path(
         "conversations/<int:pk>/",
         ConversationThreadDetailView.as_view(),
         name="conversation-thread-detail",
+    ),
+    path(
+        "conversations/<int:pk>/edit/",
+        ConversationThreadUpdateView.as_view(),
+        name="conversation-thread-update",
     ),
     path(
         "conversations/drafts/<int:pk>/approve/",

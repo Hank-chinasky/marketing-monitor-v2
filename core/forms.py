@@ -5,7 +5,17 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
 
-from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.models import (
+    ConversationThread,
+    Creator,
+    CreatorChannel,
+    Operator,
+    OperatorAssignment,
+)
+from core.services.scope import (
+    get_channel_queryset_for_user,
+    get_creator_queryset_for_user,
+)
 
 UserModel = get_user_model()
 
@@ -336,6 +346,78 @@ class CreatorChannelForm(forms.ModelForm):
 
     def clean_last_ip_check_at(self):
         return self._date_to_aware_datetime(self.cleaned_data.get("last_ip_check_at"))
+
+
+class ConversationThreadForm(forms.ModelForm):
+    class Meta:
+        model = ConversationThread
+        fields = [
+            "creator",
+            "channel",
+            "source_system",
+            "source_thread_id",
+            "status",
+            "last_message_at",
+            "thread_summary",
+            "open_loop",
+            "guardrails",
+            "risk_flags",
+            "last_handoff_note",
+            "last_approved_reply_style",
+            "active",
+        ]
+        widgets = {
+            "last_message_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "thread_summary": forms.Textarea(attrs={"rows": 4}),
+            "open_loop": forms.Textarea(attrs={"rows": 3}),
+            "guardrails": forms.Textarea(attrs={"rows": 4}),
+            "risk_flags": forms.Textarea(attrs={"rows": 3}),
+            "last_handoff_note": forms.Textarea(attrs={"rows": 4}),
+            "last_approved_reply_style": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, user, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+        self.scoped_creator_queryset = get_creator_queryset_for_user(user)
+        self.scoped_channel_queryset = get_channel_queryset_for_user(user)
+
+        self.fields["creator"].queryset = self.scoped_creator_queryset.order_by(
+            "display_name"
+        )
+        self.fields["channel"].queryset = self.scoped_channel_queryset.order_by(
+            "creator__display_name",
+            "platform",
+            "handle",
+        )
+        self.fields["channel"].required = False
+
+        if not self.is_bound and not self.instance.pk:
+            self.initial.setdefault(
+                "source_system",
+                ConversationThread.SourceSystem.MARA_CHAT,
+            )
+            self.initial.setdefault("active", True)
+
+    def clean_source_thread_id(self):
+        return (self.cleaned_data.get("source_thread_id") or "").strip()
+
+    def clean(self):
+        cleaned = super().clean()
+        creator = cleaned.get("creator")
+        channel = cleaned.get("channel")
+
+        if creator and not self.scoped_creator_queryset.filter(pk=creator.pk).exists():
+            self.add_error("creator", "Creator valt buiten je scope.")
+
+        if channel and not self.scoped_channel_queryset.filter(pk=channel.pk).exists():
+            self.add_error("channel", "Channel valt buiten je scope.")
+
+        if creator and channel and channel.creator_id != creator.pk:
+            self.add_error("channel", "Channel hoort niet bij de geselecteerde creator.")
+
+        return cleaned
 
 
 class OperatorAssignmentForm(forms.ModelForm):

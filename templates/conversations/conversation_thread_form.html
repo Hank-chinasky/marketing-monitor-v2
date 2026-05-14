@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{% if object %}Conversation thread wijzigen{% else %}Nieuwe conversation thread{% endif %}</h1>
+
+<div style="margin-bottom:1rem;">
+    <a class="quick-link" href="{% url 'conversation-thread-list' %}">Terug naar conversations</a>
+    {% if object %}
+        <a class="quick-link" href="{% url 'conversation-thread-detail' object.pk %}">Terug naar thread</a>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        {% for field in form %}
+            <p>
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <span class="muted">{{ field.help_text }}</span>
+                {% endif %}
+                {{ field.errors }}
+            </p>
+        {% endfor %}
+
+        <button type="submit" class="primary-button">Opslaan</button>
+    </form>
+</div>
+{% endblock %}
