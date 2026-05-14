@@ -477,7 +477,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Nieuwe conversation thread")
         self.assertContains(
             response,
-            "Maak handmatig een thread aan vanuit livechat-reference/source_thread_id.",
+            "Maak handmatig een thread aan voor een livechat, DM of bestaande klant.",
         )
         self.assertContains(response, reverse("conversation-thread-create"))
 
@@ -494,7 +494,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["can_create_conversation_thread"])
         self.assertNotContains(response, "Nieuwe conversation thread")
-        self.assertNotContains(response, "livechat-reference/source_thread_id")
+        self.assertNotContains(response, "livechat, DM of bestaande klant")
 
     def test_chat_buddy_slot_shows_context_prefill_for_selected_thread(self):
         self.client.force_login(self.user)
