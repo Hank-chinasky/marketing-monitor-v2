@@ -2,7 +2,97 @@
 
 ## [Unreleased]
 
+- Geen open changelog-items.
+
+## 2026-05-14 — Chats manual thread intake live on top of Buddy prefill
+
+### Added
+
+- Added manual `ConversationThread` intake for Chats Workspace v1.
+- Added scoped manual create/edit views for conversation threads:
+  - `/conversations/create/`
+  - `/conversations/<pk>/edit/`
+- Added `ConversationThreadForm` with scoped creator and channel querysets.
+- Added `conversation_thread_form.html`.
+- Added create/edit links to conversation thread list/detail pages.
+- Added tests for manual thread intake access, scoped operators, admin access, unsupported authenticated accounts, anonymous access, out-of-scope creators/channels and wrong-creator channel validation.
+
+### Context
+
+- Buddy context prefill was already live at rollback anchor `ab7327e`.
+- This deploy moved live from `ab7327e` to `4272843`.
+- Deploy range: `ab7327e..4272843`.
+- Included in this deploy range:
+  - `#52` Manual conversation thread intake
+  - `#53` Deploy preflight docs
+
+### Changed
+
+- Improved Chats Workspace support for manual thread creation and correction without introducing external chat integration.
+- Kept all manual thread intake within existing scoped creator/channel access rules.
+
+### Guardrails
+
+- No model changes.
+- No migrations.
+- No settings changes.
+- No `.env` changes.
+- No Docker/Compose changes.
+- No Traefik changes.
+- No external chat integration.
+- No AI/Buddy API.
+- No memory/vector/training layer.
+- No new product layer.
+- No autonomous actions.
+- No new permission model.
+
+### Verified
+
+Local before deploy:
+
+```bash
+./.venv/bin/python manage.py test
+./.venv/bin/python manage.py makemigrations --check --dry-run
+```
+
+Result:
+
+```text
+Found 220 test(s).
+Ran 220 tests in 66.488s
+OK
+No changes detected
+```
+
+VPS after deploy:
+
+```bash
+docker compose exec -T web python manage.py makemigrations --check --dry-run
+docker compose exec -T web python manage.py check
+```
+
+Result:
+
+```text
+No changes detected
+System check identified no issues (0 silenced).
+```
+
+### Deploy result
+
+- Deploy target: `4272843`.
+- Rollback anchor: `ab7327e`.
+- Deployed service: `creatorworkboard-ops-web-1`.
+- Deployment type: app-service only.
+- Container status after deploy: healthy.
+- Browser smoke checks confirmed.
+- No rollback required.
+- No further VPS/deploy actions.
+
+## Current shipped baseline — Ops, workspace, materials, conversation and BuddyDraft
+
 ### Fixed
+
 - Fixed Docker healthcheck behavior for the ops app so the container becomes healthy behind Traefik and HTTPS redirect handling.
 - Fixed Traefik routing for `ops.creatorworkboard.com`.
 - Restored Traefik basic authentication for the ops environment.
@@ -12,6 +102,7 @@
 - Fixed conversation thread view tests to accept localized BuddyDraft confidence rendering instead of assuming a dot decimal separator.
 
 ### Changed
+
 - Updated the Creator Workboard ops deployment to run cleanly on the VPS under Docker and Traefik.
 - Standardized live routing and healthcheck behavior for the `creatorworkboard-ops` service.
 - Adjusted reverse-proxy behavior so Django login works correctly behind Traefik.
@@ -24,6 +115,7 @@
 - Improved the read-only BuddyDraft presentation on conversation detail pages with a clearer draft context block and explicit empty-state messaging.
 
 ### Added
+
 - Added superuser access for the deployed environment.
 - Added operator user accounts and matching `Operator` model records.
 - Added the first `Creator` record and linked it to an operator for initial data validation.
@@ -37,6 +129,7 @@
 - Added the first BuddyDraft approval action as a small POST-only workflow step from conversation detail for admin and scoped operators, including approver attribution.
 
 ### Ops
+
 - Verified migrations, static collection, Gunicorn startup, healthchecks, Traefik labels, and protected access flow.
 - Confirmed the full access chain: Traefik auth -> Django login -> app access.
 - Fixed Docker healthcheck for `creatorworkboard-ops` so the container becomes healthy behind Traefik.
@@ -46,11 +139,13 @@
 - Validated end-to-end access flow: Traefik auth -> Django login -> app access.
 
 ### Data
+
 - Added superuser access for the live environment.
 - Added operator user accounts and matching `Operator` records.
 - Added first `Creator` test record and linked it to an operator.
 
 ### Tests
+
 - Added Instagram workspace session-discipline tests for required structured save fields, derived legacy summary output, latest-session rendering, risk visibility, launch-first actions, channel-edit form discipline, posting-only save access, and analytics-only denial.
 - Updated Instagram workspace tests to use the structured session-closeout contract.
 - Updated channel handoff tests to validate the structured session form instead of the legacy loose note field.
@@ -65,6 +160,7 @@
 ## 2026-03-25 — Ticket 1 assignment-scoped operational access
 
 ### Changed
+
 - Added central assignment scope helpers in `core/services/scope.py`.
 - Patched creator list/detail/edit views to use assignment-scoped querysets.
 - Patched channel list/detail/edit views to use assignment-scoped querysets.
@@ -73,15 +169,17 @@
 - Kept admin breadth via existing `is_staff` / `is_superuser` semantics.
 
 ### Added
+
 - Added scope tests for assignment windows, object access, dashboard behavior, and delete admin-only mixin behavior.
 
 ### Notes
+
 - Confirmed `ends_at == now` is tested with a fixed patched clock to avoid flakiness.
 - No model changes.
 - No migrations.
 - No connector or auth framework changes.
 
-## 2026-03-22 — creatorworkboard ops deployment stabilized
+## 2026-03-22 — CreatorWorkboard ops deployment stabilized
 
 - Compose drift verwijderd.
 - Container healthcheck gefixt.
@@ -91,65 +189,66 @@
 
 ## 2026-03-18 — Content intake is modeled as source-based and future-proof
 
-**Decision**  
+### Decision
+
 Content intake is stored as source metadata on Creator, not as a forced internal media-hosting model.
 
-**Why**  
+### Why
+
 This keeps the current workflow light and legally/operationally simpler, while allowing later transition to internal storage without breaking the domain model.
 
-**Consequence**  
+### Consequence
+
 Creator now stores:
+
 - `content_source_type`
 - `content_source_url`
 - `content_source_notes`
 - `content_ready_status`
 
-## 2026-03-18
-
-- Documented decision: content intake modeled as source-based metadata on `Creator`.
+## 2026-03-18 — Creator materials and source-based content intake
 
 ### Added
+
+- Documented decision: content intake modeled as source-based metadata on `Creator`.
 - Added `CreatorMaterial` as a creator-bound internal material model for file uploads used directly in the ops cockpit.
 - Added a materials section to creator detail with admin upload support and scoped operator visibility.
 - Added app-controlled material opening/download flow for creator materials.
-
-### Changed
-- Restricted creator edit and channel edit flows to admin-only access.
-- Aligned scope behavior so operators can access assigned creator/channel detail pages but not full edit forms.
-- Established creator-bound materials as the first MVP slice for internal operator use before any creator portal or external upload layer.
-
-### Fixed
-- Fixed migration dependency for `CreatorMaterial` so it follows the current `core` migration chain and no longer creates multiple migration leaf nodes.
-- Fixed scope test expectations to match the chosen product rule: admin manages structure, operator works through scoped operational flows.
-
-### Notes
-- Handmatig lokaal gevalideerd: superadmin kan materiaal uploaden, operator binnen scope kan materiaal zien en openen.
-- Current UX works functionally but still needs preview-first improvements for image and video materials.
-
-### Added
 - Added preview-first creator materials for images and videos on creator detail pages.
 - Added simple in-page media viewer for creator material previews.
 - Added multi-select upload for creator materials so multiple files can be uploaded in one action.
 
 ### Changed
+
+- Restricted creator edit and channel edit flows to admin-only access.
+- Aligned scope behavior so operators can access assigned creator/channel detail pages but not full edit forms.
+- Established creator-bound materials as the first MVP slice for internal operator use before any creator portal or external upload layer.
 - Changed creator materials upload flow from single-file upload to multi-file upload.
 - Improved creator materials UX so images and videos are visually recognizable before opening.
 - Kept creator materials attached directly to creators without adding folders or a broader media management layer.
 
+### Fixed
+
+- Fixed migration dependency for `CreatorMaterial` so it follows the current `core` migration chain and no longer creates multiple migration leaf nodes.
+- Fixed scope test expectations to match the chosen product rule: admin manages structure, operator works through scoped operational flows.
+
 ### Validated
+
+- Handmatig lokaal gevalideerd: superadmin kan materiaal uploaden, operator binnen scope kan materiaal zien en openen.
+- Current UX works functionally but still needs preview-first improvements for image and video materials.
 - Confirmed locally that multiple files can be selected and uploaded in one submit.
 - Confirmed locally that preview-first materials rendering works in the site UI.
 - Confirmed locally that scoped operators can still see uploaded materials.
 
-
-
-## Feeder Workspace v1 scan-context
+## 2026-04-24 — Feeder Workspace v1 scan-context
 
 ### Status
+
 - Live bevestigd op 2026-04-24 als kleine Feeder Workspace v1-verdiepingsslice.
 - De slice bleef binnen de bestaande Mara Ops-lijn: shared core → chats → feeder → templates/approvals → buddy.
 
 ### Added
+
 - Added compact Feeder scan context in `FeederHubView` for:
   - feeder focus
   - latest feeder handoff
@@ -159,6 +258,7 @@ Creator now stores:
 - Added regression coverage for Feeder scan context in `core/tests/test_shared_core_v1_views.py`.
 
 ### Changed
+
 - Improved Feeder Workspace scanability inside the existing 3-pane shell.
 - Made current focus, handoff state, next operator action, and Chats handoff signal easier to read for operators.
 - Het operationele middenvlak van **Feeder Workspace v1** maakt nu explicieter zichtbaar:
@@ -170,6 +270,7 @@ Creator now stores:
 - De wijziging is bewust klein gehouden en blijft binnen de bestaande Feeder Workspace v1-scope.
 
 ### Guardrails
+
 - No model changes.
 - No migrations.
 - No routing/url changes.
@@ -180,16 +281,18 @@ Creator now stores:
 - No docs/changelog files were included in the original code-slice itself; this changelog update documents the slice afterwards.
 
 ### Tested
+
 - `python manage.py test core.tests.test_shared_core_v1_views.SharedCoreV1ViewsTests.test_feeder_scan_context_is_present_in_template_and_context`
 - `python manage.py test core.tests.test_shared_core_v1_views`
 - `python manage.py makemigrations --check`
 - `python manage.py test core.tests.test_shared_core_v1_views core.tests.test_approvals_v1`
-- Korte runtime/smoke check uitgevoerd op `/feeder/`
-- Korte regressiecheck uitgevoerd op `/chats/`
+- Korte runtime/smoke check uitgevoerd op `/feeder/`.
+- Korte regressiecheck uitgevoerd op `/chats/`.
 
 ### Deploy
-- VPS app-repo bevestigd op `/opt/commandcenter/apps/creatorworkboard-ops`
-- VPS `main` bijgewerkt naar de gemergede feeder-slice
-- `web` service opnieuw gebouwd en gestart via de bestaande stackflow
-- Container healthy bevestigd
-- Live bevestigd op basis van uitgevoerde operator smoke check
+
+- VPS app-repo bevestigd op `/opt/commandcenter/apps/creatorworkboard-ops`.
+- VPS `main` bijgewerkt naar de gemergede feeder-slice.
+- `web` service opnieuw gebouwd en gestart via de bestaande stackflow.
+- Container healthy bevestigd.
+- Live bevestigd op basis van uitgevoerde operator smoke check.
