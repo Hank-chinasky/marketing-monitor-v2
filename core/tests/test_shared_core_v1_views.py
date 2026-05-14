@@ -468,6 +468,34 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Shared Core Creator")
         self.assertContains(response, "Reply with updated delivery date.")
 
+    def test_chat_hub_shows_manual_thread_intake_entrypoint_for_scoped_operator(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["can_create_conversation_thread"])
+        self.assertContains(response, "Nieuwe conversation thread")
+        self.assertContains(
+            response,
+            "Maak handmatig een thread aan vanuit livechat-reference/source_thread_id.",
+        )
+        self.assertContains(response, reverse("conversation-thread-create"))
+
+    def test_chat_hub_hides_manual_thread_intake_entrypoint_for_unsupported_user(self):
+        user_model = get_user_model()
+        unsupported_user = user_model.objects.create_user(
+            username="unsupported-chat-entrypoint",
+            password="x",
+            is_active=True,
+        )
+        self.client.force_login(unsupported_user)
+        response = self.client.get(reverse("chat-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["can_create_conversation_thread"])
+        self.assertNotContains(response, "Nieuwe conversation thread")
+        self.assertNotContains(response, "livechat-reference/source_thread_id")
+
     def test_chat_buddy_slot_shows_context_prefill_for_selected_thread(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})

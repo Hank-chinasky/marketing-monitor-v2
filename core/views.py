@@ -134,6 +134,7 @@ class OperationsDashboardView(LoginRequiredMixin, TemplateView):
         context["creators_without_active_assignment"] = creators_without_active_assignment[:10]
         context["quick_channels"] = quick_channels
         context["my_creators"] = my_creators
+        context["can_create_conversation_thread"] = is_admin_user(self.request.user) or bool(creators)
 
         return context
 

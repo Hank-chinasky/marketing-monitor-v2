@@ -17,6 +17,7 @@ from core.services.scope import (
     get_channel_queryset_for_user,
     get_creator_queryset_for_user,
     get_operator_for_user,
+    is_admin_user,
 )
 
 TEMPLATES_V1 = [
@@ -601,6 +602,10 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         run_log = []
         open_issues = []
         quick_actions = []
+        can_create_conversation_thread = (
+            is_admin_user(self.request.user)
+            or get_creator_queryset_for_user(self.request.user).exists()
+        )
 
         template_query = (self.request.GET.get("template_q") or "").strip()
         template_type = (self.request.GET.get("template_type") or "").strip()
@@ -736,6 +741,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "run_log": run_log,
             "open_issues": open_issues,
             "quick_actions": quick_actions,
+            "can_create_conversation_thread": can_create_conversation_thread,
             "saved": self.request.GET.get("saved") == "1",
             "submit_error": submit_error,
             "handoff_form": self._build_handoff_form_data(
