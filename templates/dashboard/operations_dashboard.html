@@ -14,6 +14,19 @@
 </div>
 {% endif %}
 
+{% if can_create_conversation_thread %}
+<div class="panel" style="margin-bottom: 1.5rem;">
+    <h2>Conversation intake</h2>
+    <p class="muted">
+        Maak handmatig een thread aan vanuit livechat-reference/source_thread_id.
+    </p>
+    <a class="primary-button" href="{% url 'conversation-thread-list' %}">Conversations</a>
+    <a class="primary-button" href="{% url 'conversation-thread-create' %}">
+        Nieuwe conversation thread
+    </a>
+</div>
+{% endif %}
+
 <div class="cards">
     <div class="card">
         <div>Creators</div>

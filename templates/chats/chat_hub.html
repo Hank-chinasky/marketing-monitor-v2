@@ -259,6 +259,13 @@
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Quick actions</h3>
         <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            {% if can_create_conversation_thread %}
+                <a class="quick-link" href="{% url 'conversation-thread-create' %}">
+                    Nieuwe conversation thread
+                </a>
+                <div class="muted">Maak handmatig een thread aan vanuit livechat-reference/source_thread_id.</div>
+            {% endif %}
+
             {% for action in quick_actions %}
                 {% if action.type == "approve" %}
                     <form method="post" action="{% url 'buddy-draft-approve' action.draft_id %}">
@@ -269,7 +276,9 @@
                     <a class="quick-link" href="{{ action.url }}">{{ action.label }}</a>
                 {% endif %}
             {% empty %}
-                <span class="muted">Geen quick actions beschikbaar.</span>
+                {% if not can_create_conversation_thread %}
+                    <span class="muted">Geen quick actions beschikbaar.</span>
+                {% endif %}
             {% endfor %}
         </div>
     </div>
