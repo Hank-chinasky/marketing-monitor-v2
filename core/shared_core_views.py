@@ -137,6 +137,11 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
         "Creator",
         selected_thread.creator.display_name,
     )
+    _append_context_prefill_item(
+        context_prefill,
+        "Customer stage",
+        selected_thread.creator.get_customer_stage_display(),
+    )
     if selected_thread.channel:
         channel = selected_thread.channel
         _append_context_prefill_item(
@@ -228,6 +233,11 @@ def build_feeder_buddy_assist_snapshot(
 
     context_prefill = []
     _append_context_prefill_item(context_prefill, "Creator", selected_creator.display_name)
+    _append_context_prefill_item(
+        context_prefill,
+        "Customer stage",
+        selected_creator.get_customer_stage_display(),
+    )
     _append_context_prefill_item(
         context_prefill,
         "Content status",

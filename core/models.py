@@ -36,6 +36,14 @@ class Creator(models.Model):
         ACTIVE = "active", "Active"
         REVOKED = "revoked", "Revoked"
 
+    class CustomerStage(models.TextChoices):
+        UNKNOWN = "unknown", "Unknown"
+        LEAD = "lead", "Lead"
+        OUTSIDE_PAYWALL = "outside_paywall", "Outside paywall"
+        INSIDE_PAYWALL = "inside_paywall", "Inside paywall"
+        FORMER_CUSTOMER = "former_customer", "Former customer"
+        BLOCKED_DO_NOT_CONTACT = "blocked_do_not_contact", "Blocked / do not contact"
+
     class ContentSourceType(models.TextChoices):
         SHARED_DRIVE = "shared_drive", "Shared drive"
         DROPBOX = "dropbox", "Dropbox"
@@ -57,6 +65,11 @@ class Creator(models.Model):
     legal_name = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices)
     consent_status = models.CharField(max_length=20, choices=ConsentStatus.choices)
+    customer_stage = models.CharField(
+        max_length=30,
+        choices=CustomerStage.choices,
+        default=CustomerStage.UNKNOWN,
+    )
     primary_operator = models.ForeignKey(
         "Operator",
         on_delete=models.SET_NULL,

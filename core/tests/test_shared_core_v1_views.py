@@ -38,6 +38,7 @@ class SharedCoreV1ViewsTests(TestCase):
             legal_name="Shared Core Creator BV",
             status=Creator.Status.ACTIVE,
             consent_status=Creator.ConsentStatus.ACTIVE,
+            customer_stage=Creator.CustomerStage.INSIDE_PAYWALL,
             content_source_url="https://example.com/source",
             content_ready_status=Creator.ContentReadyStatus.READY_TO_POST,
         )
@@ -131,6 +132,35 @@ class SharedCoreV1ViewsTests(TestCase):
             active=True,
         )
 
+    def test_creator_customer_stage_defaults_to_unknown_and_choices_are_stable(self):
+        creator = Creator.objects.create(
+            display_name="Default Stage Creator",
+            status=Creator.Status.ACTIVE,
+            consent_status=Creator.ConsentStatus.ACTIVE,
+        )
+
+        self.assertEqual(creator.customer_stage, Creator.CustomerStage.UNKNOWN)
+        self.assertEqual(creator.get_customer_stage_display(), "Unknown")
+        self.assertEqual(
+            [value for value, _label in Creator.CustomerStage.choices],
+            [
+                "unknown",
+                "lead",
+                "outside_paywall",
+                "inside_paywall",
+                "former_customer",
+                "blocked_do_not_contact",
+            ],
+        )
+
+    def test_creator_detail_shows_customer_stage_read_only(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Customer stage")
+        self.assertContains(response, "Inside paywall")
+
     def test_chat_and_feeder_keep_fixed_pane_roles(self):
         self.client.force_login(self.user)
         chats = self.client.get(reverse("chat-hub"))
@@ -151,6 +181,22 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(chats, "Mag ik hier werken?")
         self.assertContains(chats, "Assignment status")
         self.assertContains(chats, "Completeness alerts")
+
+    def test_chats_shows_customer_stage_read_only_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Customer stage")
+        self.assertContains(response, "Inside paywall")
+
+    def test_feeder_shows_customer_stage_read_only_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("feeder-hub"), {"creator": self.creator.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Customer stage")
+        self.assertContains(response, "Inside paywall")
 
     def test_feeder_keeps_operator_first_five_center_blocks(self):
         self.client.force_login(self.user)
@@ -284,11 +330,16 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Context prefill")
         self.assertContains(response, "Shared Core Creator")
+        self.assertContains(response, "Inside paywall")
         self.assertContains(response, "Ready to post")
         self.assertContains(response, "https://example.com/source")
         self.assertContains(response, "TikTok / recent-handoff-channel")
         self.assertContains(response, "https://example.com/recent-handoff-channel")
         self.assertContains(response, "Use approved device profile.")
+        self.assertIn(
+            {"label": "Customer stage", "value": "Inside paywall"},
+            response.context["buddy_assist"]["context_prefill"],
+        )
         self.assertIn(
             {"label": "Content status", "value": "Ready to post"},
             response.context["buddy_assist"]["context_prefill"],
@@ -504,6 +555,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Context prefill")
         self.assertContains(response, "Creator")
         self.assertContains(response, "Shared Core Creator")
+        self.assertContains(response, "Inside paywall")
         self.assertContains(response, "Instagram / shared-core-channel")
         self.assertContains(response, "https://example.com/shared-core-channel")
         self.assertContains(response, "Use operator direct access only.")
@@ -512,6 +564,10 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertNotContains(response, "Out Scope Creator")
         self.assertIn(
             {"label": "Creator", "value": "Shared Core Creator"},
+            response.context["buddy_assist"]["context_prefill"],
+        )
+        self.assertIn(
+            {"label": "Customer stage", "value": "Inside paywall"},
             response.context["buddy_assist"]["context_prefill"],
         )
         self.assertIn(
