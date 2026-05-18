@@ -23,10 +23,12 @@ class CreatorAdmin(admin.ModelAdmin):
         "display_name",
         "status",
         "consent_status",
+        "customer_stage",
         "primary_operator",
         "content_source_type",
         "content_ready_status",
     )
+    list_filter = ("status", "consent_status", "customer_stage", "content_ready_status")
     search_fields = (
         "display_name",
         "legal_name",

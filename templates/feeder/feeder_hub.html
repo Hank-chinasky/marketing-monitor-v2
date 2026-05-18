@@ -38,6 +38,7 @@
             <ul class="clean">
                 <li><strong>Creator:</strong> {{ selected_creator.display_name }}</li>
                 <li><strong>Primary operator:</strong> {{ selected_creator.primary_operator|default:"-" }}</li>
+                <li><strong>Customer stage:</strong> {{ selected_creator.get_customer_stage_display }}</li>
                 <li><strong>Content source:</strong>
                     {% if selected_creator.content_source_url %}
                         <a href="{{ selected_creator.content_source_url }}" target="_blank" rel="noopener">Open source</a>
@@ -56,6 +57,7 @@
         {% if selected_creator %}
             <ul class="clean">
                 <li><strong>Channels in scope:</strong> {{ channels|length }}</li>
+                <li><strong>Customer stage:</strong> {{ selected_creator.get_customer_stage_display }}</li>
                 <li><strong>Content ready:</strong> {{ selected_creator.get_content_ready_status_display|default:"-" }}</li>
             </ul>
         {% else %}

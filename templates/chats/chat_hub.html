@@ -36,6 +36,7 @@
             <ul class="clean">
                 <li><strong>Creator:</strong> {{ selected_thread.creator.display_name }}</li>
                 <li><strong>Consent:</strong> {{ selected_thread.creator.get_consent_status_display }}</li>
+                <li><strong>Customer stage:</strong> {{ selected_thread.creator.get_customer_stage_display }}</li>
                 <li><strong>Channel:</strong>
                     {% if selected_thread.channel %}
                         {{ selected_thread.channel.get_platform_display }} / {{ selected_thread.channel.handle }}

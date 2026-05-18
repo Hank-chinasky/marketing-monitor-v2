@@ -34,6 +34,13 @@
     </div>
 
     <div class="card">
+        <div>Customer stage</div>
+        <div style="margin-top:0.35rem;">
+            <span class="badge">{{ creator.get_customer_stage_display }}</span>
+        </div>
+    </div>
+
+    <div class="card">
         <div>Channels</div>
         <div class="card-number">{{ summary.channel_count }}</div>
     </div>
@@ -65,6 +72,7 @@
         <ul class="clean">
             <li><strong>Legal name:</strong> {{ creator.legal_name|default:"-" }}</li>
             <li><strong>Primary operator:</strong> {{ creator.primary_operator|default:"-" }}</li>
+            <li><strong>Customer stage:</strong> {{ creator.get_customer_stage_display }}</li>
             <li><strong>Primary link:</strong>
                 {% if creator.primary_link %}
                     <a href="{{ creator.primary_link }}" target="_blank" rel="noopener">{{ creator.primary_link }}</a>
