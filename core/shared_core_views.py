@@ -608,6 +608,11 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         completeness_alerts = self._build_completeness_alerts(selected_thread)
         buddy_assist = build_buddy_assist_snapshot(selected_thread, completeness_alerts)
         chat_scan_context = self._build_chat_scan_context(selected_thread)
+        conversation_messages = []
+        if selected_thread:
+            conversation_messages = list(
+                selected_thread.conversation_messages.order_by("occurred_at", "id")
+            )
 
         run_log = []
         open_issues = []
@@ -740,6 +745,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         return {
             "threads": threads,
             "selected_thread": selected_thread,
+            "conversation_messages": conversation_messages,
             "latest_draft": latest_draft,
             "completeness_alerts": completeness_alerts,
             "buddy_assist": buddy_assist,

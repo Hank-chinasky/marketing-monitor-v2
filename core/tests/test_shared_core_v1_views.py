@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from core.models import (
     BuddyDraft,
+    ConversationMessage,
     ConversationThread,
     Creator,
     CreatorChannel,
@@ -197,6 +198,65 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Customer stage")
         self.assertContains(response, "Inside paywall")
+
+    def test_chats_message_panel_renders_selected_thread_messages_read_only(self):
+        older_message = ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            sender_label="Customer",
+            body="Eerste bericht van klant.",
+            occurred_at=timezone.now() - timedelta(minutes=2),
+        )
+        newer_message = ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.OUTBOUND,
+            sender_label="Operator",
+            body="Antwoord van operator.",
+            occurred_at=timezone.now() - timedelta(minutes=1),
+        )
+        ConversationMessage.objects.create(
+            thread=self.handoff_thread,
+            direction=ConversationMessage.Direction.INTERNAL_NOTE,
+            sender_label="Internal",
+            body="Bericht op andere selected_thread mag niet lekken.",
+            occurred_at=timezone.now(),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Berichtcontext")
+        self.assertContains(response, "Read-only berichten uit de geselecteerde thread.")
+        self.assertContains(response, "Customer")
+        self.assertContains(response, "Eerste bericht van klant.")
+        self.assertContains(response, "Operator")
+        self.assertContains(response, "Antwoord van operator.")
+        self.assertNotContains(response, "Bericht op andere selected_thread mag niet lekken.")
+        self.assertEqual(
+            list(response.context["conversation_messages"]),
+            [older_message, newer_message],
+        )
+        self.assertNotContains(response, "Bericht toevoegen")
+        self.assertNotContains(response, 'name="message_body"')
+
+    def test_chats_message_panel_shows_empty_state_without_messages(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Berichtcontext")
+        self.assertContains(response, "Nog geen berichten vastgelegd voor deze thread.")
+        self.assertEqual(list(response.context["conversation_messages"]), [])
+
+    def test_chats_message_panel_fallback_without_thread_is_empty(self):
+        ConversationThread.objects.filter(creator=self.creator).delete()
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["conversation_messages"], [])
+        self.assertContains(response, "Selecteer een thread om het werkvlak te starten.")
 
     def test_feeder_keeps_operator_first_five_center_blocks(self):
         self.client.force_login(self.user)

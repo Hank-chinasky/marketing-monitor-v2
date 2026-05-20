@@ -400,6 +400,34 @@ class ConversationThread(models.Model):
         return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"
 
 
+class ConversationMessage(models.Model):
+    class Direction(models.TextChoices):
+        INBOUND = "inbound", "Inbound"
+        OUTBOUND = "outbound", "Outbound"
+        INTERNAL_NOTE = "internal_note", "Internal note"
+
+    thread = models.ForeignKey(
+        ConversationThread,
+        on_delete=models.CASCADE,
+        related_name="conversation_messages",
+    )
+    direction = models.CharField(max_length=20, choices=Direction.choices)
+    sender_label = models.CharField(max_length=160, blank=True)
+    source_message_id = models.CharField(max_length=255, blank=True)
+    body = models.TextField()
+    occurred_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["occurred_at", "id"]
+        indexes = [
+            models.Index(fields=("thread", "occurred_at"), name="convmsg_thread_occurred_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.thread_id} / {self.direction} / {self.occurred_at}"
+
+
 class Approval(models.Model):
     class Type(models.TextChoices):
         CONTENT_APPROVAL = "content_approval", "Content approval"
