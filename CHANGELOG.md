@@ -1,8 +1,160 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] — main, not deployed
 
-- Geen open changelog-items.
+### Added
+
+- Added `ConversationMessage` as a stored, read-only message context model for Chats Workspace v1.
+- Added migration `core.0017_conversation_message`.
+- Added `ConversationMessage` admin registration for admin-only inspection/management.
+- Added a read-only `Berichtcontext` panel to `/chats/` for the selected `ConversationThread`.
+- Added empty-state rendering when a selected thread has no stored messages.
+- Added tests for:
+  - `ConversationMessage` defaults and required body validation;
+  - direction choice validation;
+  - message ordering by `occurred_at`, `id`;
+  - `/chats/` rendering only messages from the selected scoped thread;
+  - no message add/send form in the Chats panel.
+
+### Technical details
+
+- `ConversationMessage` is linked to `ConversationThread` with `related_name="conversation_messages"`.
+- Message visibility in `/chats/` is loaded only through:
+
+```python
+selected_thread.conversation_messages.order_by("occurred_at", "id")
+```
+
+- The read-only panel does not introduce a write flow, send/reply action, import API, webhook, background worker, livechat sync, embedded chatclient, attachment handling, raw payload storage, metadata field, or Buddy posting/decisioning.
+- The scope boundary remains the already-scoped `selected_thread`.
+
+### Verification
+
+Local proof before merge:
+
+```text
+Targeted tests: 64 OK
+Full test suite: 231 OK
+makemigrations --check --dry-run: No changes detected
+```
+
+Merge result:
+
+```text
+PR #60 merged
+Target on main: 14d6593
+Commit: Add conversation message read-only panel (#60)
+```
+
+### Deploy status
+
+```text
+Not deployed.
+No VPS action performed.
+No live migration performed.
+Migration-aware deploy gate required before live deployment.
+```
+
+### Guardrails
+
+- No `forms.py` changes.
+- No `urls.py` changes.
+- No `conversation_views.py` changes.
+- No settings changes.
+- No `.env` changes.
+- No Docker/Compose changes.
+- No Traefik changes.
+- No livechat API.
+- No realtime sync.
+- No import/webhook/background worker.
+- No send/reply action.
+- No operator message create/update flow.
+- No Buddy posting or Buddy decisioning.
+
+## 2026-05-18 — Creator customer stage read-only context live
+
+### Added
+
+- Added `Creator.customer_stage` for Customer lifecycle / paywall status v1.
+- Added migration `core.0016_creator_customer_stage`.
+- Added conservative V1 choices:
+  - `unknown`
+  - `lead`
+  - `outside_paywall`
+  - `inside_paywall`
+  - `former_customer`
+  - `blocked_do_not_contact`
+- Added admin visibility/management for `customer_stage`.
+- Added read-only `customer_stage` context to:
+  - creator detail;
+  - Chats context;
+  - Feeder context;
+  - Buddy context prefill.
+
+### Changed
+
+- Improved operator context by showing customer lifecycle/paywall stage as existing read-only context.
+- Kept customer lifecycle status as one field on `Creator`; no separate `paywall_status` was added.
+
+### Guardrails
+
+- No `CreatorForm` change.
+- No operator update flow.
+- No lifecycle history.
+- No audit trail.
+- No dashboard filters.
+- No Buddy advice.
+- No automatic status logic.
+- No livechat integration.
+- No bulk customer-stage data changes.
+
+### Verified
+
+Local before deploy:
+
+```text
+core.tests.test_shared_core_v1_views: 53 OK
+Full test suite: 226 OK
+makemigrations --check --dry-run: No changes detected
+```
+
+VPS deploy proof:
+
+```text
+Deploy target: 8f17f2b
+Rollback anchor: aa02629
+Migration: core.0016_creator_customer_stage
+DB backend: SQLite
+SQLite backup created before migration
+Applying core.0016_creator_customer_stage... OK
+creatorworkboard-ops-web-1: healthy
+Django check: OK
+showmigrations: [X] 0016_creator_customer_stage
+makemigrations --check --dry-run: No changes detected
+```
+
+Browser smoke checks confirmed:
+
+```text
+/login/ = OK
+/chats/ = OK
+/feeder/ = OK
+/conversations/ = OK
+/conversations/create/ = OK
+creator detail customer_stage visible = yes
+Chats/Buddy customer_stage visible = yes
+Feeder/Buddy customer_stage visible = yes
+admin can see/manage customer_stage = yes
+operator sees customer_stage as context = yes
+operator edit route /creators/3/edit/ = 403
+```
+
+### Deploy result
+
+- Deploy accepted as live and stable.
+- No rollback required.
+- No further VPS/deploy actions after completion.
+
 
 ## 2026-05-14 — Chats manual thread intake live on top of Buddy prefill
 
