@@ -1,8 +1,75 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] — main, not deployed
 
-- Geen open changelog-items.
+### Added
+
+- Added `ConversationMessage` as a stored, read-only message context model for Chats Workspace v1.
+- Added migration `core.0017_conversation_message`.
+- Added `ConversationMessage` admin registration for admin-only inspection/management.
+- Added a read-only `Berichtcontext` panel to `/chats/` for the selected `ConversationThread`.
+- Added empty-state rendering when a selected thread has no stored messages.
+- Added tests for:
+  - `ConversationMessage` defaults and required body validation;
+  - direction choice validation;
+  - message ordering by `occurred_at`, `id`;
+  - `/chats/` rendering only messages from the selected scoped thread;
+  - no message add/send form in the Chats panel.
+
+### Technical details
+
+- `ConversationMessage` is linked to `ConversationThread` with `related_name="conversation_messages"`.
+- Message visibility in `/chats/` is loaded only through:
+
+```python
+selected_thread.conversation_messages.order_by("occurred_at", "id")
+```
+
+- The read-only panel does not introduce a write flow, send/reply action, import API, webhook, background worker, livechat sync, embedded chatclient, attachment handling, raw payload storage, metadata field, or Buddy posting/decisioning.
+- The scope boundary remains the already-scoped `selected_thread`.
+
+### Verification
+
+Local proof before merge:
+
+```text
+Targeted tests: 64 OK
+Full test suite: 231 OK
+makemigrations --check --dry-run: No changes detected
+```
+
+Merge result:
+
+```text
+PR #60 merged
+Target on main: 14d6593
+Commit: Add conversation message read-only panel (#60)
+```
+
+### Deploy status
+
+```text
+Not deployed.
+No VPS action performed.
+No live migration performed.
+Migration-aware deploy gate required before live deployment.
+```
+
+### Guardrails
+
+- No `forms.py` changes.
+- No `urls.py` changes.
+- No `conversation_views.py` changes.
+- No settings changes.
+- No `.env` changes.
+- No Docker/Compose changes.
+- No Traefik changes.
+- No livechat API.
+- No realtime sync.
+- No import/webhook/background worker.
+- No send/reply action.
+- No operator message create/update flow.
+- No Buddy posting or Buddy decisioning.
 
 ## 2026-05-14 — Chats manual thread intake live on top of Buddy prefill
 
