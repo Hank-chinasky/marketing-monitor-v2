@@ -3,7 +3,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from core.models import ConversationThread, Creator, CreatorChannel
+from core.models import ConversationMessage, ConversationThread, Creator, CreatorChannel
 
 
 class ConversationThreadModelTests(TestCase):
@@ -126,3 +126,56 @@ class ConversationThreadModelTests(TestCase):
             thread.full_clean()
 
         self.assertIn("creator", exc.exception.message_dict)
+
+    def test_conversation_message_crud_defaults_and_required_body(self):
+        thread = ConversationThread.objects.create(
+            creator=self.creator,
+            channel=self.channel,
+            source_system=ConversationThread.SourceSystem.MARA_CHAT,
+            source_thread_id="thread-with-message",
+            status=ConversationThread.Status.ACTIVE,
+        )
+
+        before = timezone.now()
+        message = ConversationMessage.objects.create(
+            thread=thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            sender_label="Customer",
+            source_message_id="source-msg-001",
+            body="Hallo, ik heb een vraag.",
+        )
+
+        self.assertEqual(message.thread, thread)
+        self.assertEqual(message.direction, ConversationMessage.Direction.INBOUND)
+        self.assertEqual(message.body, "Hallo, ik heb een vraag.")
+        self.assertGreaterEqual(message.occurred_at, before)
+        self.assertIsNotNone(message.created_at)
+
+        invalid_message = ConversationMessage(
+            thread=thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            body="",
+        )
+        with self.assertRaises(ValidationError) as exc:
+            invalid_message.full_clean()
+
+        self.assertIn("body", exc.exception.message_dict)
+
+    def test_conversation_message_direction_choices_validate(self):
+        thread = ConversationThread.objects.create(
+            creator=self.creator,
+            channel=self.channel,
+            source_system=ConversationThread.SourceSystem.MARA_CHAT,
+            source_thread_id="thread-with-invalid-message-direction",
+            status=ConversationThread.Status.ACTIVE,
+        )
+        message = ConversationMessage(
+            thread=thread,
+            direction="external_sync",
+            body="Message body.",
+        )
+
+        with self.assertRaises(ValidationError) as exc:
+            message.full_clean()
+
+        self.assertIn("direction", exc.exception.message_dict)

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from core.models import (
+    ConversationMessage,
     ConversationThread,
     Creator,
     CreatorChannel,
@@ -113,3 +114,24 @@ class ConversationThreadAdmin(admin.ModelAdmin):
         "last_approved_reply_style",
     )
     autocomplete_fields = ("creator", "channel")
+
+
+@admin.register(ConversationMessage)
+class ConversationMessageAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "thread",
+        "direction",
+        "sender_label",
+        "occurred_at",
+        "created_at",
+    )
+    list_filter = ("direction", "occurred_at", "created_at")
+    search_fields = (
+        "thread__source_thread_id",
+        "thread__creator__display_name",
+        "sender_label",
+        "source_message_id",
+        "body",
+    )
+    autocomplete_fields = ("thread",)
