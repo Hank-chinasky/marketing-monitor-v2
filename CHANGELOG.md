@@ -363,3 +363,44 @@ Creator now stores:
 - `web` service opnieuw gebouwd en gestart via de bestaande stackflow.
 - Container healthy bevestigd.
 - Live bevestigd op basis van uitgevoerde operator smoke check.
+
+## 2026-05-30 — ConversationMessage read-only panel live
+
+### Deploy completion
+
+```text
+Deploy completion — ConversationMessage read-only panel
+
+Target deployed:
+- 2c6c0c1
+
+Rollback anchor:
+- 8f17f2b
+
+Migration:
+- core.0017_conversation_message
+
+Result:
+- SQLite backup created before migration:
+  /app/data/db.sqlite3.bak.before_conversation_message_0017_20260530132449
+- Deployment to 2c6c0c1 completed
+- Migration applied successfully
+- creatorworkboard-ops-web-1 is healthy
+- Django check OK
+- showmigrations confirms [X] 0017_conversation_message
+- makemigrations check clean
+- Browser smoke checks passed
+- No rollback required
+
+Scope confirmed:
+- /chats/ shows read-only Berichtcontext panel
+- no send/reply/import/livechat flow
+- no operator message create/update flow
+- no Buddy posting/decisioning
+- no Traefik/.env/Docker/host changes
+
+Conclusion:
+- Deploy accepted as live and stable
+- No further VPS actions now
+
+```
