@@ -378,6 +378,21 @@
                 <li class="muted">Geen context prefill beschikbaar.</li>
             {% endfor %}
         </ul>
+        <div style="margin:0.75rem 0; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc;">
+            <p style="margin-top:0;"><strong>Intern reply draft voorstel</strong></p>
+            {% if operator_reply_draft.reply_text %}
+                <p><strong>Concept:</strong><br>{{ operator_reply_draft.reply_text|linebreaksbr }}</p>
+            {% else %}
+                <p class="muted">Nog geen intern reply draft voorstel beschikbaar.</p>
+            {% endif %}
+            <ul class="clean">
+                <li><strong>Language:</strong> {{ operator_reply_draft.language }}</li>
+                <li><strong>Source:</strong> {{ operator_reply_draft.source }}</li>
+                <li><strong>Human review:</strong> {{ operator_reply_draft.requires_human_review|yesno:"verplicht,niet verplicht" }}</li>
+                <li><strong>Safety note:</strong> {{ operator_reply_draft.safety_note }}</li>
+            </ul>
+            <p class="muted" style="margin-bottom:0;">Read-only operatorconcept; de operator blijft verantwoordelijk voor handmatige controle in de bronchat.</p>
+        </div>
         <p><strong>Korte threadsamenvatting:</strong><br>{{ buddy_assist.thread_summary|linebreaksbr }}</p>
         <p><strong>Ontbrekende velden/contextgaten:</strong></p>
         <ul class="clean">

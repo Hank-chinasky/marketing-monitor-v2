@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 
 from core.conversation_views import get_latest_buddy_draft, get_scoped_conversation_thread_queryset
 from core.models import Approval, ConversationThread, CreatorMaterial, OperatorAssignment
+from core.services.buddy_reply import build_operator_reply_draft
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_channel_queryset_for_user,
@@ -613,6 +614,12 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             conversation_messages = list(
                 selected_thread.conversation_messages.order_by("occurred_at", "id")
             )
+        operator_reply_draft = build_operator_reply_draft(
+            selected_thread,
+            conversation_messages,
+            latest_draft=latest_draft,
+            operator=get_operator_for_user(self.request.user),
+        )
 
         run_log = []
         open_issues = []
@@ -746,6 +753,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "threads": threads,
             "selected_thread": selected_thread,
             "conversation_messages": conversation_messages,
+            "operator_reply_draft": operator_reply_draft,
             "latest_draft": latest_draft,
             "completeness_alerts": completeness_alerts,
             "buddy_assist": buddy_assist,
