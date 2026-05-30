@@ -579,6 +579,57 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Shared Core Creator")
         self.assertContains(response, "Reply with updated delivery date.")
 
+    def test_chat_buddy_slot_shows_operator_reply_draft_read_only_from_service(self):
+        BuddyDraft.objects.filter(thread=self.thread).delete()
+        ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            sender_label="Customer",
+            body="Hello, can you help me with the delivery date?",
+            occurred_at=timezone.now(),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Intern reply draft voorstel")
+        self.assertContains(response, "Thanks for your message")
+        self.assertContains(response, "deterministic_stub")
+        self.assertContains(response, "Human review:")
+        self.assertContains(response, "Read-only operatorconcept")
+        self.assertEqual(response.context["operator_reply_draft"]["language"], "en")
+        self.assertEqual(
+            response.context["operator_reply_draft"]["source"],
+            "deterministic_stub",
+        )
+        self.assertTrue(response.context["operator_reply_draft"]["requires_human_review"])
+        self.assertNotContains(response, "Bericht versturen")
+        self.assertNotContains(response, 'name="reply_text"')
+        self.assertNotContains(response, 'name="message_body"')
+
+    def test_chat_buddy_slot_uses_latest_buddy_draft_through_service_boundary(self):
+        ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            sender_label="Klant",
+            body="Hoi, kun je mij morgen helpen?",
+            occurred_at=timezone.now(),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dankjewel! We komen morgen met update.")
+        self.assertEqual(response.context["operator_reply_draft"]["language"], "nl")
+        self.assertEqual(
+            response.context["operator_reply_draft"]["source"],
+            "latest_buddy_draft",
+        )
+        self.assertNotContains(response, "Bericht versturen")
+        self.assertNotContains(response, 'name="reply_text"')
+
     def test_chat_hub_shows_manual_thread_intake_entrypoint_for_scoped_operator(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
