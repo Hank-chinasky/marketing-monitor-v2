@@ -595,13 +595,13 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Intern reply draft voorstel")
         self.assertContains(response, "Thanks for your message")
-        self.assertContains(response, "deterministic_stub")
+        self.assertContains(response, "deterministic_quality_v1")
         self.assertContains(response, "Human review:")
         self.assertContains(response, "Read-only operatorconcept")
         self.assertEqual(response.context["operator_reply_draft"]["language"], "en")
         self.assertEqual(
             response.context["operator_reply_draft"]["source"],
-            "deterministic_stub",
+            "deterministic_quality_v1",
         )
         self.assertTrue(response.context["operator_reply_draft"]["requires_human_review"])
         self.assertNotContains(response, "Bericht versturen")
