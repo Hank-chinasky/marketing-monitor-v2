@@ -1,5 +1,91 @@
 # Changelog
 
+## 2026-05-31 — Buddy draft quality v1 live
+
+### Status
+
+- Buddy draft quality v1 is live.
+- Final live commit: `1779b54`.
+- Rollback anchor: `961a0ef`.
+- Deploy type: app-only.
+- No rollback required.
+- No further VPS actions now.
+
+### Changed
+
+- Improved deterministic Buddy reply draft quality inside the existing service boundary.
+- Added structured draft quality fields:
+  - `missing_context_note`
+  - `tone_note`
+- Changed newly generated draft source from `deterministic_stub` to `deterministic_quality_v1`.
+- Improved deterministic language detection for:
+  - Dutch / `nl`
+  - German / `de`
+  - English / `en`
+  - Portuguese / `pt`
+- Switched language detection to marker scoring to avoid simple ordering conflicts.
+- Updated safety notes to English-first wording.
+- Kept existing `latest_buddy_draft` behavior read-only behind the same service boundary.
+
+### Guardrails
+
+- No model changes.
+- No migrations.
+- No settings/env changes.
+- No URL changes.
+- No template changes.
+- No Docker/Compose config changes.
+- No Traefik changes.
+- No external AI/API calls.
+- No provider registry.
+- No send/reply/post action.
+- No auto-send/autopilot behavior.
+- No background worker.
+- No training/vector/import flow.
+
+### Tested
+
+- `python manage.py test core.tests.test_buddy_reply`
+  - 9 tests OK
+- Targeted shared-core Buddy draft rendering test
+  - OK
+- Full test suite
+  - 242 tests OK
+- `python manage.py makemigrations --check --dry-run`
+  - No changes detected
+
+### Deploy verification
+
+- VPS app repo updated to `1779b54`.
+- Container healthy.
+- Docker healthcheck returned `200`.
+- Django check OK.
+- `makemigrations --check` clean.
+- Migrations applied through `core.0017`.
+- Public anonymous `/` returned expected `HTTP/2 401 Basic Auth`.
+- Public anonymous `/healthz/` returned expected `HTTP/2 401 Basic Auth`.
+- TLS and Traefik routing/auth confirmed.
+- No rollback required.
+
+### Browser/functionality smoke
+
+- Functional smoke OK.
+- `/chats/` opens.
+- ConversationMessage panel remains live.
+- Buddy draft quality v1 visible within the read-only Buddy boundary.
+- No send/reply/post/autopilot action visible or executable.
+- Deploy accepted.
+- No further VPS actions now.
+
+### Deploy note
+
+Public curl immediately after `docker compose up` may briefly return `404` while Traefik re-detects the replaced container.
+
+Public smoke is only decisive after the web container is healthy.
+
+Expected anonymous public response remains `HTTP/2 401 Basic Auth`.
+
+
 ## [Unreleased] — main, not deployed
 
 ### Added
