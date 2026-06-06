@@ -341,6 +341,7 @@ class OperatorAssignment(models.Model):
 class ConversationThread(models.Model):
     class SourceSystem(models.TextChoices):
         MARA_CHAT = "mara_chat", "Mara chat"
+        CHATTIES = "chatties", "Chatties"
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -367,6 +368,10 @@ class ConversationThread(models.Model):
         default=SourceSystem.MARA_CHAT,
     )
     source_thread_id = models.CharField(max_length=255)
+    source_site_id = models.CharField(max_length=100, blank=True, default="")
+    source_site_label = models.CharField(max_length=255, blank=True, default="")
+    source_participant_a_id = models.CharField(max_length=100, blank=True, default="")
+    source_participant_b_id = models.CharField(max_length=100, blank=True, default="")
     status = models.CharField(
         max_length=32,
         choices=Status.choices,
@@ -414,6 +419,20 @@ class ConversationMessage(models.Model):
     direction = models.CharField(max_length=20, choices=Direction.choices)
     sender_label = models.CharField(max_length=160, blank=True)
     source_message_id = models.CharField(max_length=255, blank=True)
+    source_system = models.CharField(
+        max_length=32,
+        choices=ConversationThread.SourceSystem.choices,
+        blank=True,
+        default="",
+    )
+    source_site_id = models.CharField(max_length=100, blank=True, default="")
+    source_thread_id = models.CharField(max_length=255, blank=True, default="")
+    source_sender_id = models.CharField(max_length=100, blank=True, default="")
+    source_recipient_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+    )
     body = models.TextField()
     occurred_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
