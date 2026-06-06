@@ -12,7 +12,7 @@ The current workflow proves the workspace, assignment scope, message context and
 
 ## Decision
 
-V1 introduces the scope for connecting one existing Mara-owned Django chat platform as the first inbound source.
+V1 introduces the scope for connecting one existing Mara-owned source platform as the first inbound source.
 
 The goal is to import real inbound messages into the existing internal `ConversationThread` and `ConversationMessage` flow so Mara can see them in `/chats/`.
 
@@ -30,7 +30,7 @@ source adapter -> normalized message payload -> internal import/upsert service -
 
 ## V1 source
 
-V1 targets one existing Django source platform.
+V1 targets one existing Mara-owned source platform. The first confirmed source candidate is `chatties.nl`, a PHP/custom chatengine.
 
 The source is expected to provide enough data to identify:
 
@@ -43,11 +43,37 @@ The source is expected to provide enough data to identify:
 - message body
 - message timestamp
 
+## Confirmed source candidate
+
+Initial read-only source inspection found the first practical intake candidate:
+
+- source system: `chatties`
+- source platform: `chatties.nl`
+- runtime/app type: PHP/custom chatengine
+- source database: `chatengine_big`
+- source table: `messages`
+- source message id: `messages.message_id`
+- source site id: `messages.web_id`
+- source site label: `slave_sites.domain`
+- source timestamp: `messages.time_sending`
+- source body field: `messages.message`
+- source participants: `messages.from` and `messages.to`
+- source thread id candidate: `web_id + normalized from/to profile pair`
+
+The `messages` table has a stable primary key:
+
+- `message_id int(11) PRIMARY auto_increment`
+
+Read-only inspection showed that this table contains the real message history, while `messages_chat` appears to be a transient/live chat table and was empty during inspection.
+
+Direction and creator/customer mapping still need a separate read-only review before code.
+
+
 ## In V1
 
 Connected Chat Intake v1 may include:
 
-- one Django source adapter
+- one source adapter for the first confirmed source platform
 - normalized source payload shape
 - internal import/upsert service
 - idempotent inbound import
@@ -118,7 +144,7 @@ V1 must not introduce unsafe source-system access.
 
 Before code, confirm:
 
-- how the source Django platform will expose messages
+- how the source platform will expose messages
 - whether access is read-only
 - where credentials are stored
 - no source credentials in Git
