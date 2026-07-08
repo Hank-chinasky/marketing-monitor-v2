@@ -86,6 +86,54 @@
             <p>Minder afleiding. Werk één gesprek of opvolgstap bewust af.</p>
             <a class="quick-link" href="{% url 'chat-hub' %}">Terug naar normale stand</a>
         </div>
+
+        <div class="panel" style="margin-bottom:0.75rem; border-color:#7c3aed; background:#f5f3ff;">
+            <h3 style="margin-top:0;">Buddy Context</h3>
+            <div class="shared-core-item">
+                <strong>Waar moet ik op letten?</strong>
+                <p style="margin-bottom:0;">Bekijk eerst de laatste context, open loops en mogelijke opvolgstap voordat je antwoordt.</p>
+            </div>
+            <div class="shared-core-item">
+                <strong>Laatste context</strong>
+                {% if selected_thread %}
+                    <p style="margin-bottom:0;">
+                        {{ latest_handoff_scan.summary|linebreaksbr }}
+                    </p>
+                {% else %}
+                    <p style="margin-bottom:0;">Nog geen specifiek gesprek geselecteerd. Open of kies een gesprek om Buddy-context te gebruiken.</p>
+                {% endif %}
+            </div>
+            <div class="shared-core-item">
+                <strong>Gesprek/contextstatus</strong>
+                {% if selected_thread %}
+                    <p style="margin-bottom:0;">
+                        Status: {{ selected_thread.get_status_display }} · Bron: {{ selected_thread.get_source_system_display }}
+                    </p>
+                {% else %}
+                    <p style="margin-bottom:0;">Nog geen specifiek gesprek geselecteerd.</p>
+                {% endif %}
+            </div>
+            <div class="shared-core-item">
+                <strong>Operator focus</strong>
+                <p style="margin-bottom:0;">Werk één gesprek of opvolgstap bewust af. Niet tegelijk jagen op te veel signalen.</p>
+            </div>
+            <div class="shared-core-item">
+                <strong>Follow-up hint</strong>
+                <p style="margin-bottom:0;">Let op open vragen, bijna-betaalmomenten, terugkerende klanten en gesprekken die niet mogen afkoelen.</p>
+            </div>
+            <div class="shared-core-item">
+                <strong>Revenue moment</strong>
+                {% if selected_thread %}
+                    <p style="margin-bottom:0;">Volgende stap: {{ next_step_scan|linebreaksbr }}</p>
+                {% else %}
+                    <p style="margin-bottom:0;">Zoek naar een natuurlijk moment voor terugkeer, verlenging, bestelling of vervolggesprek.</p>
+                {% endif %}
+            </div>
+            <div class="shared-core-item">
+                <strong>Safety boundary</strong>
+                <p style="margin-bottom:0;">Buddy adviseert. Mara beslist. Geen automatische verzending, geen automatische triggers en geen externe koppelingen actief.</p>
+            </div>
+        </div>
     {% endif %}
 
     <div class="panel" style="margin-bottom:0.75rem;">
