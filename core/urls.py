@@ -1,5 +1,6 @@
 from django.urls import path
 
+from core.adultadsuite_views import AdultAdSuiteCockpitView
 from core.admin_update_views import CreatorChannelUpdateView, CreatorUpdateView
 from core.assignment_views import (
     AssignmentListView,
@@ -48,6 +49,7 @@ from core.workspace_views import InstagramWorkspaceView
 urlpatterns = [
     path("healthz/", HealthzView.as_view(), name="healthz"),
     path("", OperationsDashboardView.as_view(), name="operations-dashboard"),
+    path("adultadsuite/", AdultAdSuiteCockpitView.as_view(), name="adultadsuite-cockpit"),
     path("chats/", ChatHubView.as_view(), name="chat-hub"),
     path("feeder/", FeederHubView.as_view(), name="feeder-hub"),
     path("approvals/create/", ApprovalCreateView.as_view(), name="approval-create"),

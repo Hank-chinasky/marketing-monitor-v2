@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>AdultAdSuite Runtime Cockpit</h1>
+
+<div class="muted" style="margin-bottom:1rem;">
+    AdultAdSuite is de interne revenue- en operatoromgeving.
+    CreatorWorkboardFlow is het live werkscherm waar gesprekken, klantstatus, Buddy en opvolging samenkomen.
+</div>
+
+<div class="panel" style="margin-bottom:1rem;">
+    <p style="margin-top:0;"><span class="badge badge-blue">Workspace</span> Mara / Seducing Media</p>
+    <h2 style="margin-bottom:0.5rem;">Revenue-first dagfocus</h2>
+    <p><strong>Doel:</strong> Mara elke dag meer omzet uit bestaande chats laten halen.</p>
+    <p class="muted">
+        Deze cockpitdeur toont alleen structuur en placeholders. Live imports, mailacties en externe koppelingen komen pas na aparte review.
+    </p>
+    <a class="primary-button" href="{% url 'chat-hub' %}">Open CreatorWorkboardFlow / Live gesprekken</a>
+</div>
+
+<div class="grid">
+    <div class="panel">
+        <h3>Dashboard</h3>
+        <p>Dagelijkse revenue, follow-up, funnel en operatoractie in één startpunt.</p>
+    </div>
+    <div class="panel">
+        <h3>CreatorWorkboardFlow</h3>
+        <p>Live gesprekken, klantstatus, Buddy, opvolging en operatoractie.</p>
+        <a class="quick-link" href="{% url 'chat-hub' %}">Naar /chats/</a>
+    </div>
+    <div class="panel">
+        <h3>Mail Health</h3>
+        <p>Veilig mailen en bereiklekken zien.</p>
+    </div>
+    <div class="panel">
+        <h3>Klantenstatus</h3>
+        <p>Wie opvolgen, beschermen of reviewen.</p>
+    </div>
+    <div class="panel">
+        <h3>Revenue / Bestellingen</h3>
+        <p>Bestellingen, whales, repeat buyers en omzetlekken.</p>
+    </div>
+    <div class="panel">
+        <h3>Trigger Radar</h3>
+        <p>Wie vandaag aandacht nodig heeft.</p>
+    </div>
+    <div class="panel">
+        <h3>Campagnes</h3>
+        <p>Wat gedaan is en wat geld opleverde.</p>
+    </div>
+    <div class="panel">
+        <h3>Funnels / Landingspagina’s</h3>
+        <p>Welke routes klanten en betalingen brengen.</p>
+    </div>
+    <div class="panel">
+        <h3>App / Flowmatch</h3>
+        <p>Welke app-CTA’s terugkeer en chatstarts brengen.</p>
+    </div>
+    <div class="panel">
+        <h3>Data Health / Source Reliability</h3>
+        <p>Welke bron betrouwbaar, onzeker of legacy is.</p>
+    </div>
+    <div class="panel">
+        <h3>Instellingen</h3>
+        <p>Later: workspace, bronweergave en operatorinstellingen.</p>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Cashflow status</h3>
+    <p>
+        Cashflow is een module of legacybron binnen AdultAdSuite, niet de hoofdtool.
+        AdultAdSuite stuurt op revenue, follow-up, funnel, mail health, campagne-effect, operatoractie en source reliability.
+    </p>
+</div>
+{% endblock %}
