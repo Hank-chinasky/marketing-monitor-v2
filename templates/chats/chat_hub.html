@@ -136,6 +136,50 @@
         </div>
     {% endif %}
 
+    {% if focus_mode %}
+        <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
+            <h3 style="margin-top:0;">Follow-up focus</h3>
+            <p style="margin-bottom:0.5rem;">
+                Check eerst of dit gesprek warm, open loop, later triggeren, afgekoeld of review nodig is.
+            </p>
+            <p class="muted" style="margin-bottom:0;">
+                Compacte reminder. Kies bewust; geen automatische ranking, trigger of verzending.
+            </p>
+        </div>
+    {% else %}
+        <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
+            <h3 style="margin-top:0;">Klantenstatus / Follow-up</h3>
+            <p>
+                Gebruik deze lijst om bewust te kiezen wie nu aandacht krijgt, wie later terugkomt en welke gesprekken niet mogen afkoelen.
+            </p>
+            <div class="grid">
+                <div class="shared-core-item">
+                    <strong>Warm</strong>
+                    <p style="margin-bottom:0;">Klanten of gesprekken waar vandaag waarschijnlijk iets uit te halen is.</p>
+                </div>
+                <div class="shared-core-item">
+                    <strong>Open loop</strong>
+                    <p style="margin-bottom:0;">Gesprekken waar nog een vraag, belofte, context of vervolgstap openstaat.</p>
+                </div>
+                <div class="shared-core-item">
+                    <strong>Later triggeren</strong>
+                    <p style="margin-bottom:0;">Niet nu pushen, maar later opnieuw openen met betere timing.</p>
+                </div>
+                <div class="shared-core-item">
+                    <strong>Afgekoeld</strong>
+                    <p style="margin-bottom:0;">Gesprekken die opnieuw warmte nodig hebben voordat er op omzet gestuurd wordt.</p>
+                </div>
+                <div class="shared-core-item">
+                    <strong>Review nodig</strong>
+                    <p style="margin-bottom:0;">Eerst zelf controleren voordat je antwoordt, triggert of opvolgt.</p>
+                </div>
+            </div>
+            <p class="muted" style="margin-bottom:0;">
+                Nog geen follow-up lijst beschikbaar. Gebruik deze zone voorlopig als operatorcheck: warm, open loop, later triggeren, afgekoeld of review nodig.
+            </p>
+        </div>
+    {% endif %}
+
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Threadselectie in werkvlak</h3>
         {% if threads %}
