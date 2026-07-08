@@ -781,6 +781,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "template_action": template_action,
             "approvals": approvals,
             "approval_type_choices": Approval.Type.choices,
+            "focus_mode": self.request.GET.get("focus") == "1",
         }
 
     def get(self, request, *args, **kwargs):
@@ -840,7 +841,10 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             ]
         )
 
-        query = urlencode({"thread": selected_thread.pk, "saved": 1})
+        query_values = {"thread": selected_thread.pk, "saved": 1}
+        if request.POST.get("focus") == "1":
+            query_values["focus"] = "1"
+        query = urlencode(query_values)
         return redirect(f"{reverse('chat-hub')}?{query}")
 
 

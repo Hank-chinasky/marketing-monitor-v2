@@ -183,6 +183,36 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(chats, "Assignment status")
         self.assertContains(chats, "Completeness alerts")
 
+    def test_chats_requires_login_for_anonymous_user(self):
+        response = self.client.get(reverse("chat-hub"))
+
+        self.assertIn(response.status_code, [302, 401, 403])
+        if response.status_code == 302:
+            self.assertIn("/login/", response["Location"])
+
+    def test_chats_normal_mode_still_renders_without_focus_banner(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Chats Workspace v1")
+        self.assertNotContains(response, "CreatorWorkboardFlow Focusstand")
+        self.assertFalse(response.context["focus_mode"])
+
+    def test_chats_focus_mode_renders_focus_banner_and_backlink(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"focus": "1", "thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CreatorWorkboardFlow Focusstand")
+        self.assertContains(response, "Minder afleiding. Werk één gesprek of opvolgstap bewust af.")
+        self.assertContains(response, "Terug naar normale stand")
+        self.assertContains(response, "/chats/")
+        self.assertTrue(response.context["focus_mode"])
+
     def test_chats_shows_customer_stage_read_only_context(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})

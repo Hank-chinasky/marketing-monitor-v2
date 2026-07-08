@@ -1,7 +1,7 @@
 {% extends "shared_core/three_pane_base.html" %}
 
-{% block workspace_title %}Chats Workspace v1{% endblock %}
-{% block workspace_subtitle %}Operator-first chatwerk: policy eerst, daarna threadfocus, en rechts de overdracht/run-log kolom.{% endblock %}
+{% block workspace_title %}{% if focus_mode %}CreatorWorkboardFlow Focusstand{% else %}Chats Workspace v1{% endif %}{% endblock %}
+{% block workspace_subtitle %}{% if focus_mode %}Minder afleiding. Werk één gesprek of opvolgstap bewust af.{% else %}Operator-first chatwerk: policy eerst, daarna threadfocus, en rechts de overdracht/run-log kolom.{% endif %}{% endblock %}
 {% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
 {% block center_pane_title %}Werkvlak: threadfocus en actuele aandacht{% endblock %}
 {% block right_pane_title %}Handoff · Run log · Open issues · Quick actions · Buddy-slot{% endblock %}
@@ -80,10 +80,19 @@
 {% endblock %}
 
 {% block center_pane %}
+    {% if focus_mode %}
+        <div class="panel" style="margin-bottom:0.75rem; border-color:#2563eb; background:#eff6ff;">
+            <h3 style="margin-top:0;">CreatorWorkboardFlow Focusstand</h3>
+            <p>Minder afleiding. Werk één gesprek of opvolgstap bewust af.</p>
+            <a class="quick-link" href="{% url 'chat-hub' %}">Terug naar normale stand</a>
+        </div>
+    {% endif %}
+
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Threadselectie in werkvlak</h3>
         {% if threads %}
             <form method="get" style="display:flex; gap:0.65rem; align-items:center; flex-wrap:wrap;">
+                {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
                 <label for="thread-select" style="margin:0;">Actieve thread</label>
                 <select id="thread-select" name="thread" style="max-width:420px;">
                     {% for thread in threads %}
@@ -102,6 +111,7 @@
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Templates v1</h3>
         <form method="get" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:0.5rem; align-items:end;">
+            {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
             <input type="hidden" name="thread" value="{% if selected_thread %}{{ selected_thread.pk }}{% endif %}">
             <p style="margin:0;">
                 <label for="id_template_q">Zoek titel</label>
@@ -125,7 +135,7 @@
                         <strong>{{ template_item.title }}</strong>
                         <div class="muted">Type: {{ template_item.template_type }} · Tags: {{ template_item.tags|join:", " }}</div>
                     </div>
-                    <a class="quick-link" href="?thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ template_item.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}">Open</a>
+                    <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ template_item.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}">Open</a>
                 </div>
             {% empty %}
                 <div class="muted">Geen templates binnen filter.</div>
@@ -139,7 +149,7 @@
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ selected_template.body }}</pre>
                 <p class="muted" style="margin:0 0 0.5rem;">Duplicaat / ingevuld</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ filled_template_body }}</pre>
-                <a class="quick-link" href="?thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
+                <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
             </div>
         {% endif %}
     </div>
@@ -203,6 +213,7 @@
                 {% endif %}
                 <form method="post">
                     {% csrf_token %}
+                    {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
                     <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
                     <p>
                         <label for="id_handoff_summary">Laatste stand (verplicht)</label>
