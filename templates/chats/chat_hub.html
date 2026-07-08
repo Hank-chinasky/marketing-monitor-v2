@@ -138,12 +138,60 @@
 
     {% if focus_mode %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
-            <h3 style="margin-top:0;">Follow-up focus</h3>
+            <h3 style="margin-top:0;">Follow-up status</h3>
             <p style="margin-bottom:0.5rem;">
                 Check eerst of dit gesprek warm, open loop, later triggeren, afgekoeld of review nodig is.
             </p>
-            <p class="muted" style="margin-bottom:0;">
-                Compacte reminder. Kies bewust; geen automatische ranking, trigger of verzending.
+
+            {% if follow_up_saved %}
+                <div class="success-panel">Follow-up status opgeslagen.</div>
+            {% endif %}
+            {% if follow_up_submit_error %}
+                <div class="panel" style="margin-bottom:0.75rem; border-color:#dc2626; background:#fef2f2;">
+                    <strong>Follow-up status niet opgeslagen:</strong> {{ follow_up_submit_error }}
+                </div>
+            {% endif %}
+
+            {% if selected_thread %}
+                {% if follow_up_status %}
+                    <p>
+                        <strong>Laatst opgeslagen:</strong> {{ follow_up_status.get_status_display }}<br>
+                        {% if follow_up_status.note %}
+                            <span class="muted">Notitie: {{ follow_up_status.note|linebreaksbr }}</span>
+                        {% else %}
+                            <span class="muted">Geen operatornotitie vastgelegd.</span>
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="muted">Nog geen follow-up status vastgelegd voor dit gesprek.</p>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_action" value="follow_up_status">
+                    <input type="hidden" name="focus" value="1">
+                    <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                    <p>
+                        <label for="id_focus_follow_up_status">Statuskeuze</label>
+                        <select id="id_focus_follow_up_status" name="follow_up_status" required>
+                            <option value="">Kies status</option>
+                            {% for value, label in follow_up_status_choices %}
+                                <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </p>
+                    <p>
+                        <label for="id_focus_follow_up_note">Optionele korte operatornotitie</label>
+                        <textarea id="id_focus_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
+                    </p>
+                    <button type="submit" class="secondary-button">Opslaan follow-up status</button>
+                </form>
+            {% else %}
+                <p class="muted">Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.</p>
+            {% endif %}
+
+            <p class="muted" style="margin-bottom:0; margin-top:0.75rem;">
+                Buddy adviseert. Mara beslist. Geen automatische ranking, trigger of verzending.
             </p>
         </div>
     {% else %}
@@ -174,8 +222,55 @@
                     <p style="margin-bottom:0;">Eerst zelf controleren voordat je antwoordt, triggert of opvolgt.</p>
                 </div>
             </div>
-            <p class="muted" style="margin-bottom:0;">
-                Nog geen follow-up lijst beschikbaar. Gebruik deze zone voorlopig als operatorcheck: warm, open loop, later triggeren, afgekoeld of review nodig.
+
+            {% if follow_up_saved %}
+                <div class="success-panel">Follow-up status opgeslagen.</div>
+            {% endif %}
+            {% if follow_up_submit_error %}
+                <div class="panel" style="margin-bottom:0.75rem; border-color:#dc2626; background:#fef2f2;">
+                    <strong>Follow-up status niet opgeslagen:</strong> {{ follow_up_submit_error }}
+                </div>
+            {% endif %}
+
+            {% if selected_thread %}
+                {% if follow_up_status %}
+                    <p>
+                        <strong>Laatst opgeslagen:</strong> {{ follow_up_status.get_status_display }}<br>
+                        {% if follow_up_status.note %}
+                            <span class="muted">Notitie: {{ follow_up_status.note|linebreaksbr }}</span>
+                        {% else %}
+                            <span class="muted">Geen operatornotitie vastgelegd.</span>
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="muted">Nog geen follow-up status vastgelegd voor dit gesprek.</p>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_action" value="follow_up_status">
+                    <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                    <p>
+                        <label for="id_follow_up_status">Statuskeuze</label>
+                        <select id="id_follow_up_status" name="follow_up_status" required>
+                            <option value="">Kies status</option>
+                            {% for value, label in follow_up_status_choices %}
+                                <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </p>
+                    <p>
+                        <label for="id_follow_up_note">Optionele operatornotitie</label>
+                        <textarea id="id_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
+                    </p>
+                    <button type="submit" class="secondary-button">Opslaan follow-up status</button>
+                </form>
+            {% else %}
+                <p class="muted">Kies eerst een gesprek om follow-up status vast te leggen.</p>
+            {% endif %}
+
+            <p class="muted" style="margin-bottom:0; margin-top:0.75rem;">
+                Nog geen automatische follow-up lijst. Mara kiest handmatig: warm, open loop, later triggeren, afgekoeld of review nodig.
             </p>
         </div>
     {% endif %}

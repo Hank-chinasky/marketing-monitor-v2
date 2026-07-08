@@ -405,6 +405,48 @@ class ConversationThread(models.Model):
         return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"
 
 
+class ThreadFollowUpStatus(models.Model):
+    class Status(models.TextChoices):
+        WARM = "warm", "Warm"
+        OPEN_LOOP = "open_loop", "Open loop"
+        LATER_TRIGGEREN = "later_triggeren", "Later triggeren"
+        AFGEKOELD = "afgekoeld", "Afgekoeld"
+        REVIEW_NODIG = "review_nodig", "Review nodig"
+
+    thread = models.OneToOneField(
+        ConversationThread,
+        on_delete=models.CASCADE,
+        related_name="follow_up_status",
+    )
+    status = models.CharField(max_length=32, choices=Status.choices)
+    note = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_thread_follow_up_statuses",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_thread_follow_up_statuses",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=("status",), name="thread_followup_status_idx"),
+            models.Index(fields=("updated_at",), name="thread_followup_updated_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.thread} / {self.get_status_display()}"
+
+
 class ConversationMessage(models.Model):
     class Direction(models.TextChoices):
         INBOUND = "inbound", "Inbound"
