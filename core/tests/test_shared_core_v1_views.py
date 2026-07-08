@@ -14,6 +14,7 @@ from core.models import (
     CreatorMaterial,
     Operator,
     OperatorAssignment,
+    ThreadFollowUpStatus,
 )
 
 
@@ -208,8 +209,11 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Later triggeren")
         self.assertContains(response, "Afgekoeld")
         self.assertContains(response, "Review nodig")
-        self.assertContains(response, "Nog geen follow-up lijst beschikbaar")
-        self.assertContains(response, "operatorcheck")
+        self.assertContains(response, "Statuskeuze")
+        self.assertContains(response, "Optionele operatornotitie")
+        self.assertContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Nog geen follow-up status vastgelegd")
+        self.assertContains(response, "Mara kiest handmatig")
         self.assertNotContains(response, "CreatorWorkboardFlow Focusstand")
         self.assertNotContains(response, "Buddy Context")
         self.assertFalse(response.context["focus_mode"])
@@ -227,11 +231,14 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Terug naar normale stand")
         self.assertContains(response, "/chats/")
         self.assertContains(response, "Buddy Context")
-        self.assertContains(response, "Follow-up focus")
+        self.assertContains(response, "Follow-up status")
         self.assertContains(response, "Check eerst of dit gesprek warm, open loop, later triggeren, afgekoeld of review nodig is.")
-        self.assertContains(response, "geen automatische ranking, trigger of verzending")
-        self.assertContains(response, "warm")
-        self.assertContains(response, "open loop")
+        self.assertContains(response, "Geen automatische ranking, trigger of verzending")
+        self.assertContains(response, "Statuskeuze")
+        self.assertContains(response, "Optionele korte operatornotitie")
+        self.assertContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Warm")
+        self.assertContains(response, "Open loop")
         self.assertContains(response, "Waar moet ik op letten?")
         self.assertContains(response, "Laatste context")
         self.assertContains(response, "Gesprek/contextstatus")
@@ -258,8 +265,86 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Safety boundary")
         self.assertContains(response, "Buddy adviseert")
         self.assertContains(response, "Mara beslist")
+        self.assertContains(response, "Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.")
         self.assertTrue(response.context["focus_mode"])
         self.assertIsNone(response.context["selected_thread"])
+
+    def test_chats_manual_follow_up_empty_state_without_thread(self):
+        ConversationThread.objects.filter(creator=self.creator).delete()
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Klantenstatus / Follow-up")
+        self.assertContains(response, "Kies eerst een gesprek om follow-up status vast te leggen.")
+        self.assertIsNone(response.context["selected_thread"])
+
+    def test_chats_manual_follow_up_status_saves_warm_with_note(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("chat-hub"),
+            {
+                "form_action": "follow_up_status",
+                "thread": self.thread.pk,
+                "follow_up_status": ThreadFollowUpStatus.Status.WARM,
+                "follow_up_note": "Vandaag warm opvolgen met rustige opening.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(f"thread={self.thread.pk}", response["Location"])
+        self.assertIn("follow_up_saved=1", response["Location"])
+
+        follow_up_status = ThreadFollowUpStatus.objects.get(thread=self.thread)
+        self.assertEqual(follow_up_status.status, ThreadFollowUpStatus.Status.WARM)
+        self.assertEqual(
+            follow_up_status.note,
+            "Vandaag warm opvolgen met rustige opening.",
+        )
+        self.assertEqual(follow_up_status.created_by, self.user)
+        self.assertEqual(follow_up_status.updated_by, self.user)
+
+        saved_response = self.client.get(response["Location"])
+        self.assertContains(saved_response, "Follow-up status opgeslagen")
+        self.assertContains(saved_response, "Laatst opgeslagen")
+        self.assertContains(saved_response, "Warm")
+        self.assertContains(saved_response, "Vandaag warm opvolgen met rustige opening.")
+
+    def test_chats_manual_follow_up_status_saves_open_loop_and_preserves_focus(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("chat-hub"),
+            {
+                "form_action": "follow_up_status",
+                "focus": "1",
+                "thread": self.thread.pk,
+                "follow_up_status": ThreadFollowUpStatus.Status.OPEN_LOOP,
+                "follow_up_note": "Klant vroeg om later terug te komen.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("focus=1", response["Location"])
+        self.assertIn(f"thread={self.thread.pk}", response["Location"])
+        self.assertIn("follow_up_saved=1", response["Location"])
+
+        follow_up_status = ThreadFollowUpStatus.objects.get(thread=self.thread)
+        self.assertEqual(
+            follow_up_status.status,
+            ThreadFollowUpStatus.Status.OPEN_LOOP,
+        )
+        self.assertEqual(follow_up_status.note, "Klant vroeg om later terug te komen.")
+
+        saved_response = self.client.get(response["Location"])
+        self.assertContains(saved_response, "CreatorWorkboardFlow Focusstand")
+        self.assertContains(saved_response, "Buddy Context")
+        self.assertContains(saved_response, "Follow-up status opgeslagen")
+        self.assertContains(saved_response, "Open loop")
+        self.assertContains(saved_response, "Klant vroeg om later terug te komen.")
+        self.assertContains(saved_response, "Buddy adviseert")
+        self.assertContains(saved_response, "Mara beslist")
+        self.assertContains(saved_response, "Geen automatische ranking, trigger of verzending")
 
     def test_chats_shows_customer_stage_read_only_context(self):
         self.client.force_login(self.user)

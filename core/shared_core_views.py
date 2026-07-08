@@ -11,7 +11,13 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from core.conversation_views import get_latest_buddy_draft, get_scoped_conversation_thread_queryset
-from core.models import Approval, ConversationThread, CreatorMaterial, OperatorAssignment
+from core.models import (
+    Approval,
+    ConversationThread,
+    CreatorMaterial,
+    OperatorAssignment,
+    ThreadFollowUpStatus,
+)
 from core.services.buddy_reply import build_operator_reply_draft
 from core.services.scope import (
     get_active_assignments_for_operator,
@@ -676,6 +682,17 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 .order_by("-created_at", "-id")
             )
 
+        follow_up_status = None
+        if selected_thread:
+            follow_up_status = ThreadFollowUpStatus.objects.filter(
+                thread=selected_thread,
+            ).first()
+
+        follow_up_form = {
+            "status": follow_up_status.status if follow_up_status else "",
+            "note": follow_up_status.note if follow_up_status else "",
+        }
+
         if selected_thread:
             run_log.append(
                 {
@@ -781,6 +798,11 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "template_action": template_action,
             "approvals": approvals,
             "approval_type_choices": Approval.Type.choices,
+            "follow_up_status": follow_up_status,
+            "follow_up_status_choices": ThreadFollowUpStatus.Status.choices,
+            "follow_up_form": follow_up_form,
+            "follow_up_saved": self.request.GET.get("follow_up_saved") == "1",
+            "follow_up_submit_error": None,
             "focus_mode": self.request.GET.get("focus") == "1",
         }
 
@@ -805,8 +827,56 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         selected_thread = context["selected_thread"]
 
         if not selected_thread:
-            context["submit_error"] = "Geen actieve thread geselecteerd voor handoff-afsluiting."
+            if request.POST.get("form_action") == "follow_up_status":
+                context["follow_up_submit_error"] = (
+                    "Geen actieve thread geselecteerd voor follow-up status."
+                )
+            else:
+                context["submit_error"] = "Geen actieve thread geselecteerd voor handoff-afsluiting."
             return self.render_to_response(context)
+
+        if request.POST.get("form_action") == "follow_up_status":
+            follow_up_value = (request.POST.get("follow_up_status") or "").strip()
+            follow_up_note = (request.POST.get("follow_up_note") or "").strip()
+            allowed_statuses = {choice[0] for choice in ThreadFollowUpStatus.Status.choices}
+
+            context["follow_up_form"] = {
+                "status": follow_up_value,
+                "note": follow_up_note,
+            }
+
+            if follow_up_value not in allowed_statuses:
+                context["follow_up_submit_error"] = "Kies een geldige follow-up status."
+                return self.render_to_response(context)
+
+            follow_up_status, created = ThreadFollowUpStatus.objects.get_or_create(
+                thread=selected_thread,
+                defaults={
+                    "status": follow_up_value,
+                    "note": follow_up_note,
+                    "created_by": request.user,
+                    "updated_by": request.user,
+                },
+            )
+
+            if not created:
+                follow_up_status.status = follow_up_value
+                follow_up_status.note = follow_up_note
+                follow_up_status.updated_by = request.user
+                follow_up_status.save(
+                    update_fields=[
+                        "status",
+                        "note",
+                        "updated_by",
+                        "updated_at",
+                    ]
+                )
+
+            query_values = {"thread": selected_thread.pk, "follow_up_saved": 1}
+            if request.POST.get("focus") == "1":
+                query_values["focus"] = "1"
+            query = urlencode(query_values)
+            return redirect(f"{reverse('chat-hub')}?{query}")
 
         if context["access_state"]["status"] == "blocked":
             context["submit_error"] = (
