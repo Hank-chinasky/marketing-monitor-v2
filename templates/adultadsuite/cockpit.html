@@ -3,66 +3,121 @@
 {% block content %}
 <h1>AdultAdSuite Runtime Cockpit</h1>
 
-<div class="muted" style="margin-bottom:1rem;">
-    AdultAdSuite is de interne revenue- en operatoromgeving.
-    CreatorWorkboardFlow is het live werkscherm waar gesprekken, klantstatus, Buddy en opvolging samenkomen.
-</div>
-
 <div class="panel" style="margin-bottom:1rem;">
-    <p style="margin-top:0;"><span class="badge badge-blue">Workspace</span> Mara / Seducing Media</p>
-    <h2 style="margin-bottom:0.5rem;">Revenue-first dagfocus</h2>
-    <p><strong>Doel:</strong> Mara elke dag meer omzet uit bestaande chats laten halen.</p>
+    <p style="margin-top:0;">
+        <span class="badge badge-blue">Workspace: Mara / Seducing Media</span>
+        <span class="badge badge-yellow">Cockpit v0.1 — placeholders only, no live imports</span>
+    </p>
+    <h2 style="margin-bottom:0.5rem;">Revenue-first dagstart voor Mara / Seducing Media.</h2>
+    <p>
+        Open CreatorWorkboardFlow, kies de belangrijkste opvolging en houd zichtbaar welke omzettools eromheen komen.
+    </p>
     <p class="muted">
-        Deze cockpitdeur toont alleen structuur en placeholders. Live imports, mailacties en externe koppelingen komen pas na aparte review.
+        Start hier. De gesprekken blijven de werkvloer; AdultAdSuite stuurt op omzet, follow-up, funnel, mail health en bronbetrouwbaarheid.
     </p>
     <a class="primary-button" href="{% url 'chat-hub' %}">Open CreatorWorkboardFlow / Live gesprekken</a>
 </div>
 
 <div class="grid">
     <div class="panel">
-        <h3>Dashboard</h3>
-        <p>Dagelijkse revenue, follow-up, funnel en operatoractie in één startpunt.</p>
+        <h2 style="margin-top:0;">Revenue Day Plan</h2>
+        <div class="shared-core-item">
+            <strong>Vandaag geld opleveren</strong>
+            <p style="margin-bottom:0;">Mara elke dag meer omzet uit bestaande chats laten halen.</p>
+        </div>
+        <div class="shared-core-item">
+            <strong>Eerst opvolgen</strong>
+            <p style="margin-bottom:0;">Open de live gesprekken en pak warme follow-ups, bijna-converterende klanten en open loops eerst.</p>
+        </div>
+        <div class="shared-core-item">
+            <strong>Daarna meten</strong>
+            <p style="margin-bottom:0;">Campagnes, mail health, funnelroutes en cashflowlekken komen hier als read-only signalen terug.</p>
+        </div>
+        <div class="shared-core-item">
+            <strong>Niet automatisch</strong>
+            <p style="margin-bottom:0;">Geen imports, geen sends en geen automatische triggers in deze cockpitversie.</p>
+        </div>
     </div>
+
     <div class="panel">
-        <h3>CreatorWorkboardFlow</h3>
-        <p>Live gesprekken, klantstatus, Buddy, opvolging en operatoractie.</p>
+        <h2 style="margin-top:0;">Vandaag eerst</h2>
+        <div class="shared-core-item">
+            <strong>1. Open live gesprekken</strong>
+            <p>Ga naar CreatorWorkboardFlow en werk de belangrijkste gesprekken af.</p>
+            <a class="quick-link" href="{% url 'chat-hub' %}">Open /chats/</a>
+        </div>
+        <div class="shared-core-item">
+            <strong>2. Check warme follow-ups</strong>
+            <p style="margin-bottom:0;">Let op klanten met lopende context, open loops of bijna-betaalmomenten.</p>
+        </div>
+        <div class="shared-core-item">
+            <strong>3. Kies één omzetactie</strong>
+            <p style="margin-bottom:0;">Campagne, mail, trigger of funnelactie: één duidelijke actie per dag.</p>
+        </div>
+        <div class="shared-core-item">
+            <strong>4. Noteer wat geld opleverde</strong>
+            <p style="margin-bottom:0;">Wat is gedaan, wat gaf reactie, wat bracht omzet?</p>
+        </div>
+        <div class="shared-core-item">
+            <strong>5. Bewaak bronkwaliteit</strong>
+            <p style="margin-bottom:0;">Gebruik legacy-bronnen voorzichtig; echte data volgt pas na review.</p>
+        </div>
+    </div>
+</div>
+
+<h2>Revenue tools rond CreatorWorkboardFlow</h2>
+
+<div class="grid">
+    <div class="panel">
+        <h3>CreatorWorkboardFlow / Live gesprekken</h3>
+        <p>De werkvloer waar gesprekken, Buddy-context, opvolging en omzetmomenten samenkomen.</p>
+        <p><span class="badge badge-green">Status: live route beschikbaar</span></p>
         <a class="quick-link" href="{% url 'chat-hub' %}">Naar /chats/</a>
     </div>
     <div class="panel">
-        <h3>Mail Health</h3>
-        <p>Veilig mailen en bereiklekken zien.</p>
+        <h3>Trigger Radar</h3>
+        <p>Wie vandaag aandacht nodig heeft en waarom.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>Klantenstatus</h3>
-        <p>Wie opvolgen, beschermen of reviewen.</p>
+        <p>Wie opvolgen, beschermen, reviewen of later triggeren.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>Revenue / Bestellingen</h3>
-        <p>Bestellingen, whales, repeat buyers en omzetlekken.</p>
+        <p>Bestellingen, repeat buyers, whales en omzetlekken zichtbaar maken.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
-        <h3>Trigger Radar</h3>
-        <p>Wie vandaag aandacht nodig heeft.</p>
+        <h3>Mail Health</h3>
+        <p>Veilig mailen, bereiklekken zien en reputatie beschermen.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>Campagnes</h3>
-        <p>Wat gedaan is en wat geld opleverde.</p>
+        <p>Wat is gedaan, wat gaf reactie en wat leverde geld op?</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>Funnels / Landingspagina’s</h3>
-        <p>Welke routes klanten en betalingen brengen.</p>
+        <p>Welke routes klanten, registraties, chatstarts en betalingen brengen.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>App / Flowmatch</h3>
-        <p>Welke app-CTA’s terugkeer en chatstarts brengen.</p>
+        <p>Welke app-CTA’s terugkeer, login en chatstarts brengen.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>Data Health / Source Reliability</h3>
         <p>Welke bron betrouwbaar, onzeker of legacy is.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
     <div class="panel">
         <h3>Instellingen</h3>
-        <p>Later: workspace, bronweergave en operatorinstellingen.</p>
+        <p>Workspace, source en operatorinstellingen komen later.</p>
+        <p><span class="badge badge-yellow">Status: placeholder</span></p>
     </div>
 </div>
 
@@ -71,6 +126,14 @@
     <p>
         Cashflow is een module of legacybron binnen AdultAdSuite, niet de hoofdtool.
         AdultAdSuite stuurt op revenue, follow-up, funnel, mail health, campagne-effect, operatoractie en source reliability.
+    </p>
+</div>
+
+<div class="panel" style="margin-top:1rem;">
+    <h3>Safety boundary</h3>
+    <p>
+        Deze cockpitversie toont alleen structuur en placeholders. Er zijn geen live imports,
+        geen automatische triggers, geen mail sends, geen chat sends en geen externe koppelingen actief.
     </p>
 </div>
 {% endblock %}

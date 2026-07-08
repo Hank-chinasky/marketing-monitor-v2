@@ -19,7 +19,7 @@ class AdultAdSuiteRuntimeCockpitTests(TestCase):
         if response.status_code == 302:
             self.assertIn("/login/", response["Location"])
 
-    def test_adultadsuite_cockpit_renders_for_logged_in_user(self):
+    def test_adultadsuite_cockpit_renders_revenue_day_plan_for_logged_in_user(self):
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("adultadsuite-cockpit"))
@@ -27,13 +27,26 @@ class AdultAdSuiteRuntimeCockpitTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite Runtime Cockpit")
         self.assertContains(response, "/chats/")
+        self.assertContains(response, "Revenue Day Plan")
         self.assertContains(response, "Mara elke dag meer omzet")
-        self.assertContains(response, "Mail Health")
+        self.assertContains(response, "Vandaag eerst")
+        self.assertContains(response, "placeholders")
+        self.assertContains(response, "geen live imports")
+        self.assertContains(response, "Open CreatorWorkboardFlow / Live gesprekken")
+        self.assertContains(response, "CreatorWorkboardFlow / Live gesprekken")
+        self.assertContains(response, "Status: live route beschikbaar")
+        self.assertContains(response, "Trigger Radar")
         self.assertContains(response, "Klantenstatus")
         self.assertContains(response, "Revenue / Bestellingen")
-        self.assertContains(response, "Trigger Radar")
+        self.assertContains(response, "Mail Health")
         self.assertContains(response, "Campagnes")
         self.assertContains(response, "Funnels / Landingspagina")
         self.assertContains(response, "App / Flowmatch")
         self.assertContains(response, "Data Health / Source Reliability")
-        self.assertContains(response, "Cashflow is een module of legacybron binnen AdultAdSuite, niet de hoofdtool")
+        self.assertContains(response, "Safety boundary")
+        self.assertContains(response, "geen mail sends")
+        self.assertContains(response, "geen chat sends")
+        self.assertContains(
+            response,
+            "Cashflow is een module of legacybron binnen AdultAdSuite, niet de hoofdtool",
+        )
