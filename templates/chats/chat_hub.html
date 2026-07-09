@@ -80,6 +80,23 @@
 {% endblock %}
 
 {% block center_pane %}
+    <div class="panel" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">AdultAdSuite / CreatorWorkboardFlow</h3>
+        <p class="muted" style="margin-bottom:0.5rem;">
+            CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite waar gesprekken, Buddy-context, follow-up status en operatoractie samenkomen.
+        </p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
+            <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}">AdultAdSuite dagstart</a>
+            {% if focus_mode %}
+                <a class="quick-link" href="{% url 'chat-hub' %}">Normale stand</a>
+                <span class="badge badge-blue">Actief: focusstand</span>
+            {% else %}
+                <span class="badge badge-green">Actief: normale werkvloer</span>
+                <a class="quick-link" href="{% url 'chat-hub' %}?focus=1">Focusstand</a>
+            {% endif %}
+        </div>
+    </div>
+
     {% if focus_mode %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#2563eb; background:#eff6ff;">
             <h3 style="margin-top:0;">CreatorWorkboardFlow Focusstand</h3>
