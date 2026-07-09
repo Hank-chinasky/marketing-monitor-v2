@@ -202,6 +202,11 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Chats Workspace v1")
+        self.assertContains(response, "AdultAdSuite / CreatorWorkboardFlow")
+        self.assertContains(response, "AdultAdSuite dagstart")
+        self.assertContains(response, "/adultadsuite/")
+        self.assertContains(response, "/chats/?focus=1")
+        self.assertContains(response, "Actief: normale werkvloer")
         self.assertContains(response, "Klantenstatus / Follow-up")
         self.assertContains(response, "Gebruik deze lijst om bewust te kiezen")
         self.assertContains(response, "warm")
@@ -227,6 +232,11 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "CreatorWorkboardFlow Focusstand")
+        self.assertContains(response, "AdultAdSuite / CreatorWorkboardFlow")
+        self.assertContains(response, "AdultAdSuite dagstart")
+        self.assertContains(response, "/adultadsuite/")
+        self.assertContains(response, "Normale stand")
+        self.assertContains(response, "Actief: focusstand")
         self.assertContains(response, "Minder afleiding. Werk één gesprek of opvolgstap bewust af.")
         self.assertContains(response, "Terug naar normale stand")
         self.assertContains(response, "/chats/")
