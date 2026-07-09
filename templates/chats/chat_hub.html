@@ -382,20 +382,26 @@
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Berichtcontext</h3>
-            <p class="muted" style="margin-top:0;">Read-only berichten uit de geselecteerde thread.</p>
+            <h3 style="margin-top:0;">Berichten</h3>
+            <p class="muted" style="margin-top:0;">Read-only berichtenstroom uit de geselecteerde thread.</p>
             <ul class="clean">
                 {% for message in conversation_messages %}
                     <li style="margin-bottom:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid #e5e7eb;">
                         <div>
-                            <span class="badge">{{ message.get_direction_display }}</span>
+                            {% if message.direction == "inbound" %}
+                                <span class="badge">Klant</span>
+                            {% elif message.direction == "outbound" %}
+                                <span class="badge">Operator</span>
+                            {% else %}
+                                <span class="badge">Systeem</span>
+                            {% endif %}
                             <strong>{{ message.sender_label|default:"-" }}</strong>
                             <span class="muted">· {{ message.occurred_at }}</span>
                         </div>
                         <div style="margin-top:0.35rem;">{{ message.body|linebreaksbr }}</div>
                     </li>
                 {% empty %}
-                    <li class="muted">Nog geen berichten vastgelegd voor deze thread.</li>
+                    <li class="muted">Nog geen berichten opgeslagen voor dit gesprek.</li>
                 {% endfor %}
             </ul>
         </div>
@@ -452,6 +458,10 @@
             <div class="muted" style="margin-top:0.5rem;">Deze waarde wordt bijgewerkt door de handoff-afsluitmodule.</div>
         </div>
     {% else %}
+        <div class="panel" style="margin-bottom:0.75rem;">
+            <h3 style="margin-top:0;">Berichten</h3>
+            <p class="muted">Kies een gesprek om berichten te bekijken.</p>
+        </div>
         <div class="panel">
             <span class="badge badge-yellow">alert</span> Selecteer een thread om het werkvlak te starten.
         </div>

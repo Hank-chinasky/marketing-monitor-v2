@@ -399,8 +399,9 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Berichtcontext")
-        self.assertContains(response, "Read-only berichten uit de geselecteerde thread.")
+        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Read-only berichtenstroom uit de geselecteerde thread.")
+        self.assertContains(response, "Klant")
         self.assertContains(response, "Customer")
         self.assertContains(response, "Eerste bericht van klant.")
         self.assertContains(response, "Operator")
@@ -410,16 +411,53 @@ class SharedCoreV1ViewsTests(TestCase):
             list(response.context["conversation_messages"]),
             [older_message, newer_message],
         )
+        html = response.content.decode()
+        self.assertLess(
+            html.index("Eerste bericht van klant."),
+            html.index("Antwoord van operator."),
+        )
         self.assertNotContains(response, "Bericht toevoegen")
         self.assertNotContains(response, 'name="message_body"')
+        self.assertNotContains(response, "Importeer berichten")
+
+    def test_chats_focus_mode_message_stream_renders_selected_thread_messages_read_only(self):
+        ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            sender_label="Customer",
+            body="Focus klantbericht.",
+            occurred_at=timezone.now() - timedelta(minutes=2),
+        )
+        ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.OUTBOUND,
+            sender_label="Operator",
+            body="Focus operatorbericht.",
+            occurred_at=timezone.now() - timedelta(minutes=1),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"focus": "1", "thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CreatorWorkboardFlow Focusstand")
+        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Klant")
+        self.assertContains(response, "Focus klantbericht.")
+        self.assertContains(response, "Operator")
+        self.assertContains(response, "Focus operatorbericht.")
+        self.assertNotContains(response, "Importeer berichten")
 
     def test_chats_message_panel_shows_empty_state_without_messages(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Berichtcontext")
-        self.assertContains(response, "Nog geen berichten vastgelegd voor deze thread.")
+        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Nog geen berichten opgeslagen voor dit gesprek.")
         self.assertEqual(list(response.context["conversation_messages"]), [])
 
     def test_chats_message_panel_fallback_without_thread_is_empty(self):
@@ -429,6 +467,8 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["conversation_messages"], [])
+        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Kies een gesprek om berichten te bekijken.")
         self.assertContains(response, "Selecteer een thread om het werkvlak te starten.")
 
     def test_feeder_keeps_operator_first_five_center_blocks(self):
