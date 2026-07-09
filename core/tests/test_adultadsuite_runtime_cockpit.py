@@ -28,7 +28,7 @@ class AdultAdSuiteRuntimeCockpitTests(TestCase):
         self.assertContains(response, "AdultAdSuite Runtime Cockpit")
         self.assertContains(response, "/chats/")
         self.assertContains(response, "Revenue Day Plan")
-        self.assertContains(response, "Mara elke dag meer omzet")
+        self.assertContains(response, "De operator elke dag meer omzet")
         self.assertContains(response, "Vandaag eerst")
         self.assertContains(response, "placeholders")
         self.assertContains(response, "geen live imports")

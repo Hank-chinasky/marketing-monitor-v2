@@ -218,7 +218,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Optionele operatornotitie")
         self.assertContains(response, "Opslaan follow-up status")
         self.assertContains(response, "Nog geen follow-up status vastgelegd")
-        self.assertContains(response, "Mara kiest handmatig")
+        self.assertContains(response, "De operator kiest handmatig")
         self.assertNotContains(response, "CreatorWorkboardFlow Focusstand")
         self.assertNotContains(response, "Buddy Context")
         self.assertFalse(response.context["focus_mode"])
@@ -257,7 +257,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Revenue moment")
         self.assertContains(response, "Safety boundary")
         self.assertContains(response, "Buddy adviseert")
-        self.assertContains(response, "Mara beslist")
+        self.assertContains(response, "De operator beslist")
         self.assertContains(response, "Geen automatische verzending")
         self.assertTrue(response.context["focus_mode"])
 
@@ -274,7 +274,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Open of kies een gesprek om Buddy-context te gebruiken")
         self.assertContains(response, "Safety boundary")
         self.assertContains(response, "Buddy adviseert")
-        self.assertContains(response, "Mara beslist")
+        self.assertContains(response, "De operator beslist")
         self.assertContains(response, "Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.")
         self.assertTrue(response.context["focus_mode"])
         self.assertIsNone(response.context["selected_thread"])
@@ -353,7 +353,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(saved_response, "Open loop")
         self.assertContains(saved_response, "Klant vroeg om later terug te komen.")
         self.assertContains(saved_response, "Buddy adviseert")
-        self.assertContains(saved_response, "Mara beslist")
+        self.assertContains(saved_response, "De operator beslist")
         self.assertContains(saved_response, "Geen automatische ranking, trigger of verzending")
 
     def test_chats_shows_customer_stage_read_only_context(self):
