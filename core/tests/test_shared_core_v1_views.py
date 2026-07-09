@@ -372,6 +372,39 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Customer stage")
         self.assertContains(response, "Inside paywall")
 
+    def test_chats_workfloor_normal_mode_places_messages_before_follow_up_action(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Klantenstatus / Follow-up")
+        self.assertContains(response, "Opslaan follow-up status")
+
+        html = response.content.decode()
+        self.assertLess(html.index("Berichten"), html.index("Klantenstatus / Follow-up"))
+        self.assertLess(html.index("Opslaan follow-up status"), html.index("Templates v1"))
+        self.assertLess(html.index("Opslaan follow-up status"), html.index("Run log samenvatting"))
+        self.assertLess(html.index("Opslaan follow-up status"), html.index("Approvals v1"))
+
+    def test_chats_workfloor_focus_mode_places_messages_before_buddy_context(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"focus": "1", "thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CreatorWorkboardFlow Focusstand")
+        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Follow-up status")
+        self.assertContains(response, "Buddy Context")
+
+        html = response.content.decode()
+        self.assertLess(html.index("Berichten"), html.index("Follow-up status"))
+        self.assertLess(html.index("Berichten"), html.index("Buddy Context"))
+        self.assertLess(html.index("Follow-up status"), html.index("Buddy Context"))
+
     def test_chats_message_panel_renders_selected_thread_messages_read_only(self):
         older_message = ConversationMessage.objects.create(
             thread=self.thread,
