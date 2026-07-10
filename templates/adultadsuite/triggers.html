@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .trigger-module-header {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .trigger-module-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 0.45rem 0.75rem;
+        font-weight: 700;
+        text-decoration: none;
+        background: #f9fafb;
+        color: #111827;
+    }
+
+    .trigger-module-button:hover {
+        background: #f3f4f6;
+        text-decoration: none;
+    }
+
+    .trigger-module-button-primary {
+        border-color: #2563eb;
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .trigger-module-button-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .trigger-module-safety {
+        border: 1px solid #f59e0b;
+        background: #fffbeb;
+    }
+
+    .trigger-queue {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .trigger-card {
+        border-left: 8px solid #9ca3af;
+    }
+
+    .trigger-card.urgent {
+        border-left-color: #dc2626;
+        background: #fff7f7;
+    }
+
+    .trigger-card.warm {
+        border-left-color: #f97316;
+        background: #fff7ed;
+    }
+
+    .trigger-card.ready {
+        border-left-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .trigger-card.info {
+        border-left-color: #2563eb;
+        background: #eff6ff;
+    }
+
+    .trigger-card.cooldown {
+        border-left-color: #6b7280;
+        background: #f9fafb;
+    }
+
+    .trigger-card.vip {
+        border-left-color: #7c3aed;
+        background: #f5f3ff;
+    }
+
+    .trigger-card h3 {
+        margin-top: 0;
+        margin-bottom: 0.35rem;
+    }
+
+    .trigger-card-meta {
+        display: grid;
+        gap: 0.35rem;
+        margin: 0.75rem 0;
+    }
+
+    .trigger-card-actions {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+
+    .trigger-preview-button {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 0.42rem 0.65rem;
+        font-weight: 700;
+        background: #f3f4f6;
+        color: #6b7280;
+        cursor: not-allowed;
+    }
+</style>
+
+<h1>AdultAdSuite TriggerModule</h1>
+
+<div class="trigger-module-header" aria-label="TriggerModule navigatie">
+    <a class="trigger-module-button" href="{% url 'chat-hub' %}" title="Terug naar chats" aria-label="Terug naar chats">Terug naar chats</a>
+    <span class="trigger-module-button trigger-module-button-primary" aria-label="TriggerModule huidige pagina">TriggerModule</span>
+    <span class="trigger-module-button" aria-label="Live wachtrij preview">Live wachtrij</span>
+    <span class="trigger-module-button" aria-label="Log preview">Log</span>
+</div>
+
+<div class="panel trigger-module-safety" style="margin-bottom:0.85rem;">
+    <strong>Preview-only v0</strong>
+    <p class="muted" style="margin-bottom:0;">
+        Deze pagina toont gecontroleerde demo-data. Er worden geen triggers verstuurd, geen legacy-server gekoppeld,
+        geen database geïmporteerd en geen externe calls uitgevoerd.
+    </p>
+</div>
+
+<h2>Trigger wachtrij</h2>
+
+<div class="trigger-queue">
+    {% for item in trigger_queue %}
+        <article class="panel trigger-card {{ item.status_class }}">
+            <h3>{{ item.name }}</h3>
+            <p style="margin-top:0;">
+                <span class="badge badge-blue">{{ item.platform }}</span>
+                <span class="badge">{{ item.status }}</span>
+            </p>
+
+            <div class="trigger-card-meta">
+                <div><strong>Prioriteit:</strong> {{ item.priority }}</div>
+                <div><strong>Reden:</strong> {{ item.reason }}</div>
+                <div><strong>Laatste actie:</strong> {{ item.last_action }}</div>
+                <div><strong>Volgende stap:</strong> {{ item.next_step }}</div>
+                {% if item.cooldown %}
+                    <div><strong>Cooldown:</strong> {{ item.cooldown }}</div>
+                {% endif %}
+            </div>
+
+            <div class="trigger-card-actions">
+                <a class="secondary-button" href="{% url 'chat-hub' %}" title="Open gesprek in CreatorWorkboardFlow" aria-label="Open gesprek in CreatorWorkboardFlow">Open gesprek</a>
+                <button class="trigger-preview-button" type="button" disabled title="Nog niet actief — preview-only v0">Voorbereiden</button>
+                <button class="trigger-preview-button" type="button" disabled title="Nog niet actief — preview-only v0">Parkeren</button>
+                <button class="trigger-preview-button" type="button" disabled title="Nog niet actief — preview-only v0">Markeer bekeken</button>
+            </div>
+        </article>
+    {% endfor %}
+</div>
+
+<div class="panel" style="margin-top:1rem;">
+    <h3>Safety boundary</h3>
+    <p style="margin-bottom:0;">
+        TriggerModule v0 is uitsluitend een veilige preview van vorm, queue-kleuren en operatorflow.
+        Er is geen live-send formulier, geen legacy-koppeling, geen scheduler en geen worker actief.
+    </p>
+</div>
+{% endblock %}
