@@ -1,9 +1,9 @@
 {% extends "shared_core/three_pane_base.html" %}
 
-{% block workspace_title %}{% if focus_mode %}CreatorWorkboard Focusstand{% else %}CreatorWorkboard{% endif %}{% endblock %}
-{% block workspace_subtitle %}Berichten eerst. Daarna status, notitie en opvolging.{% endblock %}
+{% block workspace_title %}<span class="chat-workfloor-sr-only">CreatorWorkboard</span>{% endblock %}
+{% block workspace_subtitle %}{% endblock %}
 {% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
-{% block center_pane_title %}Werkvlak: threadfocus en actuele aandacht{% endblock %}
+{% block center_pane_title %}<span class="chat-workfloor-sr-only">Werkvlak</span>{% endblock %}
 {% block right_pane_title %}Handoff · Run log · Open issues · Quick actions · Buddy-slot{% endblock %}
 
 {% block left_pane %}
@@ -80,50 +80,70 @@
 {% endblock %}
 
 {% block center_pane %}
-    <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin:0 0 0.5rem;">{% if focus_mode %}CreatorWorkboard Focusstand{% else %}CreatorWorkboard{% endif %}</h3>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-            <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}">AdultAdSuite</a>
-            {% if focus_mode %}
-                <a class="quick-link" href="{% url 'chat-hub' %}">Normale stand</a>
+    <style>
+        .page > h1:first-child,
+        .page > h1:first-child + .muted,
+        .shared-core-pane[aria-label="Werkvlak kolom"] > h2:first-child {
+            display: none;
+        }
+        .chat-workfloor-sr-only {
+            position: absolute;
+            left: -9999px;
+        }
+        .chat-workfloor-top {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chat-workfloor-actions,
+        .chat-thread-form {
+            display: flex;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .chat-thread-form label {
+            font-weight: 600;
+        }
+    </style>
+
+    <div class="panel" style="margin-bottom:0.5rem; padding:0.65rem 0.75rem;">
+        <div class="chat-workfloor-top">
+            <div class="chat-workfloor-actions">
+                <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}" title="Open AdultAdSuite dagstart" aria-label="Open AdultAdSuite dagstart">AdultAdSuite</a>
+                {% if focus_mode %}
+                    <a class="quick-link" href="{% url 'chat-hub' %}" title="Open normale stand" aria-label="Open normale stand">Normale stand</a>
+                {% else %}
+                    <a class="quick-link" href="{% url 'chat-hub' %}?focus=1" title="Open focusstand" aria-label="Open focusstand">Focusstand</a>
+                {% endif %}
+                <a class="quick-link" href="{% url 'chat-hub' %}{% if focus_mode %}?focus=1{% endif %}" title="Open gesprekkenlijst" aria-label="Open gesprekkenlijst">Gesprekken</a>
+            </div>
+
+            {% if threads %}
+                <form method="get" class="chat-thread-form" style="margin:0;">
+                    {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
+                    <label for="thread-select" style="margin:0;">Gesprek:</label>
+                    <select id="thread-select" name="thread" style="max-width:360px;">
+                        {% for thread in threads %}
+                            <option value="{{ thread.pk }}" {% if selected_thread and selected_thread.pk == thread.pk %}selected{% endif %}>
+                                {{ thread.creator.display_name }} · {{ thread.source_thread_id }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if selected_thread %}
+                        <span class="badge badge-blue">{{ selected_thread.get_status_display }}</span>
+                    {% endif %}
+                    <button type="submit" class="secondary-button">Open</button>
+                </form>
             {% else %}
-                <a class="quick-link" href="{% url 'chat-hub' %}?focus=1">Focusstand</a>
+                <div class="muted">Geen gesprekken beschikbaar binnen scope.</div>
             {% endif %}
         </div>
-    </div>
-
-    <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Gesprek</h3>
-        {% if threads %}
-            <form method="get" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
-                <label for="thread-select" style="margin:0;">Gesprek</label>
-                <select id="thread-select" name="thread" style="max-width:420px;">
-                    {% for thread in threads %}
-                        <option value="{{ thread.pk }}" {% if selected_thread and selected_thread.pk == thread.pk %}selected{% endif %}>
-                            {{ thread.creator.display_name }} · {{ thread.source_thread_id }} · {{ thread.get_status_display }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="secondary-button">Open</button>
-            </form>
-        {% else %}
-            <div class="muted">Geen gesprekken beschikbaar binnen scope.</div>
-        {% endif %}
     </div>
 
     {% if selected_thread %}
-        <div class="panel" style="margin-bottom:0.75rem;">
-            <p style="margin:0;">
-                <strong>{{ selected_thread.creator.display_name }}</strong>
-                · {{ selected_thread.source_thread_id }}
-                · {{ selected_thread.get_status_display }}
-            </p>
-            {% if selected_thread.thread_summary %}
-                <p class="muted" style="margin:0.35rem 0 0;">{{ selected_thread.thread_summary|linebreaksbr }}</p>
-            {% endif %}
-        </div>
-
         <div class="panel" style="margin-bottom:0.75rem;">
             <h3 style="margin-top:0;">Berichten</h3>
             <p class="muted" style="margin-top:0;">Read-only berichtenstroom uit de geselecteerde thread.</p>
@@ -270,6 +290,15 @@
                 Nog geen automatische follow-up lijst. De operator kiest handmatig: warm, open loop, later triggeren, afgekoeld of review nodig.
             </p>
         </div>
+    {% endif %}
+
+    {% if selected_thread and selected_thread.thread_summary %}
+        <details class="panel" style="margin-bottom:0.75rem;">
+            <summary>Gespreksinfo</summary>
+            <p class="muted" style="margin-bottom:0; margin-top:0.5rem;">
+                {{ selected_thread.thread_summary|linebreaksbr }}
+            </p>
+        </details>
     {% endif %}
 
     {% if focus_mode %}

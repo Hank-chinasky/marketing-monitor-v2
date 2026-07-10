@@ -169,7 +169,7 @@ class SharedCoreV1ViewsTests(TestCase):
         feeder = self.client.get(reverse("feeder-hub"))
 
         self.assertContains(chats, "Policy · Context · Scope · Access/Risk · Completeness")
-        self.assertContains(chats, "Werkvlak: threadfocus en actuele aandacht")
+        self.assertContains(chats, 'aria-label="Werkvlak kolom"')
         self.assertContains(chats, "Handoff · Run log · Open issues · Quick actions · Buddy-slot")
 
         self.assertContains(feeder, "Policy · Context · Scope · Access/Risk · Completeness")
@@ -230,7 +230,8 @@ class SharedCoreV1ViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "CreatorWorkboard Focusstand")
+        self.assertContains(response, "AdultAdSuite")
+        self.assertContains(response, "Normale stand")
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "/adultadsuite/")
         self.assertContains(response, "Normale stand")
@@ -268,7 +269,8 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"focus": "1"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "CreatorWorkboard Focusstand")
+        self.assertContains(response, "AdultAdSuite")
+        self.assertContains(response, "Normale stand")
         self.assertContains(response, "Buddy Context")
         self.assertContains(response, "Nog geen specifiek gesprek geselecteerd")
         self.assertContains(response, "Open of kies een gesprek om Buddy-context te gebruiken")
@@ -347,7 +349,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(follow_up_status.note, "Klant vroeg om later terug te komen.")
 
         saved_response = self.client.get(response["Location"])
-        self.assertContains(saved_response, "CreatorWorkboard Focusstand")
+        self.assertContains(saved_response, "Normale stand")
         self.assertContains(saved_response, "Buddy Context")
         self.assertContains(saved_response, "Follow-up status opgeslagen")
         self.assertContains(saved_response, "Open loop")
@@ -377,18 +379,25 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "AdultAdSuite")
+        self.assertContains(response, "Focusstand")
+        self.assertContains(response, "Gesprek:")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Follow-up status")
         self.assertContains(response, "Opslaan follow-up status")
 
         html = response.content.decode()
+        before_messages = html.split("Berichten", 1)[0]
         self.assertLess(html.index("Berichten"), html.index("Follow-up status"))
         self.assertLess(html.index("Berichten"), html.index("Templates v1"))
         self.assertLess(html.index("Berichten"), html.index("Run log samenvatting"))
         self.assertLess(html.index("Berichten"), html.index("Approvals v1"))
         self.assertLess(html.index("Opslaan follow-up status"), html.index("Templates v1"))
         self.assertNotIn("CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite", html)
-        self.assertNotIn("Minder afleiding. Werk één gesprek of opvolgstap bewust af.", html)
+        self.assertNotIn("Werkvlak: threadfocus en actuele aandacht", before_messages)
+        self.assertNotIn("CreatorWorkboard Focusstand", before_messages)
+        self.assertNotIn("Berichten eerst. Daarna status, notitie en opvolging.", before_messages)
+        self.assertNotIn("Minder afleiding. Werk één gesprek of opvolgstap bewust af.", before_messages)
         self.assertNotIn("Top chat focus", html)
 
     def test_chats_workfloor_focus_mode_places_messages_before_buddy_context(self):
@@ -399,12 +408,15 @@ class SharedCoreV1ViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "CreatorWorkboard Focusstand")
+        self.assertContains(response, "AdultAdSuite")
+        self.assertContains(response, "Normale stand")
+        self.assertContains(response, "Gesprek:")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Follow-up status")
         self.assertContains(response, "Buddy Context")
 
         html = response.content.decode()
+        before_messages = html.split("Berichten", 1)[0]
         self.assertLess(html.index("Berichten"), html.index("Follow-up status"))
         self.assertLess(html.index("Berichten"), html.index("Buddy Context"))
         self.assertLess(html.index("Berichten"), html.index("Templates v1"))
@@ -412,7 +424,10 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertLess(html.index("Berichten"), html.index("Approvals v1"))
         self.assertLess(html.index("Follow-up status"), html.index("Buddy Context"))
         self.assertNotIn("CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite", html)
-        self.assertNotIn("Minder afleiding. Werk één gesprek of opvolgstap bewust af.", html)
+        self.assertNotIn("Werkvlak: threadfocus en actuele aandacht", before_messages)
+        self.assertNotIn("CreatorWorkboard Focusstand", before_messages)
+        self.assertNotIn("Berichten eerst. Daarna status, notitie en opvolging.", before_messages)
+        self.assertNotIn("Minder afleiding. Werk één gesprek of opvolgstap bewust af.", before_messages)
         self.assertNotIn("Top chat focus", html)
 
     def test_chats_message_panel_renders_selected_thread_messages_read_only(self):
@@ -486,7 +501,8 @@ class SharedCoreV1ViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "CreatorWorkboard Focusstand")
+        self.assertContains(response, "AdultAdSuite")
+        self.assertContains(response, "Normale stand")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Klant")
         self.assertContains(response, "Focus klantbericht.")
@@ -1203,9 +1219,8 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Berichten")
         self.assertNotContains(response, "Top chat focus")
-        self.assertContains(response, "Creator")
-        self.assertContains(response, "Thread")
-        self.assertContains(response, "Threadsamenvatting")
+        self.assertContains(response, "Gesprek:")
+        self.assertContains(response, "shared-core-thread")
         self.assertContains(response, "Waiting on operator")
         self.assertNotContains(response, "Laatste statusmoment")
         self.assertContains(response, "Laatste handoff")
