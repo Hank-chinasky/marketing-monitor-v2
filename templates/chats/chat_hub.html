@@ -1,7 +1,7 @@
 {% extends "shared_core/three_pane_base.html" %}
 
-{% block workspace_title %}{% if focus_mode %}CreatorWorkboardFlow Focusstand{% else %}Chats Workspace v1{% endif %}{% endblock %}
-{% block workspace_subtitle %}{% if focus_mode %}Minder afleiding. Werk één gesprek of opvolgstap bewust af.{% else %}Operator-first chatwerk: policy eerst, daarna threadfocus, en rechts de overdracht/run-log kolom.{% endif %}{% endblock %}
+{% block workspace_title %}{% if focus_mode %}CreatorWorkboard Focusstand{% else %}CreatorWorkboard{% endif %}{% endblock %}
+{% block workspace_subtitle %}Berichten eerst. Daarna status, notitie en opvolging.{% endblock %}
 {% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
 {% block center_pane_title %}Werkvlak: threadfocus en actuele aandacht{% endblock %}
 {% block right_pane_title %}Handoff · Run log · Open issues · Quick actions · Buddy-slot{% endblock %}
@@ -81,37 +81,23 @@
 
 {% block center_pane %}
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">AdultAdSuite / CreatorWorkboardFlow</h3>
-        <p class="muted" style="margin-bottom:0.5rem;">
-            CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite waar gesprekken, Buddy-context, follow-up status en operatoractie samenkomen.
-        </p>
+        <h3 style="margin:0 0 0.5rem;">{% if focus_mode %}CreatorWorkboard Focusstand{% else %}CreatorWorkboard{% endif %}</h3>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-            <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}">AdultAdSuite dagstart</a>
+            <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}">AdultAdSuite</a>
             {% if focus_mode %}
                 <a class="quick-link" href="{% url 'chat-hub' %}">Normale stand</a>
-                <span class="badge badge-blue">Actief: focusstand</span>
             {% else %}
-                <span class="badge badge-green">Actief: normale werkvloer</span>
                 <a class="quick-link" href="{% url 'chat-hub' %}?focus=1">Focusstand</a>
             {% endif %}
         </div>
     </div>
 
-    {% if focus_mode %}
-        <div class="panel" style="margin-bottom:0.75rem; border-color:#2563eb; background:#eff6ff;">
-            <h3 style="margin-top:0;">CreatorWorkboardFlow Focusstand</h3>
-            <p>Minder afleiding. Werk één gesprek of opvolgstap bewust af.</p>
-            <a class="quick-link" href="{% url 'chat-hub' %}">Terug naar normale stand</a>
-        </div>
-
-    {% endif %}
-
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Threadselectie in werkvlak</h3>
+        <h3 style="margin-top:0;">Gesprek</h3>
         {% if threads %}
-            <form method="get" style="display:flex; gap:0.65rem; align-items:center; flex-wrap:wrap;">
+            <form method="get" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
                 {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
-                <label for="thread-select" style="margin:0;">Actieve thread</label>
+                <label for="thread-select" style="margin:0;">Gesprek</label>
                 <select id="thread-select" name="thread" style="max-width:420px;">
                     {% for thread in threads %}
                         <option value="{{ thread.pk }}" {% if selected_thread and selected_thread.pk == thread.pk %}selected{% endif %}>
@@ -119,24 +105,23 @@
                         </option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="secondary-button">Open thread</button>
+                <button type="submit" class="secondary-button">Open</button>
             </form>
         {% else %}
-            <div class="muted">Geen threads beschikbaar binnen scope.</div>
+            <div class="muted">Geen gesprekken beschikbaar binnen scope.</div>
         {% endif %}
     </div>
 
     {% if selected_thread %}
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Top chat focus</h3>
-            <ul class="clean">
-                {% for focus_item in chat_focus_items %}
-                    <li style="margin-bottom:0.45rem;">
-                        <strong>{{ focus_item.label }}:</strong><br>
-                        {{ focus_item.value|linebreaksbr }}
-                    </li>
-                {% endfor %}
-            </ul>
+            <p style="margin:0;">
+                <strong>{{ selected_thread.creator.display_name }}</strong>
+                · {{ selected_thread.source_thread_id }}
+                · {{ selected_thread.get_status_display }}
+            </p>
+            {% if selected_thread.thread_summary %}
+                <p class="muted" style="margin:0.35rem 0 0;">{{ selected_thread.thread_summary|linebreaksbr }}</p>
+            {% endif %}
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
@@ -177,9 +162,7 @@
     {% if focus_mode %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
             <h3 style="margin-top:0;">Follow-up status</h3>
-            <p style="margin-bottom:0.5rem;">
-                Check eerst of dit gesprek warm, open loop, later triggeren, afgekoeld of review nodig is.
-            </p>
+            <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
 
             {% if follow_up_saved %}
                 <div class="success-panel">Follow-up status opgeslagen.</div>
@@ -234,32 +217,8 @@
         </div>
     {% else %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
-            <h3 style="margin-top:0;">Klantenstatus / Follow-up</h3>
-            <p>
-                Gebruik deze lijst om bewust te kiezen wie nu aandacht krijgt, wie later terugkomt en welke gesprekken niet mogen afkoelen.
-            </p>
-            <div class="grid">
-                <div class="shared-core-item">
-                    <strong>Warm</strong>
-                    <p style="margin-bottom:0;">Klanten of gesprekken waar vandaag waarschijnlijk iets uit te halen is.</p>
-                </div>
-                <div class="shared-core-item">
-                    <strong>Open loop</strong>
-                    <p style="margin-bottom:0;">Gesprekken waar nog een vraag, belofte, context of vervolgstap openstaat.</p>
-                </div>
-                <div class="shared-core-item">
-                    <strong>Later triggeren</strong>
-                    <p style="margin-bottom:0;">Niet nu pushen, maar later opnieuw openen met betere timing.</p>
-                </div>
-                <div class="shared-core-item">
-                    <strong>Afgekoeld</strong>
-                    <p style="margin-bottom:0;">Gesprekken die opnieuw warmte nodig hebben voordat er op omzet gestuurd wordt.</p>
-                </div>
-                <div class="shared-core-item">
-                    <strong>Review nodig</strong>
-                    <p style="margin-bottom:0;">Eerst zelf controleren voordat je antwoordt, triggert of opvolgt.</p>
-                </div>
-            </div>
+            <h3 style="margin-top:0;">Follow-up status</h3>
+            <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
 
             {% if follow_up_saved %}
                 <div class="success-panel">Follow-up status opgeslagen.</div>
