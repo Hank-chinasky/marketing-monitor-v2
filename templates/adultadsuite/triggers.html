@@ -94,6 +94,27 @@
         margin: 0.75rem 0;
     }
 
+    .trigger-buddy-surface {
+        border: 1px solid #ddd6fe;
+        border-radius: 10px;
+        padding: 0.65rem;
+        background: rgba(255, 255, 255, 0.72);
+        margin-top: 0.75rem;
+    }
+
+    .trigger-buddy-surface h4 {
+        margin: 0 0 0.5rem;
+    }
+
+    .trigger-buddy-grid {
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .trigger-buddy-label {
+        font-weight: 700;
+    }
+
     .trigger-card-actions {
         display: flex;
         gap: 0.45rem;
@@ -150,6 +171,20 @@
                 {% endif %}
             </div>
 
+            <div class="trigger-buddy-surface">
+                <h4>Buddy</h4>
+                <div class="trigger-buddy-grid">
+                    <div><span class="trigger-buddy-label">Buddy status:</span> {{ item.buddy.status }}</div>
+                    <div><span class="trigger-buddy-label">Waarom nu:</span> {{ item.buddy.why_now }}</div>
+                    <div><span class="trigger-buddy-label">Laatste context:</span> {{ item.buddy.latest_context }}</div>
+                    <div><span class="trigger-buddy-label">Open loop:</span> {{ item.buddy.open_loop }}</div>
+                    <div><span class="trigger-buddy-label">Niet doen:</span> {{ item.buddy.do_not_do }}</div>
+                    <div><span class="trigger-buddy-label">Volgende stap:</span> {{ item.buddy.next_step }}</div>
+                    <div><span class="trigger-buddy-label">Betrouwbaarheid:</span> {{ item.buddy.reliability }}</div>
+                </div>
+                <p class="muted" style="margin-bottom:0; margin-top:0.5rem;">Buddy adviseert. De operator beslist. Geen automatische actie.</p>
+            </div>
+
             <div class="trigger-card-actions">
                 <a class="secondary-button" href="{% url 'chat-hub' %}" title="Open gesprek in CreatorWorkboardFlow" aria-label="Open gesprek in CreatorWorkboardFlow">Open gesprek</a>
                 <button class="trigger-preview-button" type="button" disabled title="Nog niet actief — preview-only v0">Voorbereiden</button>
@@ -164,7 +199,7 @@
     <h3>Safety boundary</h3>
     <p style="margin-bottom:0;">
         TriggerModule v0 is uitsluitend een veilige preview van vorm, queue-kleuren en operatorflow.
-        Er is geen live-send formulier, geen legacy-koppeling, geen scheduler en geen worker actief.
+        Er is geen verzendformulier, geen legacy-koppeling, geen scheduler en geen worker actief.
     </p>
 </div>
 {% endblock %}

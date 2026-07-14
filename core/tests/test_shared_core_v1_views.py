@@ -216,7 +216,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Nog geen follow-up status vastgelegd")
         self.assertContains(response, "De operator kiest handmatig")
         self.assertNotContains(response, "CreatorWorkboard Focusstand")
-        self.assertNotContains(response, "Buddy Context")
+        self.assertContains(response, "Buddy Context Surface")
         self.assertNotContains(response, "CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite")
         self.assertNotContains(response, "Minder afleiding. Werk één gesprek of opvolgstap bewust af.")
         self.assertNotContains(response, "Top chat focus")
@@ -232,34 +232,47 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "Normale stand")
-        self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "/adultadsuite/")
-        self.assertContains(response, "Normale stand")
         self.assertContains(response, "/chats/")
         self.assertContains(response, "Gesprek")
         self.assertContains(response, "Berichten")
-        self.assertContains(response, "Buddy Context")
         self.assertContains(response, "Follow-up status")
         self.assertContains(response, "Lees de berichten, kies status")
-        self.assertNotContains(response, "CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite")
-        self.assertNotContains(response, "Minder afleiding. Werk één gesprek of opvolgstap bewust af.")
-        self.assertNotContains(response, "Top chat focus")
-        self.assertContains(response, "Geen automatische ranking, trigger of verzending")
         self.assertContains(response, "Statuskeuze")
         self.assertContains(response, "Optionele korte operatornotitie")
         self.assertContains(response, "Opslaan follow-up status")
         self.assertContains(response, "Warm")
         self.assertContains(response, "Open loop")
-        self.assertContains(response, "Waar moet ik op letten?")
+
+        self.assertContains(response, "Buddy Context Surface")
+        self.assertContains(response, "Buddy status")
+        self.assertContains(response, "Waarom nu")
         self.assertContains(response, "Laatste context")
-        self.assertContains(response, "Gesprek/contextstatus")
-        self.assertContains(response, "Operator focus")
-        self.assertContains(response, "Follow-up hint")
-        self.assertContains(response, "Revenue moment")
-        self.assertContains(response, "Safety boundary")
+        self.assertContains(response, "Niet doen")
+        self.assertContains(response, "Volgende stap")
+        self.assertContains(response, "Betrouwbaarheid")
         self.assertContains(response, "Buddy adviseert")
         self.assertContains(response, "De operator beslist")
-        self.assertContains(response, "Geen automatische verzending")
+        self.assertContains(response, "Geen automatische actie.")
+
+        html = response.content.decode()
+        self.assertLess(
+            html.index("Berichten"),
+            html.index("Buddy Context Surface"),
+        )
+
+        self.assertNotContains(
+            response,
+            "CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite",
+        )
+        self.assertNotContains(
+            response,
+            "Minder afleiding. Werk één gesprek of opvolgstap bewust af.",
+        )
+        self.assertNotContains(response, "Top chat focus")
+        self.assertNotContains(response, "Verstuur nu")
+        self.assertNotContains(response, "sendtrigger")
+        self.assertNotContains(response, "cashflow.adultadsuite.com")
         self.assertTrue(response.context["focus_mode"])
 
     def test_chats_focus_mode_buddy_context_has_safe_empty_state_without_thread(self):
@@ -271,13 +284,33 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "Normale stand")
-        self.assertContains(response, "Buddy Context")
-        self.assertContains(response, "Nog geen specifiek gesprek geselecteerd")
-        self.assertContains(response, "Open of kies een gesprek om Buddy-context te gebruiken")
-        self.assertContains(response, "Safety boundary")
+        self.assertContains(response, "Buddy Context Surface")
+        self.assertContains(response, "Buddy status: Kies gesprek")
+        self.assertContains(response, "Waarom nu")
+        self.assertContains(response, "Laatste context")
+        self.assertContains(response, "Open loop")
+        self.assertContains(response, "Niet doen")
+        self.assertContains(response, "Volgende stap")
+        self.assertContains(response, "Betrouwbaarheid")
+        self.assertContains(
+            response,
+            "Kies een gesprek om Buddy-context te zien.",
+        )
+        self.assertContains(
+            response,
+            "Nog geen actieve thread geselecteerd.",
+        )
         self.assertContains(response, "Buddy adviseert")
         self.assertContains(response, "De operator beslist")
-        self.assertContains(response, "Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.")
+        self.assertContains(response, "Geen automatische actie.")
+        self.assertContains(
+            response,
+            "Nog geen gesprek geselecteerd. "
+            "Kies een gesprek om follow-up status vast te leggen.",
+        )
+        self.assertNotContains(response, "Verstuur nu")
+        self.assertNotContains(response, "sendtrigger")
+        self.assertNotContains(response, "cashflow.adultadsuite.com")
         self.assertTrue(response.context["focus_mode"])
         self.assertIsNone(response.context["selected_thread"])
 

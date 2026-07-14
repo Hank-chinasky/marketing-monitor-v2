@@ -32,7 +32,19 @@ class AdultAdSuiteTriggersV0Tests(TestCase):
         self.assertContains(response, "Cooldown voorbeeld")
         self.assertContains(response, "VIP koper")
         self.assertContains(response, "Datakwaliteit voorbeeld")
+        self.assertContains(response, "Buddy")
+        self.assertContains(response, "Buddy status")
+        self.assertContains(response, "Waarom nu")
+        self.assertContains(response, "Laatste context")
+        self.assertContains(response, "Open loop")
+        self.assertContains(response, "Niet doen")
+        self.assertContains(response, "Volgende stap")
+        self.assertContains(response, "Betrouwbaarheid")
+        self.assertContains(response, "Geen generieke trigger sturen")
         self.assertContains(response, reverse("chat-hub"))
+
+        html = response.content.decode()
+        self.assertGreaterEqual(html.count("Buddy status"), 6)
 
     def test_adultadsuite_triggers_preview_page_has_no_live_send_or_legacy_hooks(self):
         response = self.client.get(reverse("adultadsuite-triggers"))
@@ -45,7 +57,9 @@ class AdultAdSuiteTriggersV0Tests(TestCase):
         self.assertNotIn("bulk verzenden", html)
         self.assertNotIn("bulk-send", html)
         self.assertNotIn("sendtrigger", html)
+        self.assertNotIn("trigger-send", html)
         self.assertNotIn("triggerqueue", html)
+        self.assertNotIn("live-send", html)
 
     def test_adultadsuite_triggers_requires_login(self):
         self.client.logout()
