@@ -107,6 +107,33 @@
         .chat-thread-form label {
             font-weight: 600;
         }
+        .chat-buddy-surface {
+            border-color: #7c3aed;
+            background: #f5f3ff;
+        }
+        .chat-buddy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .chat-buddy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.55rem;
+            margin-top: 0.65rem;
+        }
+        .chat-buddy-item {
+            border: 1px solid #ddd6fe;
+            border-radius: 8px;
+            padding: 0.6rem;
+            background: rgba(255, 255, 255, 0.72);
+        }
+        .chat-buddy-item strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
     </style>
 
     <div class="panel" style="margin-bottom:0.5rem; padding:0.65rem 0.75rem;">
@@ -301,55 +328,59 @@
         </details>
     {% endif %}
 
-    {% if focus_mode %}
-        <div class="panel" style="margin-bottom:0.75rem; border-color:#7c3aed; background:#f5f3ff;">
-            <h3 style="margin-top:0;">Buddy Context</h3>
-            <div class="shared-core-item">
-                <strong>Waar moet ik op letten?</strong>
-                <p style="margin-bottom:0;">Bekijk eerst de laatste context, open loops en mogelijke opvolgstap voordat je antwoordt.</p>
+    <div class="panel chat-buddy-surface" style="margin-bottom:0.75rem;">
+        <div class="chat-buddy-header">
+            <h3 style="margin:0;">Buddy Context Surface</h3>
+            <span class="badge badge-blue">Buddy status: {% if selected_thread %}Warme lopende follow-up{% else %}Kies gesprek{% endif %}</span>
+        </div>
+
+        <div class="chat-buddy-grid">
+            <div class="chat-buddy-item">
+                <strong>Waarom nu</strong>
+                {% if selected_thread %}
+                    <p style="margin-bottom:0;">Recente context, open loop en bestaande persoonlijke lijn vragen gecontroleerde opvolging.</p>
+                {% else %}
+                    <p style="margin-bottom:0;">Kies een gesprek om Buddy-context te zien.</p>
+                {% endif %}
             </div>
-            <div class="shared-core-item">
+            <div class="chat-buddy-item">
                 <strong>Laatste context</strong>
                 {% if selected_thread %}
-                    <p style="margin-bottom:0;">
-                        {{ latest_handoff_scan.summary|linebreaksbr }}
-                    </p>
+                    <p style="margin-bottom:0;">{{ latest_handoff_scan.summary|linebreaksbr }}</p>
                 {% else %}
-                    <p style="margin-bottom:0;">Nog geen specifiek gesprek geselecteerd. Open of kies een gesprek om Buddy-context te gebruiken.</p>
+                    <p style="margin-bottom:0;">Nog geen actieve thread geselecteerd.</p>
                 {% endif %}
             </div>
-            <div class="shared-core-item">
-                <strong>Gesprek/contextstatus</strong>
+            <div class="chat-buddy-item">
+                <strong>Open loop</strong>
+                {% if selected_thread and selected_thread.open_loop %}
+                    <p style="margin-bottom:0;">{{ selected_thread.open_loop|linebreaksbr }}</p>
+                {% else %}
+                    <p style="margin-bottom:0;">Geen open loop zichtbaar.</p>
+                {% endif %}
+            </div>
+            <div class="chat-buddy-item">
+                <strong>Niet doen</strong>
+                <p style="margin-bottom:0;">Geen generieke trigger sturen. Niet resetten of opgebouwde toon breken.</p>
+            </div>
+            <div class="chat-buddy-item">
+                <strong>Volgende stap</strong>
                 {% if selected_thread %}
-                    <p style="margin-bottom:0;">
-                        Status: {{ selected_thread.get_status_display }} · Bron: {{ selected_thread.get_source_system_display }}
-                    </p>
+                    <p style="margin-bottom:0;">{{ next_step_scan|linebreaksbr }}</p>
                 {% else %}
-                    <p style="margin-bottom:0;">Nog geen specifiek gesprek geselecteerd.</p>
+                    <p style="margin-bottom:0;">Selecteer eerst een gesprek.</p>
                 {% endif %}
             </div>
-            <div class="shared-core-item">
-                <strong>Operator focus</strong>
-                <p style="margin-bottom:0;">Werk één gesprek of opvolgstap bewust af. Niet tegelijk jagen op te veel signalen.</p>
-            </div>
-            <div class="shared-core-item">
-                <strong>Follow-up hint</strong>
-                <p style="margin-bottom:0;">Let op open vragen, bijna-betaalmomenten, terugkerende klanten en gesprekken die niet mogen afkoelen.</p>
-            </div>
-            <div class="shared-core-item">
-                <strong>Revenue moment</strong>
-                {% if selected_thread %}
-                    <p style="margin-bottom:0;">Volgende stap: {{ next_step_scan|linebreaksbr }}</p>
-                {% else %}
-                    <p style="margin-bottom:0;">Zoek naar een natuurlijk moment voor terugkeer, verlenging, bestelling of vervolggesprek.</p>
-                {% endif %}
-            </div>
-            <div class="shared-core-item">
-                <strong>Safety boundary</strong>
-                <p style="margin-bottom:0;">Buddy adviseert. De operator beslist. Geen automatische verzending, geen automatische triggers en geen externe koppelingen actief.</p>
+            <div class="chat-buddy-item">
+                <strong>Betrouwbaarheid</strong>
+                <p style="margin-bottom:0;">Demo-context / menselijk checken.</p>
             </div>
         </div>
-    {% endif %}
+
+        <p class="muted" style="margin-bottom:0; margin-top:0.65rem;">
+            Buddy adviseert. De operator beslist. Geen automatische actie.
+        </p>
+    </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Templates v1</h3>
