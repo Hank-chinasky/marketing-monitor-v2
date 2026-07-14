@@ -88,6 +88,8 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertIn("max-width: 1600px;", html)
         self.assertIn('"context work"', html)
         self.assertIn('"operations operations"', html)
+        self.assertIn("@media (min-width: 1101px)", html)
+        self.assertIn("position: sticky;", html)
         self.assertIn('"messages buddy"', html)
         self.assertIn('"followup buddy"', html)
         self.assertIn("chat-follow-up-panel", html)
