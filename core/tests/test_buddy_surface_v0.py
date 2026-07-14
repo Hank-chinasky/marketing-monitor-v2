@@ -82,10 +82,29 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertNotIn("Buddy-slot", html)
         self.assertNotIn("Intern reply draft voorstel", html)
         self.assertIn(
+            "grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);",
+            html,
+        )
+        self.assertIn("max-width: 1600px;", html)
+        self.assertIn('"context work"', html)
+        self.assertIn('"operations operations"', html)
+        self.assertIn('"messages buddy"', html)
+        self.assertIn('"followup buddy"', html)
+        self.assertIn("chat-follow-up-panel", html)
+        self.assertLess(
+            html.index("Buddy Context Surface"),
+            html.index("Follow-up status"),
+        )
+        self.assertIn("@media (max-width: 1100px)", html)
+        self.assertIn("@media (max-width: 720px)", html)
+        self.assertIn("Context & veiligheid", html)
+        self.assertIn("Operationele details", html)
+        self.assertIn("Templates v1", html)
+        self.assertIn("Sessie & overdracht", html)
+        self.assertNotIn(
             "grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);",
             html,
         )
-        self.assertIn("@media (max-width: 900px)", html)
         self.assertNotIn("Verstuur nu", html)
         self.assertNotIn("bulk verzenden", html)
         self.assertNotIn("sendtrigger", html)
