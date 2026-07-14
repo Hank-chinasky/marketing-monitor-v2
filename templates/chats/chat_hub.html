@@ -15,6 +15,25 @@
         </p>
     </div>
 
+    <div class="panel chat-compact-context" style="margin-bottom:0.75rem;">
+        <h3 style="margin-top:0;">Klantcontext</h3>
+        {% if selected_thread %}
+            <p style="margin-bottom:0;">
+                <strong>{{ selected_thread.creator.display_name }}</strong><br>
+                <span class="muted">
+                    {{ selected_thread.creator.get_customer_stage_display }}
+                    {% if selected_thread.channel %}
+                        · {{ selected_thread.channel.get_platform_display }} / {{ selected_thread.channel.handle }}
+                    {% endif %}
+                </span>
+            </p>
+        {% else %}
+            <p class="muted" style="margin-bottom:0;">Selecteer een gesprek voor klantcontext.</p>
+        {% endif %}
+    </div>
+
+    <details class="panel chat-secondary-details">
+        <summary>Context & veiligheid</summary>
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Assignment status</h3>
         <p><strong>Status:</strong> {{ assignment_context.status_label }}</p>
@@ -77,14 +96,36 @@
             {% endfor %}
         </ul>
     </div>
+    </details>
 {% endblock %}
 
 {% block center_pane %}
     <style>
         .page > h1:first-child,
         .page > h1:first-child + .muted,
-        .shared-core-pane[aria-label="Werkvlak kolom"] > h2:first-child {
+        .shared-core-pane > h2:first-child {
             display: none;
+        }
+        .page {
+            max-width: 1600px;
+        }
+        .shared-core-shell {
+            grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+            grid-template-areas:
+                "context work"
+                "operations operations";
+            gap: 0.75rem;
+            align-items: start;
+        }
+        .shared-core-pane[aria-label="Policy en context kolom"] {
+            grid-area: context;
+        }
+        .shared-core-pane[aria-label="Werkvlak kolom"] {
+            grid-area: work;
+        }
+        .shared-core-pane[aria-label="Handoff kolom"] {
+            grid-area: operations;
+            overflow: visible;
         }
         .chat-workfloor-sr-only {
             position: absolute;
@@ -109,7 +150,10 @@
         }
         .chat-message-buddy-layout {
             display: grid;
-            grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+            grid-template-areas:
+                "messages buddy"
+                "followup buddy";
             gap: 0.75rem;
             align-items: start;
             margin-bottom: 0.75rem;
@@ -117,6 +161,7 @@
         .chat-message-column {
             display: grid;
             gap: 0.75rem;
+            grid-area: messages;
             min-width: 0;
         }
         .chat-message-panel,
@@ -129,7 +174,9 @@
             margin: 0;
             min-width: 0;
             position: static;
+            grid-area: buddy;
         }
+        .chat-follow-up-panel { grid-area: followup; margin-bottom: 0 !important; }
         .chat-buddy-header {
             display: flex;
             justify-content: space-between;
@@ -154,9 +201,72 @@
             display: block;
             margin-bottom: 0.25rem;
         }
-        @media (max-width: 900px) {
+        .chat-buddy-more > summary,
+        .chat-secondary-details > summary {
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .chat-buddy-more[open] > summary,
+        .chat-secondary-details[open] > summary {
+            margin-bottom: 0.6rem;
+        }
+        .chat-secondary-details > .panel:first-of-type {
+            margin-top: 0.75rem;
+        }
+        .chat-compact-context p {
+            line-height: 1.45;
+        }
+        @media (min-width: 1101px) {
+            .shared-core-pane[aria-label="Policy en context kolom"] {
+                position: sticky;
+                top: 0.75rem;
+                max-height: calc(100vh - 1.5rem);
+                overflow: auto;
+            }
+        }
+        @media (max-width: 1100px) {
+            .page {
+                max-width: none;
+                padding: 1rem;
+            }
+            .shared-core-shell {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-areas:
+                    "work"
+                    "context"
+                    "operations";
+                min-height: auto;
+            }
+            .chat-message-buddy-layout {
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+            }
+        }
+        @media (max-width: 720px) {
+            .page {
+                padding: 0.6rem;
+            }
+            .shared-core-pane {
+                padding: 0.65rem;
+                overflow: visible;
+            }
             .chat-message-buddy-layout {
                 grid-template-columns: minmax(0, 1fr);
+                grid-template-areas:
+                    "messages"
+                    "buddy"
+                    "followup";
+            }
+            .chat-workfloor-top,
+            .chat-thread-form {
+                align-items: stretch;
+            }
+            .chat-thread-form {
+                width: 100%;
+            }
+            .chat-thread-form select,
+            .chat-thread-form button {
+                width: 100%;
+                max-width: none !important;
             }
         }
     </style>
@@ -258,14 +368,14 @@
                         <p style="margin-bottom:0;">Kies een gesprek om Buddy-context te zien.</p>
                     {% endif %}
                 </div>
-                <div class="chat-buddy-item">
-                    <strong>Laatste context</strong>
+                <details class="chat-buddy-item chat-buddy-more">
+                    <summary>Laatste context</summary>
                     {% if selected_thread %}
                         <p style="margin-bottom:0;">{{ latest_handoff_scan.summary|linebreaksbr }}</p>
                     {% else %}
                         <p style="margin-bottom:0;">Nog geen actieve thread geselecteerd.</p>
                     {% endif %}
-                </div>
+                </details>
                 <div class="chat-buddy-item">
                     <strong>Open loop</strong>
                     {% if selected_thread and selected_thread.open_loop %}
@@ -286,20 +396,19 @@
                         <p style="margin-bottom:0;">Selecteer eerst een gesprek.</p>
                     {% endif %}
                 </div>
-                <div class="chat-buddy-item">
-                    <strong>Betrouwbaarheid</strong>
+                <details class="chat-buddy-item chat-buddy-more">
+                    <summary>Betrouwbaarheid</summary>
                     <p style="margin-bottom:0;">Demo-context / menselijk checken.</p>
-                </div>
+                </details>
             </div>
 
             <p class="muted" style="margin-bottom:0; margin-top:0.65rem;">
                 Buddy adviseert. De operator beslist. Geen automatische actie.
             </p>
         </aside>
-    </div>
 
     {% if focus_mode %}
-        <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
+        <div class="panel chat-follow-up-panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
             <h3 style="margin-top:0;">Follow-up status</h3>
             <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
 
@@ -352,7 +461,7 @@
 
         </div>
     {% else %}
-        <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
+        <div class="panel chat-follow-up-panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
             <h3 style="margin-top:0;">Follow-up status</h3>
             <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
 
@@ -407,6 +516,7 @@
             </p>
         </div>
     {% endif %}
+    </div>
 
     {% if selected_thread and selected_thread.thread_summary %}
         <details class="panel" style="margin-bottom:0.75rem;">
@@ -417,8 +527,8 @@
         </details>
     {% endif %}
 
-    <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Templates v1</h3>
+    <details class="panel chat-secondary-details" style="margin-bottom:0.75rem;">
+        <summary>Templates v1</summary>
         <form method="get" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:0.5rem; align-items:end;">
             {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
             <input type="hidden" name="thread" value="{% if selected_thread %}{{ selected_thread.pk }}{% endif %}">
@@ -461,7 +571,7 @@
                 <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
             </div>
         {% endif %}
-    </div>
+    </details>
 
     {% if saved %}
         <div class="success-panel">Handoff opgeslagen. Laatste stand en volgende stap zijn bijgewerkt.</div>
@@ -474,6 +584,8 @@
     {% endif %}
 
     {% if selected_thread %}
+        <details class="panel chat-secondary-details" style="margin-bottom:0.75rem;">
+            <summary>Sessie & overdracht</summary>
         <div class="grid" style="margin-bottom:0.75rem;">
             <div class="panel">
                 <h3 style="margin-top:0;">Sessie starten</h3>
@@ -525,10 +637,13 @@
             </div>
             <div class="muted" style="margin-top:0.5rem;">Deze waarde wordt bijgewerkt door de handoff-afsluitmodule.</div>
         </div>
+        </details>
     {% endif %}
 {% endblock %}
 
 {% block right_pane %}
+    <details class="panel chat-secondary-details">
+        <summary>Operationele details</summary>
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Laatste handoff</h3>
         {% if selected_thread %}
@@ -652,5 +767,6 @@
             <p class="muted">Selecteer eerst een thread om approvals te zien of aan te maken.</p>
         {% endif %}
     </div>
+    </details>
 
 {% endblock %}
