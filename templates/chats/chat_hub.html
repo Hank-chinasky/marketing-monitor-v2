@@ -7,6 +7,7 @@
 {% block right_pane_title %}Handoff · Run log · Open issues · Quick actions{% endblock %}
 
 {% block left_pane %}
+    <div class="chat-sticky-context">
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Mag ik hier werken?</h3>
         <p>
@@ -97,6 +98,7 @@
         </ul>
     </div>
     </details>
+    </div>
 {% endblock %}
 
 {% block center_pane %}
@@ -113,12 +115,14 @@
             grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
             grid-template-areas:
                 "context work"
-                "operations operations";
+                ". operations";
             gap: 0.75rem;
             align-items: start;
         }
         .shared-core-pane[aria-label="Policy en context kolom"] {
             grid-area: context;
+            align-self: stretch;
+            overflow: visible;
         }
         .shared-core-pane[aria-label="Werkvlak kolom"] {
             grid-area: work;
@@ -217,7 +221,7 @@
             line-height: 1.45;
         }
         @media (min-width: 1101px) {
-            .shared-core-pane[aria-label="Policy en context kolom"] {
+            .chat-sticky-context {
                 position: sticky;
                 top: 0.75rem;
                 max-height: calc(100vh - 1.5rem);
