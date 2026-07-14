@@ -75,7 +75,17 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertContains(response, "Geen generieke trigger sturen")
 
         html = response.content.decode()
+        self.assertEqual(html.count('id="chat-buddy-context"'), 1)
+        self.assertEqual(html.count("Buddy Context Surface"), 1)
+        self.assertIn('data-chat-layout="messages-buddy"', html)
         self.assertLess(html.index("Berichten"), html.index("Buddy Context Surface"))
+        self.assertNotIn("Buddy-slot", html)
+        self.assertNotIn("Intern reply draft voorstel", html)
+        self.assertIn(
+            "grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);",
+            html,
+        )
+        self.assertIn("@media (max-width: 900px)", html)
         self.assertNotIn("Verstuur nu", html)
         self.assertNotIn("bulk verzenden", html)
         self.assertNotIn("sendtrigger", html)
