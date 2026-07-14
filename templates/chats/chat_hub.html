@@ -4,7 +4,7 @@
 {% block workspace_subtitle %}{% endblock %}
 {% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
 {% block center_pane_title %}<span class="chat-workfloor-sr-only">Werkvlak</span>{% endblock %}
-{% block right_pane_title %}Handoff · Run log · Open issues · Quick actions · Buddy-slot{% endblock %}
+{% block right_pane_title %}Handoff · Run log · Open issues · Quick actions{% endblock %}
 
 {% block left_pane %}
     <div class="panel" style="margin-bottom:0.75rem;">
@@ -107,9 +107,28 @@
         .chat-thread-form label {
             font-weight: 600;
         }
+        .chat-message-buddy-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+            gap: 0.75rem;
+            align-items: start;
+            margin-bottom: 0.75rem;
+        }
+        .chat-message-column {
+            display: grid;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+        .chat-message-panel,
+        .chat-message-empty-alert {
+            margin-bottom: 0;
+        }
         .chat-buddy-surface {
             border-color: #7c3aed;
             background: #f5f3ff;
+            margin: 0;
+            min-width: 0;
+            position: static;
         }
         .chat-buddy-header {
             display: flex;
@@ -120,7 +139,7 @@
         }
         .chat-buddy-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: minmax(0, 1fr);
             gap: 0.55rem;
             margin-top: 0.65rem;
         }
@@ -129,10 +148,16 @@
             border-radius: 8px;
             padding: 0.6rem;
             background: rgba(255, 255, 255, 0.72);
+            overflow-wrap: anywhere;
         }
         .chat-buddy-item strong {
             display: block;
             margin-bottom: 0.25rem;
+        }
+        @media (max-width: 900px) {
+            .chat-message-buddy-layout {
+                grid-template-columns: minmax(0, 1fr);
+            }
         }
     </style>
 
@@ -170,41 +195,108 @@
         </div>
     </div>
 
-    {% if selected_thread %}
-        <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Berichten</h3>
-            <p class="muted" style="margin-top:0;">Read-only berichtenstroom uit de geselecteerde thread.</p>
-            <ul class="clean">
-                {% for message in conversation_messages %}
-                    <li style="margin-bottom:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid #e5e7eb;">
-                        <div>
-                            {% if message.direction == "inbound" %}
-                                <span class="badge">Klant</span>
-                            {% elif message.direction == "outbound" %}
-                                <span class="badge">Operator</span>
-                            {% else %}
-                                <span class="badge">Systeem</span>
-                            {% endif %}
-                            <strong>{{ message.sender_label|default:"-" }}</strong>
-                            <span class="muted">· {{ message.occurred_at }}</span>
-                        </div>
-                        <div style="margin-top:0.35rem;">{{ message.body|linebreaksbr }}</div>
-                    </li>
-                {% empty %}
-                    <li class="muted">Nog geen berichten opgeslagen voor dit gesprek.</li>
-                {% endfor %}
-            </ul>
+    <div
+        class="chat-message-buddy-layout"
+        data-chat-layout="messages-buddy"
+    >
+        <div class="chat-message-column">
+            {% if selected_thread %}
+                <div class="panel chat-message-panel">
+                    <h3 style="margin-top:0;">Berichten</h3>
+                    <p class="muted" style="margin-top:0;">Read-only berichtenstroom uit de geselecteerde thread.</p>
+                    <ul class="clean">
+                        {% for message in conversation_messages %}
+                            <li style="margin-bottom:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid #e5e7eb;">
+                                <div>
+                                    {% if message.direction == "inbound" %}
+                                        <span class="badge">Klant</span>
+                                    {% elif message.direction == "outbound" %}
+                                        <span class="badge">Operator</span>
+                                    {% else %}
+                                        <span class="badge">Systeem</span>
+                                    {% endif %}
+                                    <strong>{{ message.sender_label|default:"-" }}</strong>
+                                    <span class="muted">· {{ message.occurred_at }}</span>
+                                </div>
+                                <div style="margin-top:0.35rem;">{{ message.body|linebreaksbr }}</div>
+                            </li>
+                        {% empty %}
+                            <li class="muted">Nog geen berichten opgeslagen voor dit gesprek.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="panel chat-message-panel">
+                    <h3 style="margin-top:0;">Berichten</h3>
+                    <p class="muted">Kies een gesprek om berichten te bekijken.</p>
+                </div>
+                <div class="panel chat-message-empty-alert">
+                    <span class="badge badge-yellow">alert</span> Selecteer een thread om het werkvlak te starten.
+                </div>
+            {% endif %}
         </div>
 
-    {% else %}
-        <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Berichten</h3>
-            <p class="muted">Kies een gesprek om berichten te bekijken.</p>
-        </div>
-        <div class="panel" style="margin-bottom:0.75rem;">
-            <span class="badge badge-yellow">alert</span> Selecteer een thread om het werkvlak te starten.
-        </div>
-    {% endif %}
+        <aside
+            id="chat-buddy-context"
+            class="panel chat-buddy-surface"
+            aria-labelledby="chat-buddy-context-title"
+        >
+            <div class="chat-buddy-header">
+                <h3 id="chat-buddy-context-title" style="margin:0;">Buddy Context Surface</h3>
+                <span class="badge badge-blue">
+                    Buddy status:
+                    {% if selected_thread %}Warme lopende follow-up{% else %}Kies gesprek{% endif %}
+                </span>
+            </div>
+
+            <div class="chat-buddy-grid">
+                <div class="chat-buddy-item">
+                    <strong>Waarom nu</strong>
+                    {% if selected_thread %}
+                        <p style="margin-bottom:0;">Recente context, open loop en bestaande persoonlijke lijn vragen gecontroleerde opvolging.</p>
+                    {% else %}
+                        <p style="margin-bottom:0;">Kies een gesprek om Buddy-context te zien.</p>
+                    {% endif %}
+                </div>
+                <div class="chat-buddy-item">
+                    <strong>Laatste context</strong>
+                    {% if selected_thread %}
+                        <p style="margin-bottom:0;">{{ latest_handoff_scan.summary|linebreaksbr }}</p>
+                    {% else %}
+                        <p style="margin-bottom:0;">Nog geen actieve thread geselecteerd.</p>
+                    {% endif %}
+                </div>
+                <div class="chat-buddy-item">
+                    <strong>Open loop</strong>
+                    {% if selected_thread and selected_thread.open_loop %}
+                        <p style="margin-bottom:0;">{{ selected_thread.open_loop|linebreaksbr }}</p>
+                    {% else %}
+                        <p style="margin-bottom:0;">Geen open loop zichtbaar.</p>
+                    {% endif %}
+                </div>
+                <div class="chat-buddy-item">
+                    <strong>Niet doen</strong>
+                    <p style="margin-bottom:0;">Geen generieke trigger sturen. Niet resetten of opgebouwde toon breken.</p>
+                </div>
+                <div class="chat-buddy-item">
+                    <strong>Volgende stap</strong>
+                    {% if selected_thread %}
+                        <p style="margin-bottom:0;">{{ next_step_scan|linebreaksbr }}</p>
+                    {% else %}
+                        <p style="margin-bottom:0;">Selecteer eerst een gesprek.</p>
+                    {% endif %}
+                </div>
+                <div class="chat-buddy-item">
+                    <strong>Betrouwbaarheid</strong>
+                    <p style="margin-bottom:0;">Demo-context / menselijk checken.</p>
+                </div>
+            </div>
+
+            <p class="muted" style="margin-bottom:0; margin-top:0.65rem;">
+                Buddy adviseert. De operator beslist. Geen automatische actie.
+            </p>
+        </aside>
+    </div>
 
     {% if focus_mode %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
@@ -258,9 +350,6 @@
                 <p class="muted">Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.</p>
             {% endif %}
 
-            <p class="muted" style="margin-bottom:0; margin-top:0.75rem;">
-                Buddy adviseert. De operator beslist. Geen automatische ranking, trigger of verzending.
-            </p>
         </div>
     {% else %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
@@ -327,60 +416,6 @@
             </p>
         </details>
     {% endif %}
-
-    <div class="panel chat-buddy-surface" style="margin-bottom:0.75rem;">
-        <div class="chat-buddy-header">
-            <h3 style="margin:0;">Buddy Context Surface</h3>
-            <span class="badge badge-blue">Buddy status: {% if selected_thread %}Warme lopende follow-up{% else %}Kies gesprek{% endif %}</span>
-        </div>
-
-        <div class="chat-buddy-grid">
-            <div class="chat-buddy-item">
-                <strong>Waarom nu</strong>
-                {% if selected_thread %}
-                    <p style="margin-bottom:0;">Recente context, open loop en bestaande persoonlijke lijn vragen gecontroleerde opvolging.</p>
-                {% else %}
-                    <p style="margin-bottom:0;">Kies een gesprek om Buddy-context te zien.</p>
-                {% endif %}
-            </div>
-            <div class="chat-buddy-item">
-                <strong>Laatste context</strong>
-                {% if selected_thread %}
-                    <p style="margin-bottom:0;">{{ latest_handoff_scan.summary|linebreaksbr }}</p>
-                {% else %}
-                    <p style="margin-bottom:0;">Nog geen actieve thread geselecteerd.</p>
-                {% endif %}
-            </div>
-            <div class="chat-buddy-item">
-                <strong>Open loop</strong>
-                {% if selected_thread and selected_thread.open_loop %}
-                    <p style="margin-bottom:0;">{{ selected_thread.open_loop|linebreaksbr }}</p>
-                {% else %}
-                    <p style="margin-bottom:0;">Geen open loop zichtbaar.</p>
-                {% endif %}
-            </div>
-            <div class="chat-buddy-item">
-                <strong>Niet doen</strong>
-                <p style="margin-bottom:0;">Geen generieke trigger sturen. Niet resetten of opgebouwde toon breken.</p>
-            </div>
-            <div class="chat-buddy-item">
-                <strong>Volgende stap</strong>
-                {% if selected_thread %}
-                    <p style="margin-bottom:0;">{{ next_step_scan|linebreaksbr }}</p>
-                {% else %}
-                    <p style="margin-bottom:0;">Selecteer eerst een gesprek.</p>
-                {% endif %}
-            </div>
-            <div class="chat-buddy-item">
-                <strong>Betrouwbaarheid</strong>
-                <p style="margin-bottom:0;">Demo-context / menselijk checken.</p>
-            </div>
-        </div>
-
-        <p class="muted" style="margin-bottom:0; margin-top:0.65rem;">
-            Buddy adviseert. De operator beslist. Geen automatische actie.
-        </p>
-    </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Templates v1</h3>
@@ -618,46 +653,4 @@
         {% endif %}
     </div>
 
-    <div class="panel">
-        <h3 style="margin-top:0;">Buddy-slot</h3>
-        <p><strong>Context prefill:</strong></p>
-        <ul class="clean">
-            {% for item in buddy_assist.context_prefill %}
-                <li><strong>{{ item.label }}:</strong> {{ item.value|linebreaksbr }}</li>
-            {% empty %}
-                <li class="muted">Geen context prefill beschikbaar.</li>
-            {% endfor %}
-        </ul>
-        <div style="margin:0.75rem 0; padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc;">
-            <p style="margin-top:0;"><strong>Intern reply draft voorstel</strong></p>
-            {% if operator_reply_draft.reply_text %}
-                <p><strong>Concept:</strong><br>{{ operator_reply_draft.reply_text|linebreaksbr }}</p>
-            {% else %}
-                <p class="muted">Nog geen intern reply draft voorstel beschikbaar.</p>
-            {% endif %}
-            <ul class="clean">
-                <li><strong>Language:</strong> {{ operator_reply_draft.language }}</li>
-                <li><strong>Source:</strong> {{ operator_reply_draft.source }}</li>
-                <li><strong>Human review:</strong> {{ operator_reply_draft.requires_human_review|yesno:"verplicht,niet verplicht" }}</li>
-                <li><strong>Safety note:</strong> {{ operator_reply_draft.safety_note }}</li>
-            </ul>
-            <p class="muted" style="margin-bottom:0;">Read-only operatorconcept; de operator blijft verantwoordelijk voor handmatige controle in de bronchat.</p>
-        </div>
-        <p><strong>Korte threadsamenvatting:</strong><br>{{ buddy_assist.thread_summary|linebreaksbr }}</p>
-        <p><strong>Ontbrekende velden/contextgaten:</strong></p>
-        <ul class="clean">
-            {% for gap in buddy_assist.missing_context %}
-                <li>{{ gap }}</li>
-            {% empty %}
-                <li class="muted">Geen directe contextgaten gedetecteerd.</li>
-            {% endfor %}
-        </ul>
-        <p><strong>Voorgestelde volgende stap:</strong><br>{{ buddy_assist.next_step|linebreaksbr }}</p>
-        <p><strong>Compacte sessiebrief:</strong><br>{{ buddy_assist.session_brief|linebreaksbr }}</p>
-        {% if buddy_assist.has_handoff %}
-            <p><strong>Gecondenseerde laatste handoff:</strong><br>{{ buddy_assist.condensed_handoff|linebreaksbr }}</p>
-        {% else %}
-            <p class="muted"><strong>Gecondenseerde laatste handoff:</strong> Niet beschikbaar.</p>
-        {% endif %}
-    </div>
 {% endblock %}
