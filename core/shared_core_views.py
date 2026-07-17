@@ -112,10 +112,24 @@ def _append_context_prefill_item(items, label: str, value, *, limit: int = 220) 
     items.append({"label": label, "value": _condense_text(value, limit=limit)})
 
 
-def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
+def build_buddy_assist_snapshot(
+    selected_thread,
+    completeness_alerts,
+    follow_up_status=None,
+):
     if not selected_thread:
         return {
-            "thread_summary": "Geen actieve thread geselecteerd.",
+            "status_label": "Kies gesprek",
+            "why_now": "Kies een gesprek om Buddy-context te zien.",
+            "thread_summary": "Nog geen actieve thread geselecteerd.",
+            "profile_tone": "Geen profieltoon beschikbaar zonder thread.",
+            "profile_tone_source": "Ontbreekt",
+            "open_loop": "Geen actieve thread geselecteerd.",
+            "do_not_do": "Start geen operatoractie zonder threadcontext.",
+            "recommended_next_action": "Selecteer eerst een thread.",
+            "reliability_label": "Laag",
+            "reliability_badge": "badge-red",
+            "reliability_reason": "Thread en broncontext ontbreken.",
             "missing_context": ["Thread ontbreekt in selectie."],
             "next_step": "Selecteer eerst een thread.",
             "session_brief": "Geen sessiebrief beschikbaar zonder thread.",
@@ -124,9 +138,7 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
             "context_prefill": [],
         }
 
-    missing_context = []
-    if completeness_alerts:
-        missing_context.extend(completeness_alerts)
+    missing_context = list(completeness_alerts or [])
 
     if is_placeholder_noise(selected_thread.thread_summary):
         missing_context.append("Threadsamenvatting ontbreekt.")
@@ -136,7 +148,163 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
     condensed_handoff = ""
     has_handoff = not is_placeholder_noise(selected_thread.last_handoff_note)
     if has_handoff:
-        condensed_handoff = _condense_text(selected_thread.last_handoff_note, limit=220)
+        condensed_handoff = _condense_text(
+            selected_thread.last_handoff_note,
+            limit=220,
+        )
+
+    profile_tone = _condense_text(
+        selected_thread.last_approved_reply_style,
+        limit=180,
+    )
+    profile_tone_source = "Laatste goedgekeurde replystijl"
+
+    profile_tone_available = bool(profile_tone)
+    if not profile_tone_available:
+        profile_tone = "Profieltoon ontbreekt; eerst handmatig bevestigen."
+        profile_tone_source = "Ontbreekt"
+        missing_context.append("Actieve profieltoon ontbreekt.")
+
+    follow_up_why = {
+        ThreadFollowUpStatus.Status.WARM: (
+            "Handmatig als warm gemarkeerd; pak de opgebouwde lijn gecontroleerd op."
+        ),
+        ThreadFollowUpStatus.Status.OPEN_LOOP: (
+            "Er staat een open loop klaar die opvolging nodig heeft."
+        ),
+        ThreadFollowUpStatus.Status.LATER_TRIGGEREN: (
+            "Later triggeren is vastgelegd; controleer timing en context vóór actie."
+        ),
+        ThreadFollowUpStatus.Status.AFGEKOELD: (
+            "Het gesprek is afgekoeld; forceer geen generieke heractivatie."
+        ),
+        ThreadFollowUpStatus.Status.REVIEW_NODIG: (
+            "Operatorreview is vastgelegd voordat een vervolgstap wordt gekozen."
+        ),
+    }
+
+    thread_status_labels = {
+        ConversationThread.Status.ACTIVE: "Actief gesprek",
+        ConversationThread.Status.WAITING_ON_OPERATOR: "Actieve follow-up",
+        ConversationThread.Status.WAITING_ON_CUSTOMER: "Wacht op klant",
+        ConversationThread.Status.HANDOFF_REQUIRED: "Review nodig",
+        ConversationThread.Status.CLOSED: "Afgesloten",
+    }
+
+    if follow_up_status:
+        status_label = follow_up_status.get_status_display()
+    else:
+        status_label = thread_status_labels.get(
+            selected_thread.status,
+            selected_thread.get_status_display(),
+        )
+
+    if selected_thread.risk_flags:
+        why_now = (
+            "Risicosignaal aanwezig; controleer eerst context, bron en policy."
+        )
+    elif follow_up_status:
+        why_now = follow_up_why.get(
+            follow_up_status.status,
+            "Handmatige follow-upstatus vraagt operatoraandacht.",
+        )
+    elif selected_thread.status == ConversationThread.Status.WAITING_ON_OPERATOR:
+        if not is_placeholder_noise(selected_thread.open_loop):
+            why_now = (
+                "De klant wacht op operatoropvolging en er staat een concrete "
+                "open loop klaar."
+            )
+        else:
+            why_now = (
+                "De klant wacht op operatoropvolging; leg eerst een concrete "
+                "vervolgstap vast."
+            )
+    elif selected_thread.status == ConversationThread.Status.WAITING_ON_CUSTOMER:
+        why_now = (
+            "De operatorlijn staat; wacht op klant en vermijd onnodig opnieuw benaderen."
+        )
+    elif selected_thread.status == ConversationThread.Status.HANDOFF_REQUIRED:
+        why_now = (
+            "De thread vraagt overdracht of review voordat de lijn wordt voortgezet."
+        )
+    elif selected_thread.status == ConversationThread.Status.CLOSED:
+        why_now = (
+            "De thread is gesloten; alleen heropenen met een expliciete reden."
+        )
+    elif not is_placeholder_noise(selected_thread.open_loop):
+        why_now = "Er staat een concrete vervolgstap klaar voor operatorreview."
+    else:
+        why_now = "Lees de context en bepaal handmatig of opvolging nodig is."
+
+    do_not_do_parts = []
+
+    if selected_thread.risk_flags:
+        do_not_do_parts.append(
+            "Niet handelen voordat risicosignalen handmatig zijn beoordeeld."
+        )
+
+    if not profile_tone_available:
+        do_not_do_parts.append(
+            "Niet generiek openen of een profieltoon verzinnen."
+        )
+
+    if not is_placeholder_noise(selected_thread.guardrails):
+        do_not_do_parts.append(
+            f"Guardrail: {_condense_text(selected_thread.guardrails, limit=180)}"
+        )
+
+    if not do_not_do_parts:
+        do_not_do_parts.append(
+            "Niet automatisch verzenden en de bestaande gesprekstrant niet resetten."
+        )
+
+    do_not_do = " ".join(do_not_do_parts)
+
+    open_loop = (
+        _condense_text(selected_thread.open_loop, limit=220)
+        or "Geen concrete open loop vastgelegd."
+    )
+
+    if selected_thread.risk_flags:
+        recommended_next_action = (
+            "Beoordeel eerst het risicosignaal en bevestig de betrouwbare context."
+        )
+    elif not is_placeholder_noise(selected_thread.open_loop):
+        recommended_next_action = _condense_text(
+            selected_thread.open_loop,
+            limit=220,
+        )
+    elif missing_context:
+        recommended_next_action = f"Vul eerst aan: {missing_context[0]}"
+    else:
+        recommended_next_action = (
+            "Lees de laatste berichten en leg een concrete vervolgstap vast."
+        )
+
+    missing_context = list(dict.fromkeys(missing_context))
+
+    if (
+        selected_thread.risk_flags
+        or not selected_thread.channel
+        or len(missing_context) >= 3
+    ):
+        reliability_label = "Laag"
+        reliability_badge = "badge-red"
+        reliability_reason = (
+            "Risico, ontbrekende bron of meerdere essentiële contextgaten."
+        )
+    elif missing_context:
+        reliability_label = "Middel"
+        reliability_badge = "badge-yellow"
+        reliability_reason = (
+            "Bruikbare context aanwezig, maar menselijke aanvulling blijft nodig."
+        )
+    else:
+        reliability_label = "Hoog"
+        reliability_badge = "badge-green"
+        reliability_reason = (
+            "Kerncontext, bron en profieltoon zijn aanwezig."
+        )
 
     context_prefill = []
     _append_context_prefill_item(
@@ -149,6 +317,7 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
         "Customer stage",
         selected_thread.creator.get_customer_stage_display(),
     )
+
     if selected_thread.channel:
         channel = selected_thread.channel
         _append_context_prefill_item(
@@ -156,12 +325,17 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
             "Channel",
             f"{channel.get_platform_display()} / {channel.handle}",
         )
-        _append_context_prefill_item(context_prefill, "Profile URL", channel.profile_url)
+        _append_context_prefill_item(
+            context_prefill,
+            "Profile URL",
+            channel.profile_url,
+        )
         _append_context_prefill_item(
             context_prefill,
             "Access notes",
             channel.access_profile_notes or channel.access_notes,
         )
+
     _append_context_prefill_item(
         context_prefill,
         "Guardrails",
@@ -179,11 +353,22 @@ def build_buddy_assist_snapshot(selected_thread, completeness_alerts):
     ]
 
     return {
-        "thread_summary": _condense_text(selected_thread.thread_summary, limit=220)
-        or "Nog geen threadsamenvatting beschikbaar.",
+        "status_label": status_label,
+        "why_now": why_now,
+        "thread_summary": (
+            _condense_text(selected_thread.thread_summary, limit=220)
+            or "Nog geen threadsamenvatting beschikbaar."
+        ),
+        "profile_tone": profile_tone,
+        "profile_tone_source": profile_tone_source,
+        "open_loop": open_loop,
+        "do_not_do": do_not_do,
+        "recommended_next_action": recommended_next_action,
+        "reliability_label": reliability_label,
+        "reliability_badge": reliability_badge,
+        "reliability_reason": reliability_reason,
         "missing_context": missing_context,
-        "next_step": _condense_text(selected_thread.open_loop, limit=220)
-        or "Nog geen volgende stap vastgelegd.",
+        "next_step": open_loop,
         "session_brief": " · ".join(session_brief_parts),
         "condensed_handoff": condensed_handoff,
         "has_handoff": has_handoff,
@@ -613,7 +798,18 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         access_state = self._build_access_state(selected_thread, assignment)
         latest_draft = get_latest_buddy_draft(selected_thread) if selected_thread else None
         completeness_alerts = self._build_completeness_alerts(selected_thread)
-        buddy_assist = build_buddy_assist_snapshot(selected_thread, completeness_alerts)
+
+        follow_up_status = None
+        if selected_thread:
+            follow_up_status = ThreadFollowUpStatus.objects.filter(
+                thread=selected_thread,
+            ).first()
+
+        buddy_assist = build_buddy_assist_snapshot(
+            selected_thread,
+            completeness_alerts,
+            follow_up_status=follow_up_status,
+        )
         chat_scan_context = self._build_chat_scan_context(selected_thread)
         conversation_messages = []
         if selected_thread:
@@ -681,12 +877,6 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 .filter(thread=selected_thread)
                 .order_by("-created_at", "-id")
             )
-
-        follow_up_status = None
-        if selected_thread:
-            follow_up_status = ThreadFollowUpStatus.objects.filter(
-                thread=selected_thread,
-            ).first()
 
         follow_up_form = {
             "status": follow_up_status.status if follow_up_status else "",

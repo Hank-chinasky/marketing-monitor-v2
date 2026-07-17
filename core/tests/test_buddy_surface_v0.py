@@ -11,6 +11,7 @@ from core.models import (
     CreatorChannel,
     Operator,
     OperatorAssignment,
+    ThreadFollowUpStatus,
 )
 
 
@@ -55,24 +56,55 @@ class BuddySurfaceV0Tests(TestCase):
             channel=self.channel,
             source_thread_id="buddy-surface-thread",
             status=ConversationThread.Status.WAITING_ON_OPERATOR,
+            thread_summary=(
+                "Warme persoonlijke lijn over werk, routes en dagelijkse situaties."
+            ),
             open_loop="Pak de warme persoonlijke lijn op.",
             guardrails="Niet pushen zonder context.",
             risk_flags="",
-            last_handoff_note="Gesprek niet resetten; toon is al opgebouwd.",
+            last_handoff_note=(
+                "Gesprek niet resetten; de persoonlijke toon is al opgebouwd."
+            ),
+            last_approved_reply_style="Vertrouwd, plagerig en persoonlijk.",
+        )
+        ThreadFollowUpStatus.objects.create(
+            thread=self.thread,
+            status=ThreadFollowUpStatus.Status.WARM,
+            note="Warme lijn vasthouden.",
+            created_by=self.user,
+            updated_by=self.user,
         )
 
     def assert_buddy_surface_present_and_safe(self, response):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Buddy")
         self.assertContains(response, "Buddy status")
+        self.assertContains(response, "Warm")
         self.assertContains(response, "Waarom nu")
+        self.assertContains(
+            response,
+            "Handmatig als warm gemarkeerd",
+        )
         self.assertContains(response, "Laatste context")
+        self.assertContains(response, "Actieve profieltoon")
+        self.assertContains(
+            response,
+            "Vertrouwd, plagerig en persoonlijk.",
+        )
         self.assertContains(response, "Open loop")
+        self.assertContains(
+            response,
+            "Pak de warme persoonlijke lijn op.",
+        )
         self.assertContains(response, "Niet doen")
+        self.assertContains(response, "Niet pushen zonder context.")
         self.assertContains(response, "Volgende stap")
         self.assertContains(response, "Betrouwbaarheid")
-        self.assertContains(response, "Demo-context / menselijk checken")
-        self.assertContains(response, "Geen generieke trigger sturen")
+        self.assertContains(response, "Hoog")
+        self.assertContains(
+            response,
+            "Kerncontext, bron en profieltoon zijn aanwezig.",
+        )
 
         html = response.content.decode()
         self.assertEqual(html.count('id="chat-buddy-context"'), 1)
@@ -81,6 +113,7 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertLess(html.index("Berichten"), html.index("Buddy Context Surface"))
         self.assertNotIn("Buddy-slot", html)
         self.assertNotIn("Intern reply draft voorstel", html)
+        self.assertNotIn("Demo-context / menselijk checken", html)
         self.assertIn(
             "grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);",
             html,
@@ -119,15 +152,54 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertNotIn("cashflow.adultadsuite.com", html)
         self.assertNotIn("php artisan", html)
 
-    def test_chats_normal_mode_shows_compact_buddy_surface(self):
-        response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
+    def test_chats_normal_mode_shows_context_driven_buddy_surface(self):
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
 
         self.assert_buddy_surface_present_and_safe(response)
 
-    def test_chats_focus_mode_shows_compact_buddy_surface(self):
+    def test_chats_focus_mode_shows_context_driven_buddy_surface(self):
         response = self.client.get(
             reverse("chat-hub"),
             {"focus": "1", "thread": self.thread.pk},
         )
 
         self.assert_buddy_surface_present_and_safe(response)
+
+    def test_buddy_surface_marks_risky_incomplete_context_as_low_reliability(self):
+        self.thread.channel = None
+        self.thread.thread_summary = ""
+        self.thread.open_loop = ""
+        self.thread.last_handoff_note = ""
+        self.thread.last_approved_reply_style = ""
+        self.thread.risk_flags = "Onbevestigde broncontext."
+        self.thread.save(
+            update_fields=[
+                "channel",
+                "thread_summary",
+                "open_loop",
+                "last_handoff_note",
+                "last_approved_reply_style",
+                "risk_flags",
+                "updated_at",
+            ]
+        )
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Laag")
+        self.assertContains(response, "Risicosignaal aanwezig")
+        self.assertContains(
+            response,
+            "Niet handelen voordat risicosignalen handmatig zijn beoordeeld.",
+        )
+        self.assertContains(
+            response,
+            "Profieltoon ontbreekt; eerst handmatig bevestigen.",
+        )
