@@ -309,6 +309,20 @@
         </div>
     </div>
 
+    {% if demo_read_only %}
+        <div
+            class="panel"
+            style="margin-bottom:0.75rem; border-color:#2563eb; background:#eff6ff;"
+            role="status"
+        >
+            <strong>Read-only demoweergave</strong>
+            <div class="muted">
+                Je kunt de fictieve gesprekken en Buddy-context bekijken.
+                Wijzigen, goedkeuren en opslaan is geblokkeerd.
+            </div>
+        </div>
+    {% endif %}
+
     <div
         class="chat-message-buddy-layout"
         data-chat-layout="messages-buddy"
@@ -430,7 +444,13 @@
     {% if focus_mode %}
         <div class="panel chat-follow-up-panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
             <h3 style="margin-top:0;">Follow-up status</h3>
-            <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
+            {% if demo_read_only %}
+                <p class="muted" style="margin-bottom:0.75rem;">
+                    De opgeslagen follow-upstatus is alleen ter inzage.
+                </p>
+            {% else %}
+                <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
+            {% endif %}
 
             {% if follow_up_saved %}
                 <div class="success-panel">Follow-up status opgeslagen.</div>
@@ -455,26 +475,28 @@
                     <p class="muted">Nog geen follow-up status vastgelegd voor dit gesprek.</p>
                 {% endif %}
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_action" value="follow_up_status">
-                    <input type="hidden" name="focus" value="1">
-                    <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
-                    <p>
-                        <label for="id_focus_follow_up_status">Statuskeuze</label>
-                        <select id="id_focus_follow_up_status" name="follow_up_status" required>
-                            <option value="">Kies status</option>
-                            {% for value, label in follow_up_status_choices %}
-                                <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </p>
-                    <p>
-                        <label for="id_focus_follow_up_note">Optionele korte operatornotitie</label>
-                        <textarea id="id_focus_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
-                    </p>
-                    <button type="submit" class="secondary-button">Opslaan follow-up status</button>
-                </form>
+                {% if not demo_read_only %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_action" value="follow_up_status">
+                        <input type="hidden" name="focus" value="1">
+                        <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                        <p>
+                            <label for="id_focus_follow_up_status">Statuskeuze</label>
+                            <select id="id_focus_follow_up_status" name="follow_up_status" required>
+                                <option value="">Kies status</option>
+                                {% for value, label in follow_up_status_choices %}
+                                    <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </p>
+                        <p>
+                            <label for="id_focus_follow_up_note">Optionele korte operatornotitie</label>
+                            <textarea id="id_focus_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
+                        </p>
+                        <button type="submit" class="secondary-button">Opslaan follow-up status</button>
+                    </form>
+                {% endif %}
             {% else %}
                 <p class="muted">Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.</p>
             {% endif %}
@@ -483,7 +505,13 @@
     {% else %}
         <div class="panel chat-follow-up-panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
             <h3 style="margin-top:0;">Follow-up status</h3>
-            <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
+            {% if demo_read_only %}
+                <p class="muted" style="margin-bottom:0.75rem;">
+                    De opgeslagen follow-upstatus is alleen ter inzage.
+                </p>
+            {% else %}
+                <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
+            {% endif %}
 
             {% if follow_up_saved %}
                 <div class="success-panel">Follow-up status opgeslagen.</div>
@@ -508,25 +536,27 @@
                     <p class="muted">Nog geen follow-up status vastgelegd voor dit gesprek.</p>
                 {% endif %}
 
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_action" value="follow_up_status">
-                    <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
-                    <p>
-                        <label for="id_follow_up_status">Statuskeuze</label>
-                        <select id="id_follow_up_status" name="follow_up_status" required>
-                            <option value="">Kies status</option>
-                            {% for value, label in follow_up_status_choices %}
-                                <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </p>
-                    <p>
-                        <label for="id_follow_up_note">Optionele operatornotitie</label>
-                        <textarea id="id_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
-                    </p>
-                    <button type="submit" class="secondary-button">Opslaan follow-up status</button>
-                </form>
+                {% if not demo_read_only %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_action" value="follow_up_status">
+                        <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                        <p>
+                            <label for="id_follow_up_status">Statuskeuze</label>
+                            <select id="id_follow_up_status" name="follow_up_status" required>
+                                <option value="">Kies status</option>
+                                {% for value, label in follow_up_status_choices %}
+                                    <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </p>
+                        <p>
+                            <label for="id_follow_up_note">Optionele operatornotitie</label>
+                            <textarea id="id_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
+                        </p>
+                        <button type="submit" class="secondary-button">Opslaan follow-up status</button>
+                    </form>
+                {% endif %}
             {% else %}
                 <p class="muted">Kies eerst een gesprek om follow-up status vast te leggen.</p>
             {% endif %}
@@ -588,7 +618,9 @@
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ selected_template.body }}</pre>
                 <p class="muted" style="margin:0 0 0.5rem;">Duplicaat / ingevuld</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ filled_template_body }}</pre>
-                <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
+                {% if not demo_read_only %}
+                    <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
+                {% endif %}
             </div>
         {% endif %}
     </details>
@@ -621,32 +653,38 @@
                 {% if access_state.status == "blocked" %}
                     <p><span class="badge badge-red">blocked</span> Eerst access/context issues oplossen voordat je afsluit.</p>
                 {% endif %}
-                <form method="post">
-                    {% csrf_token %}
-                    {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
-                    <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
-                    <p>
-                        <label for="id_handoff_summary">Laatste stand (verplicht)</label>
-                        <textarea id="id_handoff_summary" name="handoff_summary" required>{{ handoff_form.handoff_summary }}</textarea>
+                {% if demo_read_only %}
+                    <p class="muted">
+                        Handoffgegevens zijn zichtbaar, maar kunnen in de demo niet worden gewijzigd.
                     </p>
-                    <p>
-                        <label for="id_next_step">Volgende stap (verplicht)</label>
-                        <input id="id_next_step" type="text" name="next_step" value="{{ handoff_form.next_step }}" required>
-                    </p>
-                    <p>
-                        <label for="id_blocker">Blocker / issue</label>
-                        <input id="id_blocker" type="text" name="blocker" value="{{ handoff_form.blocker }}">
-                    </p>
-                    <p>
-                        <label for="id_close_signal">Afsluitsignaal</label>
-                        <select id="id_close_signal" name="close_signal">
-                            <option value="overdracht_klaar" {% if handoff_form.close_signal == "overdracht_klaar" %}selected{% endif %}>overdracht_klaar</option>
-                            <option value="review_nodig" {% if handoff_form.close_signal == "review_nodig" %}selected{% endif %}>review_nodig</option>
-                            <option value="opvolging_nodig" {% if handoff_form.close_signal == "opvolging_nodig" %}selected{% endif %}>opvolging_nodig</option>
-                        </select>
-                    </p>
-                    <button type="submit" class="primary-button" {% if access_state.status == "blocked" %}disabled{% endif %}>Sessie afsluiten & handoff opslaan</button>
-                </form>
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
+                        <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+                        <p>
+                            <label for="id_handoff_summary">Laatste stand (verplicht)</label>
+                            <textarea id="id_handoff_summary" name="handoff_summary" required>{{ handoff_form.handoff_summary }}</textarea>
+                        </p>
+                        <p>
+                            <label for="id_next_step">Volgende stap (verplicht)</label>
+                            <input id="id_next_step" type="text" name="next_step" value="{{ handoff_form.next_step }}" required>
+                        </p>
+                        <p>
+                            <label for="id_blocker">Blocker / issue</label>
+                            <input id="id_blocker" type="text" name="blocker" value="{{ handoff_form.blocker }}">
+                        </p>
+                        <p>
+                            <label for="id_close_signal">Afsluitsignaal</label>
+                            <select id="id_close_signal" name="close_signal">
+                                <option value="overdracht_klaar" {% if handoff_form.close_signal == "overdracht_klaar" %}selected{% endif %}>overdracht_klaar</option>
+                                <option value="review_nodig" {% if handoff_form.close_signal == "review_nodig" %}selected{% endif %}>review_nodig</option>
+                                <option value="opvolging_nodig" {% if handoff_form.close_signal == "opvolging_nodig" %}selected{% endif %}>opvolging_nodig</option>
+                            </select>
+                        </p>
+                        <button type="submit" class="primary-button" {% if access_state.status == "blocked" %}disabled{% endif %}>Sessie afsluiten & handoff opslaan</button>
+                    </form>
+                {% endif %}
             </div>
         </div>
 
@@ -708,10 +746,12 @@
 
             {% for action in quick_actions %}
                 {% if action.type == "approve" %}
-                    <form method="post" action="{% url 'buddy-draft-approve' action.draft_id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="primary-button">{{ action.label }}</button>
-                    </form>
+                    {% if not demo_read_only %}
+                        <form method="post" action="{% url 'buddy-draft-approve' action.draft_id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="primary-button">{{ action.label }}</button>
+                        </form>
+                    {% endif %}
                 {% else %}
                     <a class="quick-link" href="{{ action.url }}">{{ action.label }}</a>
                 {% endif %}
@@ -726,6 +766,7 @@
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Approvals v1</h3>
         {% if selected_thread %}
+            {% if not demo_read_only %}
             <form method="post" action="{% url 'approval-create' %}" style="margin-bottom:0.75rem;">
                 {% csrf_token %}
                 <input type="hidden" name="workspace" value="chats">
@@ -744,6 +785,9 @@
                 </p>
                 <button type="submit" class="secondary-button">Approval aanmaken</button>
             </form>
+            {% else %}
+                <p class="muted">Approvals zijn in de demo alleen ter inzage.</p>
+            {% endif %}
 
             <ul class="clean">
                 {% for approval in approvals %}
@@ -765,16 +809,18 @@
                         {% endif %}
                         <div class="muted">Aangemaakt door {{ approval.requested_by }} · {{ approval.created_at }}</div>
                         {% if approval.status == "pending" %}
-                            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                                <form method="post" action="{% url 'approval-approve' approval.pk %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="primary-button">Goedkeuren</button>
-                                </form>
-                                <form method="post" action="{% url 'approval-reject' approval.pk %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="secondary-button">Afwijzen</button>
-                                </form>
-                            </div>
+                            {% if not demo_read_only %}
+                                <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                                    <form method="post" action="{% url 'approval-approve' approval.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="primary-button">Goedkeuren</button>
+                                    </form>
+                                    <form method="post" action="{% url 'approval-reject' approval.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="secondary-button">Afwijzen</button>
+                                    </form>
+                                </div>
+                            {% endif %}
                         {% elif approval.decided_by %}
                             <div class="muted">Beslist door {{ approval.decided_by }} · {{ approval.decided_at|default:"-" }}</div>
                         {% endif %}

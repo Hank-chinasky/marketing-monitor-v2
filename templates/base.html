@@ -262,13 +262,19 @@
 </head>
 <body>
     <nav>
-        <a href="{% url 'operations-dashboard' %}">Dashboard</a>
-        <a href="{% url 'creator-list' %}">Creators</a>
-        <a href="{% url 'channel-list' %}">Channels</a>
-        <a href="{% url 'assignment-list' %}">Assignments</a>
-        <a href="{% url 'operator-list' %}">Operators</a>
-        <a href="{% url 'chat-hub' %}">Chats</a>
-        <a href="{% url 'feeder-hub' %}">Feeder</a>
+        {% if request.is_demo_viewer %}
+            <a href="{% url 'adultadsuite-cockpit' %}">AdultAdSuite</a>
+            <a href="{% url 'chat-hub' %}">Chats demo</a>
+            <span class="badge badge-blue">Read-only demo</span>
+        {% else %}
+            <a href="{% url 'operations-dashboard' %}">Dashboard</a>
+            <a href="{% url 'creator-list' %}">Creators</a>
+            <a href="{% url 'channel-list' %}">Channels</a>
+            <a href="{% url 'assignment-list' %}">Assignments</a>
+            <a href="{% url 'operator-list' %}">Operators</a>
+            <a href="{% url 'chat-hub' %}">Chats</a>
+            <a href="{% url 'feeder-hub' %}">Feeder</a>
+        {% endif %}
 
         {% if request.user.is_authenticated %}
             <form method="post" action="{% url 'logout' %}" style="float:right;">
@@ -280,13 +286,15 @@
         {% endif %}
     </nav>
 
-    {% if request.user.is_authenticated and request.user.is_staff or request.user.is_superuser %}
-    <div class="secondary-nav">
-        <a href="{% url 'creator-create' %}">+ Nieuwe creator</a>
-        <a href="{% url 'channel-create' %}">+ Nieuw channel</a>
-        <a href="{% url 'operator-create' %}">+ Nieuwe operator</a>
-        <a href="{% url 'assignment-create' %}">+ Nieuwe assignment</a>
-    </div>
+    {% if not request.is_demo_viewer %}
+        {% if request.user.is_authenticated and request.user.is_staff or request.user.is_superuser %}
+        <div class="secondary-nav">
+            <a href="{% url 'creator-create' %}">+ Nieuwe creator</a>
+            <a href="{% url 'channel-create' %}">+ Nieuw channel</a>
+            <a href="{% url 'operator-create' %}">+ Nieuwe operator</a>
+            <a href="{% url 'assignment-create' %}">+ Nieuwe assignment</a>
+        </div>
+        {% endif %}
     {% endif %}
 
     <div class="page">

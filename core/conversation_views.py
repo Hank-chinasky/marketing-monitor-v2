@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from core.forms import ConversationThreadForm
 from core.models import BuddyDraft, ConversationThread
+from core.services.demo_access import is_demo_viewer
 from core.services.scope import get_creator_queryset_for_user
 
 
@@ -56,8 +57,11 @@ class ConversationThreadDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         latest_draft = get_latest_buddy_draft(self.object)
         context["latest_draft"] = latest_draft
+        context["demo_read_only"] = is_demo_viewer(self.request.user)
         context["can_approve_latest_draft"] = bool(
-            latest_draft and latest_draft.state == BuddyDraft.State.DRAFTED
+            not context["demo_read_only"]
+            and latest_draft
+            and latest_draft.state == BuddyDraft.State.DRAFTED
         )
         return context
 
@@ -68,6 +72,9 @@ class ConversationThreadManualIntakeMixin:
     template_name = "conversations/conversation_thread_form.html"
 
     def dispatch(self, request, *args, **kwargs):
+        if is_demo_viewer(request.user):
+            raise PermissionDenied("Demo viewer access is read-only.")
+
         if not get_creator_queryset_for_user(request.user).exists():
             raise PermissionDenied("No scoped creator access for manual thread intake.")
         return super().dispatch(request, *args, **kwargs)
@@ -102,6 +109,9 @@ class BuddyDraftApproveView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
     def post(self, request, pk, *args, **kwargs):
+        if is_demo_viewer(request.user):
+            raise PermissionDenied("Demo viewer access is read-only.")
+
         draft = get_object_or_404(
             get_scoped_buddy_draft_queryset(request.user).filter(
                 state=BuddyDraft.State.DRAFTED
