@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from core.models import Creator, CreatorChannel, OperatorAssignment
+from core.services.demo_access import DEMO_DATA_MARKER, is_demo_viewer
 
 
 WORKSPACE_ALLOWED_SCOPES = {
@@ -67,6 +68,9 @@ def get_workspace_assignments_for_operator(operator):
 
 
 def get_creator_queryset_for_user(user):
+    if is_demo_viewer(user):
+        return Creator.objects.filter(notes=DEMO_DATA_MARKER)
+
     if is_admin_user(user):
         return Creator.objects.all()
 
@@ -82,6 +86,11 @@ def get_creator_queryset_for_user(user):
 
 
 def get_channel_queryset_for_user(user):
+    if is_demo_viewer(user):
+        return CreatorChannel.objects.filter(
+            creator__notes=DEMO_DATA_MARKER,
+        )
+
     if is_admin_user(user):
         return CreatorChannel.objects.all()
 
@@ -97,6 +106,11 @@ def get_channel_queryset_for_user(user):
 
 
 def get_instagram_workspace_channel_queryset_for_user(user):
+    if is_demo_viewer(user):
+        return get_channel_queryset_for_user(user).filter(
+            platform=CreatorChannel.Platform.INSTAGRAM,
+        )
+
     if is_admin_user(user):
         return CreatorChannel.objects.filter(
             platform=CreatorChannel.Platform.INSTAGRAM

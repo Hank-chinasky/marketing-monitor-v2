@@ -2,7 +2,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -19,6 +19,7 @@ from core.models import (
     ThreadFollowUpStatus,
 )
 from core.services.buddy_reply import build_operator_reply_draft
+from core.services.demo_access import is_demo_viewer
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_channel_queryset_for_user,
@@ -631,6 +632,17 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 "reason": "Geen actieve thread geselecteerd; start hier geen operatoractie.",
             }
 
+        if is_demo_viewer(self.request.user):
+            return {
+                "status": "readonly",
+                "label": "read-only demo",
+                "badge": "badge-blue",
+                "reason": (
+                    "Demoweergave: bekijken is toegestaan; "
+                    "alle wijzigingen zijn geblokkeerd."
+                ),
+            }
+
         if not assignment:
             return {
                 "status": "blocked",
@@ -784,6 +796,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         thread_source="get",
         fallback_to_first=True,
     ):
+        demo_read_only = is_demo_viewer(self.request.user)
         threads = self._get_threads()
         selected_thread = self._resolve_selected_thread(
             threads,
@@ -795,6 +808,14 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             self.request.user,
             selected_thread.creator if selected_thread else None,
         )
+        assignment_context = build_assignment_context(assignment)
+        if demo_read_only:
+            assignment_context = {
+                "has_active_assignment": False,
+                "status_label": "demo viewer",
+                "scope_label": "Read-only",
+            }
+
         access_state = self._build_access_state(selected_thread, assignment)
         latest_draft = get_latest_buddy_draft(selected_thread) if selected_thread else None
         completeness_alerts = self._build_completeness_alerts(selected_thread)
@@ -827,8 +848,11 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         open_issues = []
         quick_actions = []
         can_create_conversation_thread = (
-            is_admin_user(self.request.user)
-            or get_creator_queryset_for_user(self.request.user).exists()
+            not demo_read_only
+            and (
+                is_admin_user(self.request.user)
+                or get_creator_queryset_for_user(self.request.user).exists()
+            )
         )
 
         template_query = (self.request.GET.get("template_q") or "").strip()
@@ -925,7 +949,11 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                     "url": f"/conversations/{selected_thread.pk}/",
                 }
             )
-            if latest_draft and latest_draft.state == latest_draft.State.DRAFTED:
+            if (
+                not demo_read_only
+                and latest_draft
+                and latest_draft.state == latest_draft.State.DRAFTED
+            ):
                 quick_actions.append(
                     {
                         "label": "Draft goedkeuren",
@@ -967,8 +995,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "chat_focus_items": chat_scan_context["chat_focus_items"],
             "latest_handoff_scan": chat_scan_context["latest_handoff_scan"],
             "next_step_scan": chat_scan_context["next_step_scan"],
-            "assignment_context": build_assignment_context(assignment),
+            "assignment_context": assignment_context,
             "access_state": access_state,
+            "demo_read_only": demo_read_only,
             "run_log": run_log,
             "open_issues": open_issues,
             "quick_actions": quick_actions,
@@ -1002,6 +1031,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         )
 
     def post(self, request, *args, **kwargs):
+        if is_demo_viewer(request.user):
+            raise PermissionDenied("Demo viewer access is read-only.")
+
         posted_values = {
             "handoff_summary": (request.POST.get("handoff_summary") or "").strip(),
             "next_step": (request.POST.get("next_step") or "").strip(),
@@ -1605,6 +1637,9 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
 
 class ApprovalCreateView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
+        if is_demo_viewer(request.user):
+            raise PermissionDenied("Demo viewer access is read-only.")
+
         workspace = (request.POST.get("workspace") or "").strip()
         approval_type = (request.POST.get("approval_type") or "").strip()
         summary = (request.POST.get("summary") or "").strip()
@@ -1683,6 +1718,9 @@ class ApprovalActionBaseView(LoginRequiredMixin, View):
         raise NotImplementedError
 
     def post(self, request, pk, *args, **kwargs):
+        if is_demo_viewer(request.user):
+            raise PermissionDenied("Demo viewer access is read-only.")
+
         approval = self.get_approval(request, pk)
 
         if approval.status != Approval.Status.PENDING:

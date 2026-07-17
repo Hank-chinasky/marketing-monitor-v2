@@ -4,9 +4,29 @@
 <h1>Conversation Thread</h1>
 
 <div style="margin-bottom:1rem;">
-    <a class="quick-link" href="{% url 'conversation-thread-list' %}">Terug naar conversations</a>
-    <a class="quick-link" href="{% url 'conversation-thread-update' thread.pk %}">Thread wijzigen</a>
+    {% if demo_read_only %}
+        <a class="quick-link" href="{% url 'chat-hub' %}?thread={{ thread.pk }}">
+            Terug naar Chats demo
+        </a>
+    {% else %}
+        <a class="quick-link" href="{% url 'conversation-thread-list' %}">
+            Terug naar conversations
+        </a>
+        <a class="quick-link" href="{% url 'conversation-thread-update' thread.pk %}">
+            Thread wijzigen
+        </a>
+    {% endif %}
 </div>
+
+{% if demo_read_only %}
+    <div
+        class="panel"
+        style="margin-bottom:1rem; border-color:#2563eb; background:#eff6ff;"
+    >
+        <strong>Read-only demoweergave</strong>
+        <div class="muted">Deze fictieve thread kan niet worden gewijzigd of goedgekeurd.</div>
+    </div>
+{% endif %}
 
 <div class="grid">
     <div class="panel">

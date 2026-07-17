@@ -33,6 +33,7 @@ from core.mixins import (
     ScopedCreatorQuerysetMixin,
 )
 from core.models import Creator, CreatorChannel, Operator, OperatorAssignment
+from core.services.demo_access import is_demo_viewer
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_active_assignments_queryset,
@@ -74,6 +75,13 @@ class HealthzView(View):
 
 class OperationsDashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard/operations_dashboard.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if is_demo_viewer(request.user):
+            return HttpResponseRedirect(
+                reverse("adultadsuite-cockpit")
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
