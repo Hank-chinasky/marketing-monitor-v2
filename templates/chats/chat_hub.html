@@ -358,51 +358,67 @@
             <div class="chat-buddy-header">
                 <h3 id="chat-buddy-context-title" style="margin:0;">Buddy Context Surface</h3>
                 <span class="badge badge-blue">
-                    Buddy status:
-                    {% if selected_thread %}Warme lopende follow-up{% else %}Kies gesprek{% endif %}
+                    Buddy status: {{ buddy_assist.status_label }}
                 </span>
             </div>
 
             <div class="chat-buddy-grid">
                 <div class="chat-buddy-item">
                     <strong>Waarom nu</strong>
-                    {% if selected_thread %}
-                        <p style="margin-bottom:0;">Recente context, open loop en bestaande persoonlijke lijn vragen gecontroleerde opvolging.</p>
-                    {% else %}
-                        <p style="margin-bottom:0;">Kies een gesprek om Buddy-context te zien.</p>
-                    {% endif %}
+                    <p style="margin-bottom:0;">
+                        {{ buddy_assist.why_now }}
+                    </p>
                 </div>
+
                 <details class="chat-buddy-item chat-buddy-more">
                     <summary>Laatste context</summary>
-                    {% if selected_thread %}
-                        <p style="margin-bottom:0;">{{ latest_handoff_scan.summary|linebreaksbr }}</p>
-                    {% else %}
-                        <p style="margin-bottom:0;">Nog geen actieve thread geselecteerd.</p>
+                    <p style="margin-bottom:0;">
+                        {{ buddy_assist.thread_summary }}
+                    </p>
+                    {% if buddy_assist.has_handoff %}
+                        <p class="muted" style="margin-bottom:0; margin-top:0.5rem;">
+                            Handoff: {{ buddy_assist.condensed_handoff }}
+                        </p>
                     {% endif %}
                 </details>
+
+                <div class="chat-buddy-item">
+                    <strong>Actieve profieltoon</strong>
+                    <p style="margin-bottom:0;">
+                        {{ buddy_assist.profile_tone }}
+                    </p>
+                    <span class="muted">{{ buddy_assist.profile_tone_source }}</span>
+                </div>
+
                 <div class="chat-buddy-item">
                     <strong>Open loop</strong>
-                    {% if selected_thread and selected_thread.open_loop %}
-                        <p style="margin-bottom:0;">{{ selected_thread.open_loop|linebreaksbr }}</p>
-                    {% else %}
-                        <p style="margin-bottom:0;">Geen open loop zichtbaar.</p>
-                    {% endif %}
+                    <p style="margin-bottom:0;">
+                        {{ buddy_assist.open_loop }}
+                    </p>
                 </div>
+
                 <div class="chat-buddy-item">
                     <strong>Niet doen</strong>
-                    <p style="margin-bottom:0;">Geen generieke trigger sturen. Niet resetten of opgebouwde toon breken.</p>
+                    <p style="margin-bottom:0;">
+                        {{ buddy_assist.do_not_do }}
+                    </p>
                 </div>
+
                 <div class="chat-buddy-item">
                     <strong>Volgende stap</strong>
-                    {% if selected_thread %}
-                        <p style="margin-bottom:0;">{{ next_step_scan|linebreaksbr }}</p>
-                    {% else %}
-                        <p style="margin-bottom:0;">Selecteer eerst een gesprek.</p>
-                    {% endif %}
+                    <p style="margin-bottom:0;">
+                        {{ buddy_assist.recommended_next_action }}
+                    </p>
                 </div>
+
                 <details class="chat-buddy-item chat-buddy-more">
                     <summary>Betrouwbaarheid</summary>
-                    <p style="margin-bottom:0;">Demo-context / menselijk checken.</p>
+                    <p style="margin-bottom:0;">
+                        <span class="badge {{ buddy_assist.reliability_badge }}">
+                            {{ buddy_assist.reliability_label }}
+                        </span>
+                        {{ buddy_assist.reliability_reason }}
+                    </p>
                 </details>
             </div>
 
