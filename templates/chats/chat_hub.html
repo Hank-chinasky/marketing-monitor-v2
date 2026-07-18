@@ -152,6 +152,60 @@
         .chat-thread-form label {
             font-weight: 600;
         }
+        .chat-pressure-queue {
+            margin-bottom: 0.75rem;
+            border-color: #93c5fd;
+            background: #f8fbff;
+        }
+        .chat-queue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .chat-queue-summary {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin-top: 0.65rem;
+        }
+        .chat-queue-list {
+            display: grid;
+            gap: 0.55rem;
+            margin-top: 0.75rem;
+        }
+        .chat-queue-item {
+            display: grid;
+            grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.8fr) auto;
+            gap: 0.65rem;
+            align-items: start;
+            padding: 0.7rem;
+            border: 1px solid #dbeafe;
+            border-radius: 9px;
+            background: #fff;
+            color: inherit;
+            text-decoration: none;
+        }
+        .chat-queue-item:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .chat-queue-item.active {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+        .chat-queue-source,
+        .chat-queue-reason {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .chat-queue-meta {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
         .chat-message-buddy-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
@@ -272,6 +326,12 @@
                 width: 100%;
                 max-width: none !important;
             }
+            .chat-queue-item {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .chat-queue-meta {
+                justify-content: flex-start;
+            }
         }
     </style>
 
@@ -308,6 +368,124 @@
             {% endif %}
         </div>
     </div>
+
+    <section
+        class="panel chat-pressure-queue"
+        aria-labelledby="operator-queue-title"
+        data-operator-queue="v1"
+    >
+        <div class="chat-queue-header">
+            <div>
+                <h3 id="operator-queue-title" style="margin:0;">
+                    Gezamenlijke operatorqueue
+                </h3>
+                <div class="muted" style="margin-top:0.25rem;">
+                    {{ operator_queue.counts.total }} gesprekken uit
+                    {{ operator_queue.counts.sources }} bron{{ operator_queue.counts.sources|pluralize:"nen" }}.
+                    Prioriteit blijft uitlegbaar en wordt niet automatisch uitgevoerd.
+                </div>
+            </div>
+
+            {% if operator_queue.next_item %}
+                <a
+                    class="primary-button"
+                    href="{% url 'chat-hub' %}?thread={{ operator_queue.next_item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                >
+                    Open eerstvolgende gesprek
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="chat-queue-summary">
+            <span class="badge badge-red">
+                {{ operator_queue.counts.now }} nu
+            </span>
+            <span class="badge badge-yellow">
+                {{ operator_queue.counts.review }} review
+            </span>
+            <span class="badge badge-blue">
+                {{ operator_queue.counts.later }} later
+            </span>
+            <span class="badge badge-green">
+                {{ operator_queue.counts.waiting }} wacht op klant
+            </span>
+        </div>
+
+        {% if operator_queue.active_items %}
+            <div class="chat-queue-list">
+                {% for item in operator_queue.active_items %}
+                    <a
+                        class="chat-queue-item{% if selected_thread and selected_thread.pk == item.thread.pk %} active{% endif %}"
+                        href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                    >
+                        <div class="chat-queue-source">
+                            <strong>{{ item.thread.creator.display_name }}</strong>
+                            <div class="muted">
+                                {{ item.source_label }} · {{ item.source_account }}
+                            </div>
+                            <div class="muted">
+                                Wacht: {{ item.waiting_label }}
+                            </div>
+                        </div>
+
+                        <div class="chat-queue-reason">
+                            <strong>{{ item.why_now }}</strong>
+                            <div style="margin-top:0.3rem;">
+                                {{ item.next_action }}
+                            </div>
+                            <div class="muted" style="margin-top:0.3rem;">
+                                {{ item.revenue_signal }} · Betrouwbaarheid: {{ item.reliability }}
+                            </div>
+                        </div>
+
+                        <div class="chat-queue-meta">
+                            <span class="badge {{ item.group_badge }}">
+                                {{ item.priority_label }}
+                            </span>
+                            <span class="badge badge-blue">
+                                {{ item.group_label }}
+                            </span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="muted" style="margin-bottom:0;">
+                Geen actieve gesprekken die nu operatoraandacht vragen.
+            </p>
+        {% endif %}
+
+        {% if operator_queue.parked_items %}
+            <details style="margin-top:0.75rem;">
+                <summary>
+                    Geparkeerd en wachtend ({{ operator_queue.parked_items|length }})
+                </summary>
+                <div class="chat-queue-list">
+                    {% for item in operator_queue.parked_items %}
+                        <a
+                            class="chat-queue-item"
+                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                        >
+                            <div class="chat-queue-source">
+                                <strong>{{ item.thread.creator.display_name }}</strong>
+                                <div class="muted">
+                                    {{ item.source_label }} · {{ item.source_account }}
+                                </div>
+                            </div>
+                            <div class="chat-queue-reason">
+                                {{ item.why_now }}
+                            </div>
+                            <div class="chat-queue-meta">
+                                <span class="badge {{ item.group_badge }}">
+                                    {{ item.group_label }}
+                                </span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </details>
+        {% endif %}
+    </section>
 
     {% if demo_read_only %}
         <div

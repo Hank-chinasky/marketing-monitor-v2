@@ -20,6 +20,7 @@ from core.models import (
 )
 from core.services.buddy_reply import build_operator_reply_draft
 from core.services.demo_access import is_demo_viewer
+from core.services.operator_queue import build_operator_queue
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_channel_queryset_for_user,
@@ -697,7 +698,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
     def _get_threads(self):
         return list(
             get_scoped_conversation_thread_queryset(self.request.user)
-            .select_related("creator", "channel")
+            .select_related("creator", "channel", "follow_up_status")
             .order_by("-last_message_at", "-id")
         )
 
@@ -798,6 +799,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
     ):
         demo_read_only = is_demo_viewer(self.request.user)
         threads = self._get_threads()
+        operator_queue = build_operator_queue(threads)
         selected_thread = self._resolve_selected_thread(
             threads,
             source=thread_source,
@@ -986,6 +988,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         return {
             "threads": threads,
+            "operator_queue": operator_queue,
             "selected_thread": selected_thread,
             "conversation_messages": conversation_messages,
             "operator_reply_draft": operator_reply_draft,
