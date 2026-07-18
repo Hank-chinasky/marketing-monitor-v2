@@ -205,8 +205,6 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "CreatorWorkboard")
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "/adultadsuite/")
-        self.assertContains(response, "/chats/?focus=1")
-        self.assertContains(response, "Focusstand")
         self.assertContains(response, "Gesprek")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Follow-up status")
@@ -232,7 +230,6 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Normale stand")
         self.assertContains(response, "/adultadsuite/")
         self.assertContains(response, "/chats/")
         self.assertContains(response, "Gesprek")
@@ -285,7 +282,6 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Normale stand")
         self.assertContains(response, "Buddy Context Surface")
         self.assertContains(response, "Buddy status:")
         self.assertContains(response, "Kies gesprek")
@@ -323,7 +319,11 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Follow-up status")
-        self.assertContains(response, "Kies eerst een gesprek om follow-up status vast te leggen.")
+        self.assertContains(
+            response,
+            "Nog geen gesprek geselecteerd. "
+            "Kies een gesprek om follow-up status vast te leggen.",
+        )
         self.assertIsNone(response.context["selected_thread"])
 
     def test_chats_manual_follow_up_status_saves_warm_with_note(self):
@@ -384,7 +384,6 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(follow_up_status.note, "Klant vroeg om later terug te komen.")
 
         saved_response = self.client.get(response["Location"])
-        self.assertContains(saved_response, "Normale stand")
         self.assertContains(saved_response, "Buddy Context Surface")
         self.assertContains(saved_response, "Follow-up status opgeslagen")
         self.assertContains(saved_response, "Open loop")
@@ -418,7 +417,6 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Focusstand")
         self.assertContains(response, "Gesprek:")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Follow-up status")
@@ -448,7 +446,6 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Normale stand")
         self.assertContains(response, "Gesprek:")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Follow-up status")
@@ -542,7 +539,6 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Normale stand")
         self.assertContains(response, "Berichten")
         self.assertContains(response, "Klant")
         self.assertContains(response, "Focus klantbericht.")

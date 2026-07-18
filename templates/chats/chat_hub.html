@@ -234,7 +234,104 @@
             position: static;
             grid-area: buddy;
         }
-        .chat-follow-up-panel { grid-area: followup; margin-bottom: 0 !important; }
+        .chat-operator-action {
+            grid-area: followup;
+            margin: 0;
+            border: 2px solid #2563eb;
+            background: #eff6ff;
+        }
+        .chat-operator-action-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .chat-demo-control-notice {
+            margin-top: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            background: #dbeafe;
+        }
+        .chat-current-follow-up,
+        .chat-action-feedback,
+        .chat-action-error {
+            margin-top: 0.75rem;
+        }
+        .chat-action-error {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+        .chat-operator-action-form {
+            margin-top: 0.75rem;
+        }
+        .chat-status-fieldset {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+        .chat-status-fieldset legend {
+            margin-bottom: 0.45rem;
+            font-weight: 700;
+        }
+        .chat-status-choice-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(110px, 1fr));
+            gap: 0.5rem;
+        }
+        .chat-status-choice {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-height: 42px;
+            padding: 0.55rem 0.65rem;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .chat-status-choice:hover,
+        .chat-status-choice.selected {
+            border-color: #2563eb;
+            background: #dbeafe;
+        }
+        .chat-status-choice input {
+            width: auto;
+            margin: 0;
+        }
+        .chat-action-note {
+            margin: 0.75rem 0 0;
+        }
+        .chat-action-note textarea {
+            width: 100%;
+            min-height: 76px;
+        }
+        .chat-action-buttons {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+        .chat-action-buttons button:disabled,
+        .chat-status-choice:has(input:disabled) {
+            cursor: not-allowed;
+            opacity: 0.72;
+        }
+        .chat-action-help {
+            margin: 0.7rem 0 0;
+        }
+        .chat-queue-details {
+            margin-top: 0.75rem;
+        }
+        .chat-queue-details > summary {
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .chat-queue-details[open] > summary {
+            margin-bottom: 0.65rem;
+        }
         .chat-buddy-header {
             display: flex;
             justify-content: space-between;
@@ -329,6 +426,12 @@
             .chat-queue-item {
                 grid-template-columns: minmax(0, 1fr);
             }
+            .chat-status-choice-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .chat-action-buttons button {
+                width: 100%;
+            }
             .chat-queue-meta {
                 justify-content: flex-start;
             }
@@ -339,12 +442,9 @@
         <div class="chat-workfloor-top">
             <div class="chat-workfloor-actions">
                 <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}" title="Open AdultAdSuite dagstart" aria-label="Open AdultAdSuite dagstart">AdultAdSuite</a>
-                {% if focus_mode %}
-                    <a class="quick-link" href="{% url 'chat-hub' %}" title="Open normale stand" aria-label="Open normale stand">Normale stand</a>
-                {% else %}
-                    <a class="quick-link" href="{% url 'chat-hub' %}?focus=1" title="Open focusstand" aria-label="Open focusstand">Focusstand</a>
-                {% endif %}
-                <a class="quick-link" href="{% url 'chat-hub' %}{% if focus_mode %}?focus=1{% endif %}" title="Open gesprekkenlijst" aria-label="Open gesprekkenlijst">Gesprekken</a>
+                <span class="badge badge-blue">
+                    Operatorwerkvloer
+                </span>
             </div>
 
             {% if threads %}
@@ -377,7 +477,10 @@
         <div class="chat-queue-header">
             <div>
                 <h3 id="operator-queue-title" style="margin:0;">
-                    Gezamenlijke operatorqueue
+                    Werkvoorraad
+                    <span class="chat-workfloor-sr-only">
+                        Gezamenlijke operatorqueue
+                    </span>
                 </h3>
                 <div class="muted" style="margin-top:0.25rem;">
                     {{ operator_queue.counts.total }} gesprekken uit
@@ -391,7 +494,10 @@
                     class="primary-button"
                     href="{% url 'chat-hub' %}?thread={{ operator_queue.next_item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
                 >
-                    Open eerstvolgende gesprek
+                    Start eerstvolgende
+                    <span class="chat-workfloor-sr-only">
+                        Open eerstvolgende gesprek
+                    </span>
                 </a>
             {% endif %}
         </div>
@@ -411,44 +517,75 @@
             </span>
         </div>
 
-        {% if operator_queue.active_items %}
-            <div class="chat-queue-list">
-                {% for item in operator_queue.active_items %}
-                    <a
-                        class="chat-queue-item{% if selected_thread and selected_thread.pk == item.thread.pk %} active{% endif %}"
-                        href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
-                    >
-                        <div class="chat-queue-source">
-                            <strong>{{ item.thread.creator.display_name }}</strong>
-                            <div class="muted">
-                                {{ item.source_label }} · {{ item.source_account }}
-                            </div>
-                            <div class="muted">
-                                Wacht: {{ item.waiting_label }}
-                            </div>
-                        </div>
+        {% if queue_saved %}
+            <div class="success-panel" style="margin-top:0.75rem;">
+                {% if queue_saved == "follow_up" %}
+                    Follow-upstatus opgeslagen.
+                {% else %}
+                    Handoff opgeslagen.
+                {% endif %}
 
-                        <div class="chat-queue-reason">
-                            <strong>{{ item.why_now }}</strong>
-                            <div style="margin-top:0.3rem;">
-                                {{ item.next_action }}
-                            </div>
-                            <div class="muted" style="margin-top:0.3rem;">
-                                {{ item.revenue_signal }} · Betrouwbaarheid: {{ item.reliability }}
-                            </div>
-                        </div>
-
-                        <div class="chat-queue-meta">
-                            <span class="badge {{ item.group_badge }}">
-                                {{ item.priority_label }}
-                            </span>
-                            <span class="badge badge-blue">
-                                {{ item.group_label }}
-                            </span>
-                        </div>
-                    </a>
-                {% endfor %}
+                {% if queue_advanced %}
+                    Het volgende actieve gesprek is geopend.
+                {% elif queue_cycle_complete %}
+                    Er is geen ander actief gesprek om nu te openen.
+                {% endif %}
             </div>
+        {% endif %}
+
+        {% if operator_queue.active_items %}
+            <details
+                class="chat-queue-details"
+                {% if not selected_thread %}open{% endif %}
+            >
+                <summary>
+                    Bekijk gesprekken die aandacht vragen
+                    ({{ operator_queue.active_items|length }})
+                </summary>
+
+                <div class="chat-queue-list">
+                    {% for item in operator_queue.active_items %}
+                        <a
+                            class="chat-queue-item{% if selected_thread and selected_thread.pk == item.thread.pk %} active{% endif %}"
+                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}"
+                        >
+                            <div class="chat-queue-source">
+                                <strong>
+                                    {{ item.thread.creator.display_name }}
+                                </strong>
+                                <div class="muted">
+                                    {{ item.source_label }} ·
+                                    {{ item.source_account }}
+                                </div>
+                                <div class="muted">
+                                    Wacht: {{ item.waiting_label }}
+                                </div>
+                            </div>
+
+                            <div class="chat-queue-reason">
+                                <strong>{{ item.why_now }}</strong>
+                                <div style="margin-top:0.3rem;">
+                                    {{ item.next_action }}
+                                </div>
+                                <div class="muted" style="margin-top:0.3rem;">
+                                    {{ item.revenue_signal }} ·
+                                    Betrouwbaarheid:
+                                    {{ item.reliability }}
+                                </div>
+                            </div>
+
+                            <div class="chat-queue-meta">
+                                <span class="badge {{ item.group_badge }}">
+                                    {{ item.priority_label }}
+                                </span>
+                                <span class="badge badge-blue">
+                                    {{ item.group_label }}
+                                </span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </details>
         {% else %}
             <p class="muted" style="margin-bottom:0;">
                 Geen actieve gesprekken die nu operatoraandacht vragen.
@@ -495,8 +632,8 @@
         >
             <strong>Read-only demoweergave</strong>
             <div class="muted">
-                Je kunt de fictieve gesprekken en Buddy-context bekijken.
-                Wijzigen, goedkeuren en opslaan is geblokkeerd.
+                Je ziet dezelfde operatorwerkvloer als een echte gebruiker.
+                Velden en knoppen zijn zichtbaar, maar wijzigen blijft geblokkeerd.
             </div>
         </div>
     {% endif %}
@@ -619,131 +756,7 @@
             </p>
         </aside>
 
-    {% if focus_mode %}
-        <div class="panel chat-follow-up-panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
-            <h3 style="margin-top:0;">Follow-up status</h3>
-            {% if demo_read_only %}
-                <p class="muted" style="margin-bottom:0.75rem;">
-                    De opgeslagen follow-upstatus is alleen ter inzage.
-                </p>
-            {% else %}
-                <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
-            {% endif %}
-
-            {% if follow_up_saved %}
-                <div class="success-panel">Follow-up status opgeslagen.</div>
-            {% endif %}
-            {% if follow_up_submit_error %}
-                <div class="panel" style="margin-bottom:0.75rem; border-color:#dc2626; background:#fef2f2;">
-                    <strong>Follow-up status niet opgeslagen:</strong> {{ follow_up_submit_error }}
-                </div>
-            {% endif %}
-
-            {% if selected_thread %}
-                {% if follow_up_status %}
-                    <p>
-                        <strong>Laatst opgeslagen:</strong> {{ follow_up_status.get_status_display }}<br>
-                        {% if follow_up_status.note %}
-                            <span class="muted">Notitie: {{ follow_up_status.note|linebreaksbr }}</span>
-                        {% else %}
-                            <span class="muted">Geen operatornotitie vastgelegd.</span>
-                        {% endif %}
-                    </p>
-                {% else %}
-                    <p class="muted">Nog geen follow-up status vastgelegd voor dit gesprek.</p>
-                {% endif %}
-
-                {% if not demo_read_only %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="form_action" value="follow_up_status">
-                        <input type="hidden" name="focus" value="1">
-                        <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
-                        <p>
-                            <label for="id_focus_follow_up_status">Statuskeuze</label>
-                            <select id="id_focus_follow_up_status" name="follow_up_status" required>
-                                <option value="">Kies status</option>
-                                {% for value, label in follow_up_status_choices %}
-                                    <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </p>
-                        <p>
-                            <label for="id_focus_follow_up_note">Optionele korte operatornotitie</label>
-                            <textarea id="id_focus_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
-                        </p>
-                        <button type="submit" class="secondary-button">Opslaan follow-up status</button>
-                    </form>
-                {% endif %}
-            {% else %}
-                <p class="muted">Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.</p>
-            {% endif %}
-
-        </div>
-    {% else %}
-        <div class="panel chat-follow-up-panel" style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;">
-            <h3 style="margin-top:0;">Follow-up status</h3>
-            {% if demo_read_only %}
-                <p class="muted" style="margin-bottom:0.75rem;">
-                    De opgeslagen follow-upstatus is alleen ter inzage.
-                </p>
-            {% else %}
-                <p class="muted" style="margin-bottom:0.75rem;">Lees de berichten, kies status, voeg eventueel een notitie toe en sla op.</p>
-            {% endif %}
-
-            {% if follow_up_saved %}
-                <div class="success-panel">Follow-up status opgeslagen.</div>
-            {% endif %}
-            {% if follow_up_submit_error %}
-                <div class="panel" style="margin-bottom:0.75rem; border-color:#dc2626; background:#fef2f2;">
-                    <strong>Follow-up status niet opgeslagen:</strong> {{ follow_up_submit_error }}
-                </div>
-            {% endif %}
-
-            {% if selected_thread %}
-                {% if follow_up_status %}
-                    <p>
-                        <strong>Laatst opgeslagen:</strong> {{ follow_up_status.get_status_display }}<br>
-                        {% if follow_up_status.note %}
-                            <span class="muted">Notitie: {{ follow_up_status.note|linebreaksbr }}</span>
-                        {% else %}
-                            <span class="muted">Geen operatornotitie vastgelegd.</span>
-                        {% endif %}
-                    </p>
-                {% else %}
-                    <p class="muted">Nog geen follow-up status vastgelegd voor dit gesprek.</p>
-                {% endif %}
-
-                {% if not demo_read_only %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="form_action" value="follow_up_status">
-                        <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
-                        <p>
-                            <label for="id_follow_up_status">Statuskeuze</label>
-                            <select id="id_follow_up_status" name="follow_up_status" required>
-                                <option value="">Kies status</option>
-                                {% for value, label in follow_up_status_choices %}
-                                    <option value="{{ value }}" {% if follow_up_form.status == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </p>
-                        <p>
-                            <label for="id_follow_up_note">Optionele operatornotitie</label>
-                            <textarea id="id_follow_up_note" name="follow_up_note" maxlength="1000">{{ follow_up_form.note }}</textarea>
-                        </p>
-                        <button type="submit" class="secondary-button">Opslaan follow-up status</button>
-                    </form>
-                {% endif %}
-            {% else %}
-                <p class="muted">Kies eerst een gesprek om follow-up status vast te leggen.</p>
-            {% endif %}
-
-            <p class="muted" style="margin-bottom:0; margin-top:0.75rem;">
-                Nog geen automatische follow-up lijst. De operator kiest handmatig: warm, open loop, later triggeren, afgekoeld of review nodig.
-            </p>
-        </div>
-    {% endif %}
+        {% include "chats/_operator_action_panel.html" %}
     </div>
 
     {% if selected_thread and selected_thread.thread_summary %}
@@ -860,7 +873,24 @@
                                 <option value="opvolging_nodig" {% if handoff_form.close_signal == "opvolging_nodig" %}selected{% endif %}>opvolging_nodig</option>
                             </select>
                         </p>
-                        <button type="submit" class="primary-button" {% if access_state.status == "blocked" %}disabled{% endif %}>Sessie afsluiten & handoff opslaan</button>
+                        <div class="form-actions">
+                            <button
+                                type="submit"
+                                class="secondary-button"
+                                {% if access_state.status == "blocked" %}disabled{% endif %}
+                            >
+                                Sessie afsluiten & handoff opslaan
+                            </button>
+                            <button
+                                type="submit"
+                                name="queue_action"
+                                value="save_and_next"
+                                class="primary-button"
+                                {% if access_state.status == "blocked" %}disabled{% endif %}
+                            >
+                                Afsluiten en volgende openen
+                            </button>
+                        </div>
                     </form>
                 {% endif %}
             </div>
