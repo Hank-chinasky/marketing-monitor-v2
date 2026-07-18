@@ -907,12 +907,27 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["operator_reply_draft"]["language"], "en")
+
+        reply_draft = response.context["operator_reply_draft"]
+
+        self.assertEqual(reply_draft["status"], "provider_unavailable")
+        self.assertEqual(reply_draft["language"], "en")
+        self.assertEqual(reply_draft["source"], "provider_unavailable")
+        self.assertEqual(reply_draft["reply_text"], "")
         self.assertEqual(
-            response.context["operator_reply_draft"]["source"],
-            "deterministic_quality_v1",
+            reply_draft["latest_inbound_text"],
+            "Hello, can you help me with the delivery date?",
         )
-        self.assertTrue(response.context["operator_reply_draft"]["requires_human_review"])
+        self.assertTrue(reply_draft["requires_human_review"])
+
+        self.assertContains(response, "Buddy conceptantwoord")
+        self.assertContains(response, "Provider niet gekoppeld")
+        self.assertContains(
+            response,
+            "Hello, can you help me with the delivery date?",
+        )
+        self.assertContains(response, 'name="buddy_reply_draft"')
+
         self.assertNotContains(response, "Buddy-slot")
         self.assertNotContains(response, "Intern reply draft voorstel")
         self.assertNotContains(response, "Thanks for your message")
@@ -933,15 +948,40 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["operator_reply_draft"]["language"], "nl")
+
+        reply_draft = response.context["operator_reply_draft"]
+
+        self.assertEqual(reply_draft["status"], "existing_draft")
+        self.assertEqual(reply_draft["language"], "nl")
+        self.assertEqual(reply_draft["source"], "latest_buddy_draft")
         self.assertEqual(
-            response.context["operator_reply_draft"]["source"],
-            "latest_buddy_draft",
+            reply_draft["reply_text"],
+            "Dankjewel! We komen morgen met update.",
         )
-        self.assertNotContains(response, "Buddy-slot")
-        self.assertNotContains(response, "Dankjewel! We komen morgen met update.")
-        self.assertNotContains(response, "Bericht versturen")
-        self.assertNotContains(response, 'name="reply_text"')
+        self.assertEqual(
+            reply_draft["latest_inbound_text"],
+            "Hoi, kun je mij morgen helpen?",
+        )
+
+        self.assertContains(response, "Buddy conceptantwoord")
+        self.assertContains(response, "Bestaand Buddy-concept")
+        self.assertContains(response, "Hoi, kun je mij morgen helpen?")
+        self.assertContains(response, "Dankjewel! We komen morgen met update.")
+        self.assertContains(response, "Concept kopiëren")
+
+        html = response.content.decode()
+
+        self.assertEqual(
+            html.count('class="chat-buddy-reply-focus"'),
+            1,
+        )
+        self.assertEqual(
+            html.count('data-buddy-reply-status="existing_draft"'),
+            1,
+        )
+        self.assertNotIn("Buddy-slot", html)
+        self.assertNotIn("Bericht versturen", html)
+        self.assertNotIn('name="reply_text"', html)
     def test_chat_hub_shows_manual_thread_intake_entrypoint_for_scoped_operator(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})

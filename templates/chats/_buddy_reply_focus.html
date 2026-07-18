@@ -1,0 +1,194 @@
+<section
+    class="chat-buddy-reply-focus"
+    data-buddy-reply-focus="v1"
+    data-buddy-reply-status="{{ operator_reply_draft.status }}"
+>
+    <style>
+        .chat-buddy-reply-focus {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #c4b5fd;
+        }
+
+        .chat-buddy-reply-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .chat-buddy-latest-inbound {
+            margin-top: 0.65rem;
+            padding: 0.65rem;
+            border: 1px solid #ddd6fe;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .chat-buddy-latest-inbound blockquote {
+            margin: 0.4rem 0 0;
+            padding-left: 0.65rem;
+            border-left: 3px solid #7c3aed;
+            overflow-wrap: anywhere;
+        }
+
+        .chat-buddy-reply-field {
+            display: block;
+            margin-top: 0.65rem;
+            font-weight: 700;
+        }
+
+        .chat-buddy-reply-field textarea {
+            width: 100%;
+            min-height: 150px;
+            margin-top: 0.35rem;
+            resize: vertical;
+            font: inherit;
+            font-weight: 400;
+        }
+
+        .chat-buddy-reply-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.65rem;
+        }
+
+        .chat-buddy-provider-error {
+            margin-top: 0.65rem;
+            padding: 0.6rem;
+            border: 1px solid #dc2626;
+            border-radius: 8px;
+            background: #fef2f2;
+        }
+    </style>
+
+    <div class="chat-buddy-reply-header">
+        <h4 style="margin:0;">Buddy conceptantwoord</h4>
+        <span class="badge {{ operator_reply_draft.status_badge }}">
+            {{ operator_reply_draft.status_label }}
+        </span>
+    </div>
+
+    {% if selected_thread %}
+        <div class="chat-buddy-latest-inbound">
+            <strong>Laatste klantbericht</strong>
+
+            {% if operator_reply_draft.latest_inbound_text %}
+                <blockquote>
+                    {{ operator_reply_draft.latest_inbound_text|linebreaksbr }}
+                </blockquote>
+            {% else %}
+                <p class="muted" style="margin-bottom:0;">
+                    Geen inkomend klantbericht beschikbaar.
+                </p>
+            {% endif %}
+        </div>
+
+        <label class="chat-buddy-reply-field" for="buddy-reply-draft">
+            Concept voor operatorcontrole
+            <textarea
+                id="buddy-reply-draft"
+                name="buddy_reply_draft"
+                spellcheck="true"
+                {% if demo_read_only %}readonly aria-readonly="true"{% endif %}
+            >{{ operator_reply_draft.reply_text }}</textarea>
+        </label>
+
+        {% if operator_reply_draft.provider_error %}
+            <div class="chat-buddy-provider-error" role="alert">
+                <strong>Buddy-providerfout</strong>
+                <div>{{ operator_reply_draft.provider_error }}</div>
+            </div>
+        {% endif %}
+
+        {% if operator_reply_draft.tone_note %}
+            <p class="muted" style="margin:0.65rem 0 0;">
+                <strong>Controlepunt:</strong>
+                {{ operator_reply_draft.tone_note }}
+            </p>
+        {% endif %}
+
+        <div class="chat-buddy-reply-actions">
+            <button
+                id="buddy-reply-copy"
+                type="button"
+                class="secondary-button"
+                data-buddy-copy-button
+                data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
+                {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
+            >
+                Concept kopiëren
+            </button>
+
+            <span
+                class="muted"
+                data-buddy-copy-status
+                role="status"
+                aria-live="polite"
+            ></span>
+        </div>
+
+        <p class="muted" style="margin:0.65rem 0 0;">
+            Alleen concept en kopieeractie. Geen automatische verzending of bron-writeback.
+        </p>
+    {% else %}
+        <p class="muted" style="margin-bottom:0;">
+            Selecteer een gesprek om het laatste klantbericht en conceptvlak te openen.
+        </p>
+    {% endif %}
+
+    <script>
+        (() => {
+            const root = document.querySelector('[data-buddy-reply-focus="v1"]');
+
+            if (!root) {
+                return;
+            }
+
+            const textarea = root.querySelector('#buddy-reply-draft');
+            const button = root.querySelector('[data-buddy-copy-button]');
+            const status = root.querySelector('[data-buddy-copy-status]');
+
+            if (!textarea || !button || !status) {
+                return;
+            }
+
+            const demoReadOnly = button.dataset.demoReadOnly === 'true';
+
+            const updateButtonState = () => {
+                button.disabled = demoReadOnly || textarea.value.trim() === '';
+            };
+
+            textarea.addEventListener('input', updateButtonState);
+            updateButtonState();
+
+            button.addEventListener('click', async () => {
+                const value = textarea.value.trim();
+
+                if (!value || demoReadOnly) {
+                    return;
+                }
+
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(value);
+                    } else {
+                        textarea.focus();
+                        textarea.select();
+
+                        if (!document.execCommand('copy')) {
+                            throw new Error('copy_failed');
+                        }
+                    }
+
+                    status.textContent = 'Concept gekopieerd.';
+                } catch (error) {
+                    status.textContent = 'Kopiëren niet gelukt. Selecteer de tekst handmatig.';
+                }
+            });
+        })();
+    </script>
+</section>
