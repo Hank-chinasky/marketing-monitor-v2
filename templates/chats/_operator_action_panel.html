@@ -1,0 +1,137 @@
+<section
+    class="panel chat-operator-action chat-follow-up-panel"
+    aria-labelledby="operator-action-title"
+    data-operator-action="v1"
+>
+    <div class="chat-operator-action-header">
+        <div>
+            <h3 id="operator-action-title" style="margin:0;">
+                Operatoractie
+                <span class="muted">· Follow-up status</span>
+            </h3>
+            <p class="muted" style="margin:0.3rem 0 0;">
+                Lees de berichten, kies status, voeg eventueel een notitie toe
+                en sla op. Controleer Buddy vóór gebruik.
+            </p>
+        </div>
+
+        {% if selected_thread %}
+            <span class="badge badge-blue">
+                {{ selected_thread.get_status_display }}
+            </span>
+        {% endif %}
+    </div>
+
+    {% if demo_read_only %}
+        <div class="chat-demo-control-notice">
+            <strong>Demonstratie:</strong>
+            bediening zichtbaar, wijzigen geblokkeerd.
+        </div>
+    {% endif %}
+
+    {% if follow_up_saved %}
+        <div class="success-panel chat-action-feedback">
+            Follow-up status opgeslagen.
+        </div>
+    {% endif %}
+
+    {% if follow_up_submit_error %}
+        <div class="panel chat-action-error">
+            <strong>Follow-up status niet opgeslagen:</strong>
+            {{ follow_up_submit_error }}
+        </div>
+    {% endif %}
+
+    {% if selected_thread %}
+        {% if follow_up_status %}
+            <div class="chat-current-follow-up">
+                <strong>Laatst opgeslagen:</strong>
+                {{ follow_up_status.get_status_display }}
+
+                {% if follow_up_status.note %}
+                    <span class="muted">
+                        · {{ follow_up_status.note }}
+                    </span>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="muted chat-current-follow-up">
+                Nog geen follow-up status vastgelegd voor dit gesprek.
+            </div>
+        {% endif %}
+
+        <form method="post" class="chat-operator-action-form">
+            {% csrf_token %}
+            <input type="hidden" name="form_action" value="follow_up_status">
+            <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+
+            <fieldset
+                class="chat-status-fieldset"
+                data-operator-status-options="v1"
+            >
+                <legend>Statuskeuze</legend>
+
+                <div class="chat-status-choice-grid">
+                    {% for value, label in follow_up_status_choices %}
+                        <label
+                            class="chat-status-choice{% if follow_up_form.status == value %} selected{% endif %}"
+                            for="id_operator_follow_up_status_{{ forloop.counter }}"
+                        >
+                            <input
+                                id="id_operator_follow_up_status_{{ forloop.counter }}"
+                                type="radio"
+                                name="follow_up_status"
+                                value="{{ value }}"
+                                required
+                                {% if follow_up_form.status == value %}checked{% endif %}
+                                {% if demo_read_only %}disabled{% endif %}
+                            >
+                            <span>{{ label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <p class="chat-action-note">
+                <label for="id_operator_follow_up_note">
+                    Optionele operatornotitie
+                </label>
+                <textarea
+                    id="id_operator_follow_up_note"
+                    name="follow_up_note"
+                    maxlength="1000"
+                    aria-label="Optionele korte operatornotitie"
+                    placeholder="Wat moet de volgende operator weten?"
+                    {% if demo_read_only %}disabled{% endif %}
+                >{{ follow_up_form.note }}</textarea>
+            </p>
+
+            <div class="chat-action-buttons">
+                <button
+                    type="submit"
+                    class="secondary-button"
+                    {% if demo_read_only %}disabled{% endif %}
+                >
+                    Opslaan follow-up status
+                </button>
+
+                <button
+                    type="submit"
+                    name="queue_action"
+                    value="save_and_next"
+                    class="primary-button"
+                    {% if demo_read_only %}disabled{% endif %}
+                >
+                    Opslaan en volgende openen
+                </button>
+            </div>
+        </form>
+
+        <p class="muted chat-action-help">
+            De operator kiest handmatig: warm, open loop, later triggeren,
+            afgekoeld of review nodig.
+        </p>
+    {% else %}
+        <p class="muted" style="margin-bottom:0;">Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.</p>
+    {% endif %}
+</section>

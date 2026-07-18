@@ -722,6 +722,67 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         return selected_thread
 
+    @staticmethod
+    def _apply_follow_up_completion_status(selected_thread, follow_up_value):
+        target_status = {
+            ThreadFollowUpStatus.Status.WARM: (
+                ConversationThread.Status.WAITING_ON_CUSTOMER
+            ),
+            ThreadFollowUpStatus.Status.OPEN_LOOP: (
+                ConversationThread.Status.WAITING_ON_CUSTOMER
+            ),
+            ThreadFollowUpStatus.Status.REVIEW_NODIG: (
+                ConversationThread.Status.HANDOFF_REQUIRED
+            ),
+        }.get(follow_up_value)
+
+        if target_status and selected_thread.status != target_status:
+            selected_thread.status = target_status
+            selected_thread.save(update_fields=["status"])
+
+    @staticmethod
+    def _get_handoff_completion_status(close_signal):
+        return {
+            "overdracht_klaar": ConversationThread.Status.WAITING_ON_CUSTOMER,
+            "review_nodig": ConversationThread.Status.HANDOFF_REQUIRED,
+            "opvolging_nodig": ConversationThread.Status.WAITING_ON_OPERATOR,
+        }.get(close_signal)
+
+    def _redirect_after_queue_completion(
+        self,
+        selected_thread,
+        *,
+        completion_kind,
+    ):
+        refreshed_threads = self._get_threads()
+        operator_queue = build_operator_queue(refreshed_threads)
+
+        next_item = next(
+            (
+                item
+                for item in operator_queue["active_items"]
+                if item["thread"].pk != selected_thread.pk
+            ),
+            None,
+        )
+
+        query_values = {
+            "queue_saved": completion_kind,
+        }
+
+        if next_item:
+            query_values["thread"] = next_item["thread"].pk
+            query_values["queue_advanced"] = 1
+        else:
+            query_values["thread"] = selected_thread.pk
+            query_values["queue_cycle_complete"] = 1
+
+        if self.request.POST.get("focus") == "1":
+            query_values["focus"] = 1
+
+        query = urlencode(query_values)
+        return redirect(f"{reverse('chat-hub')}?{query}")
+
     def _build_handoff_form_data(self, selected_thread, posted_values=None):
         if posted_values is not None:
             return {
@@ -1026,6 +1087,16 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "follow_up_saved": self.request.GET.get("follow_up_saved") == "1",
             "follow_up_submit_error": None,
             "focus_mode": self.request.GET.get("focus") == "1",
+            "queue_saved": (
+                self.request.GET.get("queue_saved")
+                if self.request.GET.get("queue_saved")
+                in {"follow_up", "handoff"}
+                else ""
+            ),
+            "queue_advanced": self.request.GET.get("queue_advanced") == "1",
+            "queue_cycle_complete": (
+                self.request.GET.get("queue_cycle_complete") == "1"
+            ),
         }
 
     def get(self, request, *args, **kwargs):
@@ -1097,6 +1168,16 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                     ]
                 )
 
+            if request.POST.get("queue_action") == "save_and_next":
+                self._apply_follow_up_completion_status(
+                    selected_thread,
+                    follow_up_value,
+                )
+                return self._redirect_after_queue_completion(
+                    selected_thread,
+                    completion_kind="follow_up",
+                )
+
             query_values = {"thread": selected_thread.pk, "follow_up_saved": 1}
             if request.POST.get("focus") == "1":
                 query_values["focus"] = "1"
@@ -1128,13 +1209,28 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         )
         selected_thread.open_loop = next_step
         selected_thread.last_operator_handoff_at = timezone.now()
-        selected_thread.save(
-            update_fields=[
-                "last_handoff_note",
-                "open_loop",
-                "last_operator_handoff_at",
-            ]
-        )
+
+        update_fields = [
+            "last_handoff_note",
+            "open_loop",
+            "last_operator_handoff_at",
+        ]
+
+        if request.POST.get("queue_action") == "save_and_next":
+            completion_status = self._get_handoff_completion_status(
+                close_signal
+            )
+            if completion_status and selected_thread.status != completion_status:
+                selected_thread.status = completion_status
+                update_fields.append("status")
+
+        selected_thread.save(update_fields=update_fields)
+
+        if request.POST.get("queue_action") == "save_and_next":
+            return self._redirect_after_queue_completion(
+                selected_thread,
+                completion_kind="handoff",
+            )
 
         query_values = {"thread": selected_thread.pk, "saved": 1}
         if request.POST.get("focus") == "1":

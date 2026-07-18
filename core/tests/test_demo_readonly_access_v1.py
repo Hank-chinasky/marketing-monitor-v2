@@ -145,7 +145,19 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         self.assertNotContains(response, ">Assignments<")
         self.assertNotContains(response, ">Operators<")
         self.assertNotContains(response, ">Feeder<")
-        self.assertNotContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Operatoractie")
+        self.assertContains(response, "Later triggeren")
+        self.assertContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Opslaan en volgende openen")
+        self.assertContains(
+            response,
+            "bediening zichtbaar, wijzigen geblokkeerd",
+        )
+        self.assertContains(
+            response,
+            'data-operator-status-options="v1"',
+        )
+        self.assertContains(response, "disabled")
         self.assertNotContains(
             response,
             "Sessie afsluiten & handoff opslaan",
