@@ -455,8 +455,8 @@ class SharedCoreV1ViewsTests(TestCase):
         before_messages = html.split("Berichten", 1)[0]
         self.assertEqual(html.count('id="chat-buddy-context"'), 1)
         self.assertIn('data-chat-layout="messages-buddy"', html)
-        self.assertLess(html.index("Berichten"), html.index("Buddy Context Surface"))
-        self.assertLess(html.index("Buddy Context Surface"), html.index("Follow-up status"))
+        self.assertLess(html.index("Berichten"), html.index("Follow-up status"))
+        self.assertLess(html.index("Follow-up status"), html.index("Buddy Context Surface"))
         self.assertLess(html.index("Berichten"), html.index("Templates v1"))
         self.assertLess(html.index("Berichten"), html.index("Run log samenvatting"))
         self.assertLess(html.index("Berichten"), html.index("Approvals v1"))
@@ -920,8 +920,8 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertTrue(reply_draft["requires_human_review"])
 
-        self.assertContains(response, "Buddy conceptantwoord")
-        self.assertContains(response, "Provider niet gekoppeld")
+        self.assertContains(response, "Antwoord aan klant")
+        self.assertContains(response, "Nog geen Buddy-antwoord")
         self.assertContains(
             response,
             "Hello, can you help me with the delivery date?",
@@ -963,11 +963,11 @@ class SharedCoreV1ViewsTests(TestCase):
             "Hoi, kun je mij morgen helpen?",
         )
 
-        self.assertContains(response, "Buddy conceptantwoord")
+        self.assertContains(response, "Antwoord aan klant")
         self.assertContains(response, "Bestaand Buddy-concept")
         self.assertContains(response, "Hoi, kun je mij morgen helpen?")
         self.assertContains(response, "Dankjewel! We komen morgen met update.")
-        self.assertContains(response, "Concept kopiëren")
+        self.assertContains(response, "Antwoord kopiëren")
 
         html = response.content.decode()
 

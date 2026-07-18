@@ -119,17 +119,17 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Buddy conceptantwoord")
+        self.assertContains(response, "Antwoord aan klant")
         self.assertContains(response, "Laatste klantbericht")
         self.assertContains(
             response,
             "Ik moest vandaag weer aan je denken.",
         )
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Concept kopiëren")
+        self.assertContains(response, "Antwoord kopiëren")
         self.assertContains(
             response,
-            "Geen automatische verzending of bron-writeback.",
+            "Wijzigingen in dit vak worden niet opgeslagen.",
         )
         self.assertEqual(
             response.context["operator_reply_draft"]["status"],
@@ -153,9 +153,9 @@ class BuddyReplyFocusV1ViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["demo_read_only"])
-        self.assertContains(response, "Buddy conceptantwoord")
+        self.assertContains(response, "Antwoord aan klant")
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Concept kopiëren")
+        self.assertContains(response, "Antwoord kopiëren")
 
         html = response.content.decode()
         textarea_tag = self._opening_tag(html, "buddy-reply-draft")
@@ -164,6 +164,30 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         self.assertIn("readonly", textarea_tag)
         self.assertIn('aria-readonly="true"', textarea_tag)
         self.assertIn("disabled", copy_button_tag)
+
+
+    def test_operator_action_stays_below_messages_without_buddy_height_gap(self):
+        self.client.force_login(self.operator_user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="chat-message-stream"')
+
+        html = response.content.decode()
+        message_index = html.index('class="chat-message-stream"')
+        action_index = html.index('data-operator-action="v1"')
+        buddy_index = html.index('id="chat-buddy-context"')
+
+        self.assertLess(message_index, action_index)
+        self.assertLess(action_index, buddy_index)
+        self.assertNotIn('"followup buddy"', html)
+        self.assertNotIn("grid-area: followup;", html)
+        self.assertIn("display: contents;", html)
+        self.assertIn("order: 3;", html)
 
     def test_missing_provider_is_visible_and_not_a_fake_reply(self):
         self.draft.delete()
@@ -183,7 +207,7 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             response.context["operator_reply_draft"]["reply_text"],
             "",
         )
-        self.assertContains(response, "Provider niet gekoppeld")
+        self.assertContains(response, "Nog geen Buddy-antwoord")
         self.assertContains(
             response,
             "Buddy heeft in deze staat geen antwoord gegenereerd.",
