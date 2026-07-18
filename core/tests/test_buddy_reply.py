@@ -9,128 +9,218 @@ def message(direction, body):
     return SimpleNamespace(direction=direction, body=body)
 
 
+class SuccessfulProvider:
+    def generate_reply(
+        self,
+        *,
+        selected_thread,
+        conversation_messages,
+        operator=None,
+    ):
+        return {
+            "draft_text": "Dit is een contextueel providerconcept.",
+            "language": "nl",
+            "source": "test-provider",
+            "why_this_reply": "Het concept sluit aan op het laatste klantbericht.",
+        }
+
+
+class FailingProvider:
+    def generate_reply(
+        self,
+        *,
+        selected_thread,
+        conversation_messages,
+        operator=None,
+    ):
+        raise RuntimeError("Provider unavailable")
+
+
+class InvalidProvider:
+    def generate_reply(
+        self,
+        *,
+        selected_thread,
+        conversation_messages,
+        operator=None,
+    ):
+        return {"draft_text": ""}
+
+
 class BuddyReplyServiceTests(SimpleTestCase):
     def test_returns_empty_snapshot_without_selected_thread(self):
         result = build_operator_reply_draft(None, [])
 
+        self.assertEqual(result["status"], "no_thread")
         self.assertEqual(result["reply_text"], "")
+        self.assertEqual(result["latest_inbound_text"], "")
         self.assertEqual(result["language"], "unknown")
         self.assertEqual(result["source"], "no_thread")
         self.assertTrue(result["requires_human_review"])
-        self.assertEqual(result["missing_context_note"], "No active thread selected.")
         self.assertEqual(
-            result["tone_note"],
-            "No draft should be used until thread context is available.",
+            result["missing_context_note"],
+            "Geen actieve thread geselecteerd.",
         )
 
-    def test_builds_dutch_quality_reply_from_latest_inbound_message(self):
+    def test_provider_unavailable_does_not_fake_ai_reply(self):
         result = build_operator_reply_draft(
             selected_thread=object(),
             conversation_messages=[
                 message("inbound", "Hoi, kun je mij morgen helpen?"),
-                message("outbound", "Eerdere reactie."),
             ],
         )
 
+        self.assertEqual(result["status"], "provider_unavailable")
         self.assertEqual(result["language"], "nl")
-        self.assertEqual(result["source"], "deterministic_quality_v1")
-        self.assertIn("Dankjewel voor je bericht", result["reply_text"])
-        self.assertEqual(result["missing_context_note"], "")
-        self.assertIn("short, careful", result["tone_note"])
+        self.assertEqual(
+            result["latest_inbound_text"],
+            "Hoi, kun je mij morgen helpen?",
+        )
+        self.assertEqual(result["reply_text"], "")
+        self.assertEqual(result["source"], "provider_unavailable")
+        self.assertEqual(result["provider_error"], "")
+        self.assertNotIn("Dankjewel voor je bericht", result["reply_text"])
         self.assertTrue(result["requires_human_review"])
 
-    def test_builds_german_quality_reply_from_latest_inbound_message(self):
+    def test_existing_latest_draft_is_exposed_behind_same_boundary(self):
+        latest_draft = SimpleNamespace(
+            reply_text="Bestaand concept uit BuddyDraft."
+        )
+
         result = build_operator_reply_draft(
             selected_thread=object(),
             conversation_messages=[
-                message("inbound", "Hallo, kannst du meine Frage heute beantworten?"),
+                message("inbound", "Olá, tudo bem?"),
             ],
-        )
-
-        self.assertEqual(result["language"], "de")
-        self.assertEqual(result["source"], "deterministic_quality_v1")
-        self.assertIn("Danke für deine Nachricht", result["reply_text"])
-        self.assertTrue(result["requires_human_review"])
-
-    def test_builds_english_quality_reply_from_latest_inbound_message(self):
-        result = build_operator_reply_draft(
-            selected_thread=object(),
-            conversation_messages=[
-                message("inbound", "Hello, can you help me today?"),
-            ],
-        )
-
-        self.assertEqual(result["language"], "en")
-        self.assertEqual(result["source"], "deterministic_quality_v1")
-        self.assertIn("Thanks for your message", result["reply_text"])
-        self.assertTrue(result["requires_human_review"])
-
-    def test_builds_portuguese_quality_reply_from_latest_inbound_message(self):
-        result = build_operator_reply_draft(
-            selected_thread=object(),
-            conversation_messages=[
-                message("inbound", "Olá, tudo bem? Pode responder por favor?"),
-            ],
-        )
-
-        self.assertEqual(result["language"], "pt")
-        self.assertEqual(result["source"], "deterministic_quality_v1")
-        self.assertIn("Obrigado pela mensagem", result["reply_text"])
-        self.assertTrue(result["requires_human_review"])
-
-    def test_latest_inbound_message_controls_language(self):
-        result = build_operator_reply_draft(
-            selected_thread=object(),
-            conversation_messages=[
-                message("inbound", "Hoi, kun je mij helpen?"),
-                message("inbound", "Hello, can you help me today?"),
-            ],
-        )
-
-        self.assertEqual(result["language"], "en")
-        self.assertIn("Thanks for your message", result["reply_text"])
-
-    def test_existing_latest_draft_is_exposed_read_only_behind_same_boundary(self):
-        latest_draft = SimpleNamespace(reply_text="Bestaand concept uit BuddyDraft.")
-        result = build_operator_reply_draft(
-            selected_thread=object(),
-            conversation_messages=[message("inbound", "Olá, tudo bem?")],
             latest_draft=latest_draft,
         )
 
-        self.assertEqual(result["reply_text"], "Bestaand concept uit BuddyDraft.")
+        self.assertEqual(result["status"], "existing_draft")
+        self.assertEqual(
+            result["latest_inbound_text"],
+            "Olá, tudo bem?",
+        )
+        self.assertEqual(
+            result["reply_text"],
+            "Bestaand concept uit BuddyDraft.",
+        )
         self.assertEqual(result["language"], "pt")
         self.assertEqual(result["source"], "latest_buddy_draft")
-        self.assertEqual(result["missing_context_note"], "")
-        self.assertIn("Review the existing draft", result["tone_note"])
+        self.assertEqual(result["provider_error"], "")
         self.assertTrue(result["requires_human_review"])
 
-    def test_no_inbound_message_returns_no_draft_text(self):
+    def test_no_inbound_message_returns_no_reply_even_with_thread(self):
         result = build_operator_reply_draft(
             selected_thread=object(),
-            conversation_messages=[message("outbound", "Operator update.")],
+            conversation_messages=[
+                message("outbound", "Operator update."),
+            ],
         )
 
+        self.assertEqual(result["status"], "no_inbound_message")
         self.assertEqual(result["reply_text"], "")
+        self.assertEqual(result["latest_inbound_text"], "")
         self.assertEqual(result["language"], "unknown")
         self.assertEqual(result["source"], "no_inbound_message")
         self.assertEqual(
             result["missing_context_note"],
-            "No inbound customer message is available.",
+            "Geen inkomend klantbericht beschikbaar.",
         )
-        self.assertEqual(
-            result["tone_note"],
-            "Wait for customer context before drafting a reply.",
-        )
-        self.assertTrue(result["requires_human_review"])
 
-    def test_returned_dict_contains_quality_notes(self):
+    def test_latest_inbound_message_controls_visible_context(self):
         result = build_operator_reply_draft(
             selected_thread=object(),
-            conversation_messages=[message("inbound", "Hello, can you help me today?")],
+            conversation_messages=[
+                message("inbound", "Hoi, kun je mij helpen?"),
+                message("outbound", "Eerdere operatorreactie."),
+                message("inbound", "Hello, can you help me today?"),
+            ],
         )
 
-        self.assertIn("missing_context_note", result)
-        self.assertIn("tone_note", result)
-        self.assertIn("safety_note", result)
+        self.assertEqual(result["language"], "en")
+        self.assertEqual(
+            result["latest_inbound_text"],
+            "Hello, can you help me today?",
+        )
+        self.assertEqual(result["status"], "provider_unavailable")
+        self.assertEqual(result["reply_text"], "")
+
+    def test_successful_provider_returns_structured_ready_state(self):
+        result = build_operator_reply_draft(
+            selected_thread=object(),
+            conversation_messages=[
+                message("inbound", "Hoi, kun je mij morgen helpen?"),
+            ],
+            provider=SuccessfulProvider(),
+        )
+
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(
+            result["reply_text"],
+            "Dit is een contextueel providerconcept.",
+        )
+        self.assertEqual(result["language"], "nl")
+        self.assertEqual(result["source"], "test-provider")
+        self.assertEqual(result["provider_error"], "")
+        self.assertIn(
+            "laatste klantbericht",
+            result["tone_note"],
+        )
         self.assertTrue(result["requires_human_review"])
+
+    def test_provider_exception_becomes_explicit_error_state(self):
+        result = build_operator_reply_draft(
+            selected_thread=object(),
+            conversation_messages=[
+                message("inbound", "Hello, can you help me today?"),
+            ],
+            provider=FailingProvider(),
+        )
+
+        self.assertEqual(result["status"], "provider_error")
+        self.assertEqual(result["reply_text"], "")
+        self.assertIn(
+            "geen geldig concept",
+            result["provider_error"],
+        )
+        self.assertTrue(
+            result["source"].startswith("provider_error:")
+        )
+
+    def test_invalid_provider_payload_becomes_explicit_error_state(self):
+        result = build_operator_reply_draft(
+            selected_thread=object(),
+            conversation_messages=[
+                message("inbound", "Hello, can you help me today?"),
+            ],
+            provider=InvalidProvider(),
+        )
+
+        self.assertEqual(result["status"], "provider_error")
+        self.assertEqual(result["reply_text"], "")
+        self.assertNotEqual(result["provider_error"], "")
+
+    def test_returned_dict_contains_reply_focus_contract_fields(self):
+        result = build_operator_reply_draft(
+            selected_thread=object(),
+            conversation_messages=[
+                message("inbound", "Hello, can you help me today?"),
+            ],
+        )
+
+        expected_fields = {
+            "status",
+            "status_label",
+            "status_badge",
+            "latest_inbound_text",
+            "reply_text",
+            "language",
+            "source",
+            "provider_error",
+            "requires_human_review",
+            "safety_note",
+            "missing_context_note",
+            "tone_note",
+        }
+
+        self.assertTrue(expected_fields.issubset(result.keys()))

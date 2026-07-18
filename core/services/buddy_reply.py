@@ -1,19 +1,48 @@
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
-from typing import Any, Iterable
+from typing import Any, Protocol
+
+
+class BuddyReplyProvider(Protocol):
+    """Provider-independent contract for future Buddy reply providers."""
+
+    def generate_reply(
+        self,
+        *,
+        selected_thread: Any,
+        conversation_messages: list[Any],
+        operator: Any = None,
+    ) -> Mapping[str, Any]:
+        """Return a structured reply result without application side effects."""
 
 
 @dataclass(frozen=True)
 class OperatorReplyDraft:
+    status: str
+    status_label: str
+    status_badge: str
+    latest_inbound_text: str
     reply_text: str
     language: str
     source: str
+    provider_error: str
     requires_human_review: bool
     safety_note: str
     missing_context_note: str
     tone_note: str
 
 
-def _text(value) -> str:
+_REPLY_STATUS_META = {
+    "no_thread": ("Geen gesprek", "badge-yellow"),
+    "no_inbound_message": ("Geen klantbericht", "badge-yellow"),
+    "existing_draft": ("Bestaand Buddy-concept", "badge-blue"),
+    "provider_unavailable": ("Provider niet gekoppeld", "badge-yellow"),
+    "provider_error": ("Providerfout", "badge-red"),
+    "ready": ("Concept gereed", "badge-green"),
+}
+
+
+def _text(value: Any) -> str:
     return str(value or "").strip()
 
 
@@ -27,11 +56,13 @@ def _message_body(message: Any) -> str:
 
 def _latest_inbound_body(conversation_messages: Iterable[Any]) -> str:
     messages = list(conversation_messages or [])
+
     for message in reversed(messages):
         if _message_direction(message) == "inbound":
             body = _message_body(message)
             if body:
                 return body
+
     return ""
 
 
@@ -41,105 +72,138 @@ def _marker_score(text: str, markers: set[str]) -> int:
 
 def _detect_language(text: str) -> str:
     lowered = _text(text).lower()
+
     if not lowered:
         return "unknown"
 
-    portuguese_markers = {
-        "olá",
-        "ola",
-        "obrigado",
-        "obrigada",
-        "tudo bem",
-        "por favor",
-        "mensagem",
-        "resposta",
-        "vocês",
-        "voces",
-    }
-    dutch_markers = {
-        "hoi",
-        "hallo",
-        "dank",
-        "dankjewel",
-        "bericht",
-        "graag",
-        "kun je",
-        "kunt u",
-        "wanneer",
-        "morgen",
-        "helpen",
-    }
-    german_markers = {
-        "hallo",
-        "danke",
-        "bitte",
-        "nachricht",
-        "antwort",
-        "kannst du",
-        "können sie",
-        "heute",
-        "morgen",
-        "frage",
-        "beantworten",
-    }
-    english_markers = {
-        "hello",
-        "hi",
-        "thanks",
-        "thank you",
-        "message",
-        "reply",
-        "can you",
-        "could you",
-        "today",
-        "tomorrow",
-        "question",
-        "help",
-    }
-
     scores = {
-        "pt": _marker_score(lowered, portuguese_markers),
-        "nl": _marker_score(lowered, dutch_markers),
-        "de": _marker_score(lowered, german_markers),
-        "en": _marker_score(lowered, english_markers),
+        "pt": _marker_score(
+            lowered,
+            {
+                "olá",
+                "ola",
+                "obrigado",
+                "obrigada",
+                "tudo bem",
+                "por favor",
+                "mensagem",
+                "resposta",
+                "vocês",
+                "voces",
+            },
+        ),
+        "nl": _marker_score(
+            lowered,
+            {
+                "hoi",
+                "hallo",
+                "dank",
+                "dankjewel",
+                "bericht",
+                "graag",
+                "kun je",
+                "kunt u",
+                "wanneer",
+                "morgen",
+                "helpen",
+            },
+        ),
+        "de": _marker_score(
+            lowered,
+            {
+                "hallo",
+                "danke",
+                "bitte",
+                "nachricht",
+                "antwort",
+                "kannst du",
+                "können sie",
+                "heute",
+                "morgen",
+                "frage",
+                "beantworten",
+            },
+        ),
+        "en": _marker_score(
+            lowered,
+            {
+                "hello",
+                "hi",
+                "thanks",
+                "thank you",
+                "message",
+                "reply",
+                "can you",
+                "could you",
+                "today",
+                "tomorrow",
+                "question",
+                "help",
+            },
+        ),
     }
 
     best_language, best_score = max(scores.items(), key=lambda item: item[1])
+
     if best_score > 0:
         return best_language
 
-    return "en"
-
-
-def _reply_text_for_language(language: str) -> str:
-    if language == "pt":
-        return "Obrigado pela mensagem. Vou verificar isto com cuidado e volto com uma resposta adequada."
-    if language == "nl":
-        return "Dankjewel voor je bericht. Ik kijk even goed naar je vraag en kom zo met een zorgvuldig antwoord terug."
-    if language == "de":
-        return "Danke für deine Nachricht. Ich schaue mir deine Frage sorgfältig an und komme gleich mit einer passenden Antwort zurück."
-    return "Thanks for your message. I’ll review your question carefully and come back with a clear reply."
+    return "unknown"
 
 
 def _draft(
     *,
+    status: str,
+    latest_inbound_text: str,
     reply_text: str,
     language: str,
     source: str,
     safety_note: str,
+    provider_error: str = "",
     missing_context_note: str = "",
     tone_note: str = "",
 ) -> dict[str, Any]:
+    status_label, status_badge = _REPLY_STATUS_META[status]
+
     return asdict(
         OperatorReplyDraft(
+            status=status,
+            status_label=status_label,
+            status_badge=status_badge,
+            latest_inbound_text=latest_inbound_text,
             reply_text=reply_text,
             language=language,
             source=source,
+            provider_error=provider_error,
             requires_human_review=True,
             safety_note=safety_note,
             missing_context_note=missing_context_note,
             tone_note=tone_note,
         )
+    )
+
+
+def _provider_error_draft(
+    *,
+    latest_inbound_text: str,
+    language: str,
+    source: str,
+) -> dict[str, Any]:
+    return _draft(
+        status="provider_error",
+        latest_inbound_text=latest_inbound_text,
+        reply_text="",
+        language=language,
+        source=source,
+        provider_error=(
+            "De Buddy-provider kon geen geldig concept leveren. "
+            "Er is geen automatisch of generiek antwoord ingevuld."
+        ),
+        safety_note=(
+            "Geen provideruitvoer beschikbaar. "
+            "De operator moet zelf beslissen of handmatig antwoorden veilig is."
+        ),
+        tone_note="Controleer providerstatus en context voordat je verdergaat.",
     )
 
 
@@ -149,54 +213,131 @@ def build_operator_reply_draft(
     *,
     latest_draft=None,
     operator=None,
+    provider: BuddyReplyProvider | None = None,
 ) -> dict[str, Any]:
-    """Build a deterministic, operator-facing reply draft snapshot.
+    """Build a read-only reply-workspace snapshot.
 
-    This function is intentionally read-only. It does not create BuddyDraft rows,
-    call external providers, send messages, or decide whether an operator may
-    act. Future provider/model replacement should happen behind this service
-    boundary.
+    This boundary never creates BuddyDraft rows, changes thread state, calls a
+    source platform or sends a message. When no provider is supplied, it exposes
+    an explicit unavailable state instead of presenting canned text as AI output.
     """
+
+    messages = list(conversation_messages or [])
 
     if not selected_thread:
         return _draft(
+            status="no_thread",
+            latest_inbound_text="",
             reply_text="",
             language="unknown",
             source="no_thread",
-            safety_note="Draft only. No active thread is selected, so no reply should be used.",
-            missing_context_note="No active thread selected.",
-            tone_note="No draft should be used until thread context is available.",
+            safety_note=(
+                "Geen actieve thread geselecteerd. "
+                "Er mag geen antwoord worden gebruikt."
+            ),
+            missing_context_note="Geen actieve thread geselecteerd.",
+            tone_note="Selecteer eerst een gesprek.",
         )
 
-    latest_inbound_body = _latest_inbound_body(conversation_messages)
-    language = _detect_language(latest_inbound_body)
+    latest_inbound_text = _latest_inbound_body(messages)
+    language = _detect_language(latest_inbound_text)
 
-    existing_reply_text = _text(getattr(latest_draft, "reply_text", ""))
-    if existing_reply_text:
+    if not latest_inbound_text:
         return _draft(
-            reply_text=existing_reply_text,
-            language=language,
-            source="latest_buddy_draft",
-            safety_note="Draft only. Operator must review the existing draft against the latest visible messages before use.",
-            missing_context_note="",
-            tone_note="Review the existing draft against the latest visible messages before use.",
-        )
-
-    if not latest_inbound_body:
-        return _draft(
+            status="no_inbound_message",
+            latest_inbound_text="",
             reply_text="",
             language="unknown",
             source="no_inbound_message",
-            safety_note="Draft only. No inbound customer message is available, so no reply should be used.",
-            missing_context_note="No inbound customer message is available.",
-            tone_note="Wait for customer context before drafting a reply.",
+            safety_note=(
+                "Er is geen inkomend klantbericht beschikbaar. "
+                "Er mag geen antwoord worden gebruikt."
+            ),
+            missing_context_note="Geen inkomend klantbericht beschikbaar.",
+            tone_note="Wacht op klantcontext voordat je een antwoord opstelt.",
         )
 
+    existing_reply_text = _text(getattr(latest_draft, "reply_text", ""))
+
+    if existing_reply_text:
+        return _draft(
+            status="existing_draft",
+            latest_inbound_text=latest_inbound_text,
+            reply_text=existing_reply_text,
+            language=language,
+            source="latest_buddy_draft",
+            safety_note=(
+                "Concept alleen. De operator moet het bestaande Buddy-concept "
+                "controleren tegen de zichtbare berichten en context."
+            ),
+            tone_note=(
+                "Controleer of het bestaande concept de laatste klantboodschap, "
+                "profieltoon en open loop correct volgt."
+            ),
+        )
+
+    if provider is None:
+        return _draft(
+            status="provider_unavailable",
+            latest_inbound_text=latest_inbound_text,
+            reply_text="",
+            language=language,
+            source="provider_unavailable",
+            safety_note=(
+                "Er is geen Buddy-provider gekoppeld. "
+                "Een handmatig ingevoerd concept is geen AI-uitvoer."
+            ),
+            tone_note=(
+                "De operator kan handmatig een concept typen, maar Buddy heeft "
+                "in deze staat geen antwoord gegenereerd."
+            ),
+        )
+
+    provider_name = provider.__class__.__name__
+
+    try:
+        provider_result = provider.generate_reply(
+            selected_thread=selected_thread,
+            conversation_messages=messages,
+            operator=operator,
+        )
+    except Exception:
+        return _provider_error_draft(
+            latest_inbound_text=latest_inbound_text,
+            language=language,
+            source=f"provider_error:{provider_name}",
+        )
+
+    if not isinstance(provider_result, Mapping):
+        return _provider_error_draft(
+            latest_inbound_text=latest_inbound_text,
+            language=language,
+            source=f"provider_error:{provider_name}",
+        )
+
+    reply_text = _text(provider_result.get("draft_text"))
+
+    if not reply_text:
+        return _provider_error_draft(
+            latest_inbound_text=latest_inbound_text,
+            language=language,
+            source=f"provider_error:{provider_name}",
+        )
+
+    provider_language = _text(provider_result.get("language")) or language
+    why_this_reply = _text(provider_result.get("why_this_reply"))
+
     return _draft(
-        reply_text=_reply_text_for_language(language),
-        language=language,
-        source="deterministic_quality_v1",
-        safety_note="Draft only. Operator must review context, policy and tone before using this reply.",
-        missing_context_note="",
-        tone_note="Keep the reply short, careful and aligned with the visible context.",
+        status="ready",
+        latest_inbound_text=latest_inbound_text,
+        reply_text=reply_text,
+        language=provider_language,
+        source=_text(provider_result.get("source")) or f"provider:{provider_name}",
+        safety_note=(
+            "Concept alleen. De operator controleert context, feiten, toon en "
+            "veiligheid vóór kopiëren."
+        ),
+        tone_note=why_this_reply or (
+            "Controleer of het concept aansluit op de zichtbare context."
+        ),
     )
