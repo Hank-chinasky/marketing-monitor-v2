@@ -36,7 +36,7 @@ _REPLY_STATUS_META = {
     "no_thread": ("Geen gesprek", "badge-yellow"),
     "no_inbound_message": ("Geen klantbericht", "badge-yellow"),
     "existing_draft": ("Bestaand Buddy-concept", "badge-blue"),
-    "provider_unavailable": ("Provider niet gekoppeld", "badge-yellow"),
+    "provider_unavailable": ("Nog geen Buddy-antwoord", "badge-yellow"),
     "provider_error": ("Providerfout", "badge-red"),
     "ready": ("Concept gereed", "badge-green"),
 }

@@ -66,7 +66,7 @@
     </style>
 
     <div class="chat-buddy-reply-header">
-        <h4 style="margin:0;">Buddy conceptantwoord</h4>
+        <h4 style="margin:0;">Antwoord aan klant</h4>
         <span class="badge {{ operator_reply_draft.status_badge }}">
             {{ operator_reply_draft.status_label }}
         </span>
@@ -88,14 +88,32 @@
         </div>
 
         <label class="chat-buddy-reply-field" for="buddy-reply-draft">
-            Concept voor operatorcontrole
+            Schrijf, bewerk en controleer het antwoord
             <textarea
                 id="buddy-reply-draft"
                 name="buddy_reply_draft"
                 spellcheck="true"
+                aria-describedby="buddy-reply-guidance buddy-reply-persistence-note"
+                placeholder="{% if demo_read_only %}Demoweergave: alleen-lezen{% else %}Typ hier het antwoord aan de klant{% endif %}"
                 {% if demo_read_only %}readonly aria-readonly="true"{% endif %}
             >{{ operator_reply_draft.reply_text }}</textarea>
         </label>
+
+        <p
+            id="buddy-reply-guidance"
+            class="muted"
+            style="margin:0.5rem 0 0;"
+        >
+            {% if demo_read_only %}
+                Demoweergave: dit antwoord is alleen-lezen en kan niet worden gekopieerd.
+            {% elif operator_reply_draft.status == "existing_draft" or operator_reply_draft.status == "ready" %}
+                Buddy heeft een concept voorbereid. Controleer de profieltoon,
+                gesprekslijn en open loop voordat je het antwoord kopieert.
+            {% else %}
+                Buddy heeft nog geen antwoord voorbereid. Typ hier zelf het antwoord
+                aan de klant of laat het veld leeg.
+            {% endif %}
+        </p>
 
         {% if operator_reply_draft.provider_error %}
             <div class="chat-buddy-provider-error" role="alert">
@@ -120,7 +138,7 @@
                 data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
                 {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
             >
-                Concept kopiëren
+                Antwoord kopiëren
             </button>
 
             <span
@@ -131,8 +149,15 @@
             ></span>
         </div>
 
-        <p class="muted" style="margin:0.65rem 0 0;">
-            Alleen concept en kopieeractie. Geen automatische verzending of bron-writeback.
+        <p
+            id="buddy-reply-persistence-note"
+            class="muted"
+            style="margin:0.65rem 0 0;"
+        >
+            <strong>Werkwijze:</strong>
+            Wijzigingen in dit vak worden niet opgeslagen.
+            Kopieer het antwoord en plak het in het bronplatform.
+            Er wordt niets automatisch verzonden.
         </p>
     {% else %}
         <p class="muted" style="margin-bottom:0;">
@@ -184,9 +209,9 @@
                         }
                     }
 
-                    status.textContent = 'Concept gekopieerd.';
+                    status.textContent = 'Antwoord gekopieerd.';
                 } catch (error) {
-                    status.textContent = 'Kopiëren niet gelukt. Selecteer de tekst handmatig.';
+                    status.textContent = 'Kopiëren niet gelukt. Selecteer het antwoord handmatig.';
                 }
             });
         })();

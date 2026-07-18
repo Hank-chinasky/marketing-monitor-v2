@@ -209,17 +209,21 @@
         .chat-message-buddy-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-            grid-template-areas:
-                "messages buddy"
-                "followup buddy";
             gap: 0.75rem;
             align-items: start;
             margin-bottom: 0.75rem;
         }
         .chat-message-column {
             display: grid;
+            grid-template-columns: minmax(0, 1fr);
             gap: 0.75rem;
-            grid-area: messages;
+            min-width: 0;
+            align-content: start;
+        }
+        .chat-message-stream {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.75rem;
             min-width: 0;
         }
         .chat-message-panel,
@@ -232,10 +236,8 @@
             margin: 0;
             min-width: 0;
             position: static;
-            grid-area: buddy;
         }
         .chat-operator-action {
-            grid-area: followup;
             margin: 0;
             border: 2px solid #2563eb;
             background: #eff6ff;
@@ -405,11 +407,20 @@
                 overflow: visible;
             }
             .chat-message-buddy-layout {
-                grid-template-columns: minmax(0, 1fr);
-                grid-template-areas:
-                    "messages"
-                    "buddy"
-                    "followup";
+                display: flex;
+                flex-direction: column;
+            }
+            .chat-message-column {
+                display: contents;
+            }
+            .chat-message-stream {
+                order: 1;
+            }
+            .chat-buddy-surface {
+                order: 2;
+            }
+            .chat-operator-action {
+                order: 3;
             }
             .chat-workfloor-top,
             .chat-thread-form {
@@ -643,6 +654,7 @@
         data-chat-layout="messages-buddy"
     >
         <div class="chat-message-column">
+            <div class="chat-message-stream">
             {% if selected_thread %}
                 <div class="panel chat-message-panel">
                     <h3 style="margin-top:0;">Berichten</h3>
@@ -677,6 +689,9 @@
                     <span class="badge badge-yellow">alert</span> Selecteer een thread om het werkvlak te starten.
                 </div>
             {% endif %}
+            </div>
+
+            {% include "chats/_operator_action_panel.html" %}
         </div>
 
         <aside
@@ -757,8 +772,6 @@
                 Buddy adviseert. De operator beslist. Geen automatische actie.
             </p>
         </aside>
-
-        {% include "chats/_operator_action_panel.html" %}
     </div>
 
     {% if selected_thread and selected_thread.thread_summary %}

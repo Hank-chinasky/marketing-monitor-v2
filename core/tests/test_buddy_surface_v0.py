@@ -127,13 +127,21 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertIn("@media (min-width: 1101px)", html)
         self.assertIn("position: sticky;", html)
         self.assertIn("align-self: stretch;", html)
-        self.assertIn('"messages buddy"', html)
-        self.assertIn('"followup buddy"', html)
+        self.assertNotIn('"messages buddy"', html)
+        self.assertNotIn('"followup buddy"', html)
+        self.assertIn("chat-message-stream", html)
         self.assertIn("chat-follow-up-panel", html)
         self.assertLess(
-            html.index("Buddy Context Surface"),
+            html.index("Berichten"),
             html.index("Follow-up status"),
         )
+        self.assertLess(
+            html.index("Follow-up status"),
+            html.index("Buddy Context Surface"),
+        )
+        self.assertIn("display: contents;", html)
+        self.assertIn("order: 2;", html)
+        self.assertIn("order: 3;", html)
         self.assertIn("@media (max-width: 1100px)", html)
         self.assertIn("@media (max-width: 720px)", html)
         self.assertIn("Context & veiligheid", html)

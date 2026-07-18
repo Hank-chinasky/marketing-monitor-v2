@@ -71,6 +71,7 @@ class BuddyReplyServiceTests(SimpleTestCase):
         )
 
         self.assertEqual(result["status"], "provider_unavailable")
+        self.assertEqual(result["status_label"], "Nog geen Buddy-antwoord")
         self.assertEqual(result["language"], "nl")
         self.assertEqual(
             result["latest_inbound_text"],
