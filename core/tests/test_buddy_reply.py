@@ -10,13 +10,15 @@ def message(direction, body):
 
 
 class SuccessfulProvider:
+    def __init__(self):
+        self.context_packet = None
+
     def generate_reply(
         self,
         *,
-        selected_thread,
-        conversation_messages,
-        operator=None,
+        context_packet,
     ):
+        self.context_packet = context_packet
         return {
             "draft_text": "Dit is een contextueel providerconcept.",
             "language": "nl",
@@ -29,9 +31,7 @@ class FailingProvider:
     def generate_reply(
         self,
         *,
-        selected_thread,
-        conversation_messages,
-        operator=None,
+        context_packet,
     ):
         raise RuntimeError("Provider unavailable")
 
@@ -40,9 +40,7 @@ class InvalidProvider:
     def generate_reply(
         self,
         *,
-        selected_thread,
-        conversation_messages,
-        operator=None,
+        context_packet,
     ):
         return {"draft_text": ""}
 
@@ -147,15 +145,45 @@ class BuddyReplyServiceTests(SimpleTestCase):
         self.assertEqual(result["reply_text"], "")
 
     def test_successful_provider_returns_structured_ready_state(self):
+        provider = SuccessfulProvider()
+
         result = build_operator_reply_draft(
             selected_thread=object(),
             conversation_messages=[
                 message("inbound", "Hoi, kun je mij morgen helpen?"),
             ],
-            provider=SuccessfulProvider(),
+            buddy_context={
+                "thread_summary": "Warme lopende follow-up.",
+                "profile_tone": "Speels en vertrouwd.",
+                "open_loop": "Pak de laatste vraag op.",
+                "do_not_do": "Niet generiek openen.",
+                "recommended_next_action": (
+                    "Ga door op de bestaande gesprekstrant."
+                ),
+                "reliability_label": "Hoog",
+                "reliability_reason": "Kerncontext is aanwezig.",
+                "missing_context": [],
+            },
+            provider=provider,
         )
 
         self.assertEqual(result["status"], "ready")
+        self.assertIsNotNone(provider.context_packet)
+        self.assertEqual(
+            provider.context_packet["schema_version"],
+            "buddy-context-v1",
+        )
+        self.assertEqual(
+            provider.context_packet["latest_inbound_text"],
+            "Hoi, kun je mij morgen helpen?",
+        )
+        self.assertEqual(
+            provider.context_packet["do_not_do"],
+            "Niet generiek openen.",
+        )
+        self.assertNotIn("selected_thread", provider.context_packet)
+        self.assertNotIn("conversation_messages", provider.context_packet)
+        self.assertNotIn("operator", provider.context_packet)
         self.assertEqual(
             result["reply_text"],
             "Dit is een contextueel providerconcept.",

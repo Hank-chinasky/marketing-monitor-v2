@@ -2,6 +2,8 @@ from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
 from typing import Any, Protocol
 
+from core.services.buddy_context import build_buddy_context_packet
+
 
 class BuddyReplyProvider(Protocol):
     """Provider-independent contract for future Buddy reply providers."""
@@ -9,11 +11,9 @@ class BuddyReplyProvider(Protocol):
     def generate_reply(
         self,
         *,
-        selected_thread: Any,
-        conversation_messages: list[Any],
-        operator: Any = None,
+        context_packet: Mapping[str, Any],
     ) -> Mapping[str, Any]:
-        """Return a structured reply result without application side effects."""
+        """Return structured output for one controlled context packet."""
 
 
 @dataclass(frozen=True)
@@ -213,6 +213,7 @@ def build_operator_reply_draft(
     *,
     latest_draft=None,
     operator=None,
+    buddy_context: Mapping[str, Any] | None = None,
     provider: BuddyReplyProvider | None = None,
 ) -> dict[str, Any]:
     """Build a read-only reply-workspace snapshot.
@@ -295,11 +296,16 @@ def build_operator_reply_draft(
 
     provider_name = provider.__class__.__name__
 
+    context_packet = build_buddy_context_packet(
+        selected_thread,
+        messages,
+        buddy_assist=buddy_context,
+        language=language,
+    )
+
     try:
         provider_result = provider.generate_reply(
-            selected_thread=selected_thread,
-            conversation_messages=messages,
-            operator=operator,
+            context_packet=context_packet,
         )
     except Exception:
         return _provider_error_draft(

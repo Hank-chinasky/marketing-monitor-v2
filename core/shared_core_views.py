@@ -905,6 +905,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             conversation_messages,
             latest_draft=latest_draft,
             operator=get_operator_for_user(self.request.user),
+            buddy_context=buddy_assist,
         )
 
         run_log = []
