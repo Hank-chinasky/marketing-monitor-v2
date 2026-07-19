@@ -1,6 +1,8 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -13,10 +15,38 @@ from core.models import (
     Operator,
     OperatorAssignment,
 )
+from core.services.buddy_provider import PROVIDER_FACTORIES
 from core.services.demo_access import (
     DEMO_DATA_MARKER,
     DEMO_VIEWER_GROUP_NAME,
 )
+
+
+class ConfiguredViewProvider:
+    def generate_reply(
+        self,
+        *,
+        context_packet,
+    ):
+        return {
+            "draft_text": (
+                "Ik ben vanavond nog even online. "
+                "Wat maakte dat je vandaag weer aan me dacht?"
+            ),
+            "language": "nl",
+            "why_this_reply": (
+                "Het antwoord sluit aan op de persoonlijke open loop."
+            ),
+            "open_loops_to_watch": [
+                "Vraag waarom hij vandaag aan het profiel dacht.",
+            ],
+            "do_not_do_warnings": [
+                "Niet generiek openen.",
+            ],
+            "commercial_signal": "medium",
+            "confidence": 0.84,
+            "refusal_status": "none",
+        }
 
 
 class BuddyReplyFocusV1ViewTests(TestCase):
@@ -188,6 +218,55 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         self.assertNotIn("grid-area: followup;", html)
         self.assertIn("display: contents;", html)
         self.assertIn("order: 3;", html)
+
+    @override_settings(BUDDY_REPLY_PROVIDER="test-view")
+    def test_configured_provider_runs_through_full_view_route(self):
+        self.draft.delete()
+        self.client.force_login(self.operator_user)
+
+        with patch.dict(
+            PROVIDER_FACTORIES,
+            {
+                "test-view": ConfiguredViewProvider,
+            },
+            clear=True,
+        ):
+            response = self.client.get(
+                reverse("chat-hub"),
+                {"thread": self.thread.pk},
+            )
+
+        self.assertEqual(response.status_code, 200)
+
+        reply_draft = response.context["operator_reply_draft"]
+
+        self.assertEqual(reply_draft["status"], "ready")
+        self.assertEqual(
+            reply_draft["reply_text"],
+            (
+                "Ik ben vanavond nog even online. "
+                "Wat maakte dat je vandaag weer aan me dacht?"
+            ),
+        )
+        self.assertEqual(reply_draft["language"], "nl")
+        self.assertEqual(
+            reply_draft["source"],
+            "provider:ConfiguredViewProvider",
+        )
+        self.assertIn(
+            "persoonlijke open loop",
+            reply_draft["tone_note"],
+        )
+        self.assertTrue(reply_draft["requires_human_review"])
+
+        self.assertContains(
+            response,
+            "Ik ben vanavond nog even online.",
+        )
+        self.assertNotContains(
+            response,
+            "Nog geen Buddy-antwoord",
+        )
 
     def test_missing_provider_is_visible_and_not_a_fake_reply(self):
         self.draft.delete()

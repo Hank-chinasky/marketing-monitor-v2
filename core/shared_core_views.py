@@ -18,6 +18,7 @@ from core.models import (
     OperatorAssignment,
     ThreadFollowUpStatus,
 )
+from core.services.buddy_provider import get_configured_buddy_provider
 from core.services.buddy_reply import build_operator_reply_draft
 from core.services.demo_access import is_demo_viewer
 from core.services.operator_queue import build_operator_queue
@@ -906,6 +907,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             latest_draft=latest_draft,
             operator=get_operator_for_user(self.request.user),
             buddy_context=buddy_assist,
+            provider=get_configured_buddy_provider(),
         )
 
         run_log = []
