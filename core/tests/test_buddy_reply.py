@@ -22,8 +22,17 @@ class SuccessfulProvider:
         return {
             "draft_text": "Dit is een contextueel providerconcept.",
             "language": "nl",
-            "source": "test-provider",
             "why_this_reply": "Het concept sluit aan op het laatste klantbericht.",
+            "open_loops_to_watch": [
+                "Pak de eerdere afspraak weer op.",
+            ],
+            "do_not_do_warnings": [
+                "Niet generiek openen.",
+            ],
+            "commercial_signal": "medium",
+            "confidence": 0.84,
+            "refusal_status": "none",
+            "unknown_debug_field": "mag niet worden vertrouwd",
         }
 
 
@@ -43,6 +52,22 @@ class InvalidProvider:
         context_packet,
     ):
         return {"draft_text": ""}
+
+
+class RefusingProvider:
+    def generate_reply(
+        self,
+        *,
+        context_packet,
+    ):
+        return {
+            "draft_text": "",
+            "language": "nl",
+            "why_this_reply": "Onvoldoende veilige context.",
+            "commercial_signal": "unknown",
+            "confidence": 0.2,
+            "refusal_status": "refused",
+        }
 
 
 class BuddyReplyServiceTests(SimpleTestCase):
@@ -189,10 +214,40 @@ class BuddyReplyServiceTests(SimpleTestCase):
             "Dit is een contextueel providerconcept.",
         )
         self.assertEqual(result["language"], "nl")
-        self.assertEqual(result["source"], "test-provider")
+        self.assertEqual(
+            result["source"],
+            "provider:SuccessfulProvider",
+        )
         self.assertEqual(result["provider_error"], "")
         self.assertIn(
             "laatste klantbericht",
+            result["tone_note"],
+        )
+        self.assertTrue(result["requires_human_review"])
+
+    def test_explicit_provider_refusal_never_becomes_a_draft(self):
+        result = build_operator_reply_draft(
+            selected_thread=object(),
+            conversation_messages=[
+                message("inbound", "Hoi, kun je mij helpen?"),
+            ],
+            provider=RefusingProvider(),
+        )
+
+        self.assertEqual(result["status"], "provider_refusal")
+        self.assertEqual(
+            result["status_label"],
+            "Buddy geeft geen concept",
+        )
+        self.assertEqual(result["reply_text"], "")
+        self.assertEqual(result["language"], "nl")
+        self.assertEqual(
+            result["source"],
+            "provider_refusal:RefusingProvider",
+        )
+        self.assertEqual(result["provider_error"], "")
+        self.assertIn(
+            "Onvoldoende veilige context",
             result["tone_note"],
         )
         self.assertTrue(result["requires_human_review"])

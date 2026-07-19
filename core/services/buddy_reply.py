@@ -3,6 +3,10 @@ from dataclasses import asdict, dataclass
 from typing import Any, Protocol
 
 from core.services.buddy_context import build_buddy_context_packet
+from core.services.buddy_output import (
+    BuddyOutputValidationError,
+    validate_buddy_output,
+)
 
 
 class BuddyReplyProvider(Protocol):
@@ -38,6 +42,7 @@ _REPLY_STATUS_META = {
     "existing_draft": ("Bestaand Buddy-concept", "badge-blue"),
     "provider_unavailable": ("Nog geen Buddy-antwoord", "badge-yellow"),
     "provider_error": ("Providerfout", "badge-red"),
+    "provider_refusal": ("Buddy geeft geen concept", "badge-yellow"),
     "ready": ("Concept gereed", "badge-green"),
 }
 
@@ -207,6 +212,32 @@ def _provider_error_draft(
     )
 
 
+def _provider_refusal_draft(
+    *,
+    latest_inbound_text: str,
+    language: str,
+    source: str,
+    reason: str,
+) -> dict[str, Any]:
+    return _draft(
+        status="provider_refusal",
+        latest_inbound_text=latest_inbound_text,
+        reply_text="",
+        language=language,
+        source=source,
+        safety_note=(
+            "Buddy heeft bewust geen antwoordconcept geleverd. "
+            "De operator moet de zichtbare context zelf beoordelen."
+        ),
+        missing_context_note=(
+            "Er is geen veilig providerconcept beschikbaar."
+        ),
+        tone_note=reason or (
+            "Controleer de gesprekssituatie handmatig voordat je antwoordt."
+        ),
+    )
+
+
 def build_operator_reply_draft(
     selected_thread,
     conversation_messages,
@@ -314,36 +345,40 @@ def build_operator_reply_draft(
             source=f"provider_error:{provider_name}",
         )
 
-    if not isinstance(provider_result, Mapping):
+    try:
+        validated_output = validate_buddy_output(
+            provider_result,
+        )
+    except BuddyOutputValidationError:
         return _provider_error_draft(
             latest_inbound_text=latest_inbound_text,
             language=language,
             source=f"provider_error:{provider_name}",
         )
 
-    reply_text = _text(provider_result.get("draft_text"))
+    provider_language = validated_output["language"]
+    if provider_language == "unknown":
+        provider_language = language
 
-    if not reply_text:
-        return _provider_error_draft(
+    if validated_output["refusal_status"] == "refused":
+        return _provider_refusal_draft(
             latest_inbound_text=latest_inbound_text,
-            language=language,
-            source=f"provider_error:{provider_name}",
+            language=provider_language,
+            source=f"provider_refusal:{provider_name}",
+            reason=validated_output["why_this_reply"],
         )
-
-    provider_language = _text(provider_result.get("language")) or language
-    why_this_reply = _text(provider_result.get("why_this_reply"))
 
     return _draft(
         status="ready",
         latest_inbound_text=latest_inbound_text,
-        reply_text=reply_text,
+        reply_text=validated_output["draft_text"],
         language=provider_language,
-        source=_text(provider_result.get("source")) or f"provider:{provider_name}",
+        source=f"provider:{provider_name}",
         safety_note=(
             "Concept alleen. De operator controleert context, feiten, toon en "
             "veiligheid vóór kopiëren."
         ),
-        tone_note=why_this_reply or (
+        tone_note=validated_output["why_this_reply"] or (
             "Controleer of het concept aansluit op de zichtbare context."
         ),
     )
