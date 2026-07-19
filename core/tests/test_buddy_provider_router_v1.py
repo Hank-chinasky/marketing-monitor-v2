@@ -1,3 +1,6 @@
+import os
+from unittest.mock import patch
+
 from django.test import SimpleTestCase, override_settings
 
 from core.services.buddy_provider import (
@@ -105,3 +108,61 @@ class BuddyProviderRouterV1Tests(SimpleTestCase):
         )
 
         self.assertIsInstance(provider, ValidProvider)
+
+    @override_settings(BUDDY_REPLY_PROVIDER="venice")
+    def test_venice_alias_without_credentials_fails_closed(self):
+        with patch.dict(
+            os.environ,
+            {
+                "VENICE_API_KEY": "",
+                "VENICE_MODEL": "",
+            },
+            clear=False,
+        ):
+            provider = get_configured_buddy_provider()
+
+        self.assertIsNone(provider)
+
+    @override_settings(BUDDY_REPLY_PROVIDER="venice")
+    def test_venice_alias_builds_provider_when_configured(self):
+        with patch.dict(
+            os.environ,
+            {
+                "VENICE_API_KEY": "secret-test-key",
+                "VENICE_MODEL": "test-model",
+                "VENICE_API_BASE": (
+                    "https://api.venice.ai/api/v1"
+                ),
+            },
+            clear=True,
+        ):
+            provider = get_configured_buddy_provider()
+
+        self.assertIsNotNone(provider)
+        self.assertEqual(
+            provider.__class__.__name__,
+            "VeniceBuddyProvider",
+        )
+        self.assertNotIn(
+            "secret-test-key",
+            repr(provider),
+        )
+
+    @override_settings(BUDDY_REPLY_PROVIDER="")
+    def test_environment_can_select_provider_alias(self):
+        with patch.dict(
+            os.environ,
+            {
+                "BUDDY_REPLY_PROVIDER": "venice",
+                "VENICE_API_KEY": "secret-test-key",
+                "VENICE_MODEL": "test-model",
+            },
+            clear=True,
+        ):
+            provider = get_configured_buddy_provider()
+
+        self.assertIsNotNone(provider)
+        self.assertEqual(
+            provider.__class__.__name__,
+            "VeniceBuddyProvider",
+        )
