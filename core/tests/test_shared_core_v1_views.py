@@ -920,7 +920,7 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertTrue(reply_draft["requires_human_review"])
 
-        self.assertContains(response, "Antwoord aan klant")
+        self.assertContains(response, "Antwoord opstellen")
         self.assertContains(response, "Nog geen Buddy-antwoord")
         self.assertContains(
             response,
@@ -963,16 +963,16 @@ class SharedCoreV1ViewsTests(TestCase):
             "Hoi, kun je mij morgen helpen?",
         )
 
-        self.assertContains(response, "Antwoord aan klant")
+        self.assertContains(response, "Antwoord opstellen")
         self.assertContains(response, "Bestaand Buddy-concept")
         self.assertContains(response, "Hoi, kun je mij morgen helpen?")
         self.assertContains(response, "Dankjewel! We komen morgen met update.")
-        self.assertContains(response, "Antwoord kopiëren")
+        self.assertContains(response, "Kopiëren naar bronplatform")
 
         html = response.content.decode()
 
         self.assertEqual(
-            html.count('class="chat-buddy-reply-focus"'),
+            html.count('data-operator-composer="v1"'),
             1,
         )
         self.assertEqual(

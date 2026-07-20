@@ -149,14 +149,14 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Antwoord aan klant")
+        self.assertContains(response, "Antwoord opstellen")
         self.assertContains(response, "Laatste klantbericht")
         self.assertContains(
             response,
             "Ik moest vandaag weer aan je denken.",
         )
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Antwoord kopiëren")
+        self.assertContains(response, "Kopiëren naar bronplatform")
         self.assertContains(
             response,
             "Wijzigingen in dit vak worden niet opgeslagen.",
@@ -183,9 +183,9 @@ class BuddyReplyFocusV1ViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["demo_read_only"])
-        self.assertContains(response, "Antwoord aan klant")
+        self.assertContains(response, "Antwoord opstellen")
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Antwoord kopiëren")
+        self.assertContains(response, "Kopiëren naar bronplatform")
 
         html = response.content.decode()
         textarea_tag = self._opening_tag(html, "buddy-reply-draft")
@@ -209,15 +209,22 @@ class BuddyReplyFocusV1ViewTests(TestCase):
 
         html = response.content.decode()
         message_index = html.index('class="chat-message-stream"')
+        composer_index = html.index('data-operator-composer="v1"')
         action_index = html.index('data-operator-action="v1"')
         buddy_index = html.index('id="chat-buddy-context"')
 
-        self.assertLess(message_index, action_index)
+        self.assertLess(message_index, composer_index)
+        self.assertLess(composer_index, action_index)
         self.assertLess(action_index, buddy_index)
+        self.assertEqual(
+            html.count('data-operator-composer="v1"'),
+            1,
+        )
         self.assertNotIn('"followup buddy"', html)
         self.assertNotIn("grid-area: followup;", html)
         self.assertIn("display: contents;", html)
-        self.assertIn("order: 3;", html)
+        self.assertIn(".chat-operator-composer {", html)
+        self.assertIn("order: 4;", html)
 
     @override_settings(BUDDY_REPLY_PROVIDER="test-view")
     def test_configured_provider_runs_through_full_view_route(self):
