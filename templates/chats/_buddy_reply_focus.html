@@ -1,13 +1,14 @@
 <section
-    class="chat-buddy-reply-focus"
+    class="panel chat-buddy-reply-focus chat-operator-composer"
     data-buddy-reply-focus="v1"
+    data-operator-composer="v1"
     data-buddy-reply-status="{{ operator_reply_draft.status }}"
 >
     <style>
         .chat-buddy-reply-focus {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #c4b5fd;
+            margin: 0;
+            border: 2px solid #2563eb;
+            background: #eff6ff;
         }
 
         .chat-buddy-reply-header {
@@ -66,7 +67,7 @@
     </style>
 
     <div class="chat-buddy-reply-header">
-        <h4 style="margin:0;">Antwoord aan klant</h4>
+        <h3 style="margin:0;">Antwoord opstellen</h3>
         <span class="badge {{ operator_reply_draft.status_badge }}">
             {{ operator_reply_draft.status_label }}
         </span>
@@ -88,7 +89,7 @@
         </div>
 
         <label class="chat-buddy-reply-field" for="buddy-reply-draft">
-            Schrijf, bewerk en controleer het antwoord
+            Schrijf, bewerk en controleer het definitieve antwoord
             <textarea
                 id="buddy-reply-draft"
                 name="buddy_reply_draft"
@@ -138,7 +139,7 @@
                 data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
                 {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
             >
-                Antwoord kopiëren
+                Kopiëren naar bronplatform
             </button>
 
             <span

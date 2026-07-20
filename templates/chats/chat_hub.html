@@ -416,11 +416,14 @@
             .chat-message-stream {
                 order: 1;
             }
-            .chat-buddy-surface {
+            .chat-operator-composer {
                 order: 2;
             }
-            .chat-operator-action {
+            .chat-buddy-surface {
                 order: 3;
+            }
+            .chat-operator-action {
+                order: 4;
             }
             .chat-workfloor-top,
             .chat-thread-form {
@@ -691,6 +694,8 @@
             {% endif %}
             </div>
 
+            {% include "chats/_buddy_reply_focus.html" %}
+
             {% include "chats/_operator_action_panel.html" %}
         </div>
 
@@ -765,8 +770,6 @@
                     </p>
                 </details>
             </div>
-
-            {% include "chats/_buddy_reply_focus.html" %}
 
             <p class="muted" style="margin-bottom:0; margin-top:0.65rem;">
                 Buddy adviseert. De operator beslist. Geen automatische actie.
