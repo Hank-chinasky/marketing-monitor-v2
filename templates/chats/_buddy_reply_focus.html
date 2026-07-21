@@ -109,7 +109,7 @@
                 Demoweergave: dit antwoord is alleen-lezen en kan niet worden gekopieerd.
             {% elif operator_reply_draft.status == "existing_draft" or operator_reply_draft.status == "ready" %}
                 Buddy heeft een concept voorbereid. Controleer de profieltoon,
-                gesprekslijn en open loop voordat je het antwoord kopieert.
+                gesprekslijn en open loop voordat je het antwoord verzendt.
             {% else %}
                 Buddy heeft nog geen antwoord voorbereid. Typ hier zelf het antwoord
                 aan de klant of laat het veld leeg.
@@ -132,6 +132,17 @@
 
         <div class="chat-buddy-reply-actions">
             <button
+                id="buddy-reply-send-demo"
+                type="button"
+                class="primary-button"
+                data-buddy-send-demo-button
+                data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
+                {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
+            >
+                Verzenden (demo)
+            </button>
+
+            <button
                 id="buddy-reply-copy"
                 type="button"
                 class="secondary-button"
@@ -139,8 +150,15 @@
                 data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
                 {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
             >
-                Kopiëren naar bronplatform
+                Concept kopiëren
             </button>
+
+            <span
+                class="muted"
+                data-buddy-send-demo-status
+                role="status"
+                aria-live="polite"
+            ></span>
 
             <span
                 class="muted"
@@ -155,10 +173,11 @@
             class="muted"
             style="margin:0.65rem 0 0;"
         >
-            <strong>Werkwijze:</strong>
+            <strong>Demo:</strong>
             Wijzigingen in dit vak worden niet opgeslagen.
-            Kopieer het antwoord en plak het in het bronplatform.
-            Er wordt niets automatisch verzonden.
+            Verzenden (demo) voert geen bronactie uit.
+            Er wordt niets opgeslagen of verzonden.
+            Gebruik Concept kopiëren alleen als tijdelijke fallback.
         </p>
     {% else %}
         <p class="muted" style="margin-bottom:0;">
@@ -175,28 +194,70 @@
             }
 
             const textarea = root.querySelector('#buddy-reply-draft');
-            const button = root.querySelector('[data-buddy-copy-button]');
-            const status = root.querySelector('[data-buddy-copy-status]');
+            const sendDemoButton = root.querySelector(
+                '[data-buddy-send-demo-button]'
+            );
+            const sendDemoStatus = root.querySelector(
+                '[data-buddy-send-demo-status]'
+            );
+            const copyButton = root.querySelector(
+                '[data-buddy-copy-button]'
+            );
+            const copyStatus = root.querySelector(
+                '[data-buddy-copy-status]'
+            );
 
-            if (!textarea || !button || !status) {
+            if (
+                !textarea
+                || !sendDemoButton
+                || !sendDemoStatus
+                || !copyButton
+                || !copyStatus
+            ) {
                 return;
             }
 
-            const demoReadOnly = button.dataset.demoReadOnly === 'true';
+            const demoReadOnly =
+                sendDemoButton.dataset.demoReadOnly === 'true';
 
             const updateButtonState = () => {
-                button.disabled = demoReadOnly || textarea.value.trim() === '';
+                const disabled =
+                    demoReadOnly || textarea.value.trim() === '';
+
+                sendDemoButton.disabled = disabled;
+                copyButton.disabled = disabled;
             };
 
-            textarea.addEventListener('input', updateButtonState);
+            textarea.addEventListener('input', () => {
+                updateButtonState();
+                sendDemoStatus.textContent = '';
+                copyStatus.textContent = '';
+            });
+
             updateButtonState();
 
-            button.addEventListener('click', async () => {
+            sendDemoButton.addEventListener('click', () => {
                 const value = textarea.value.trim();
 
                 if (!value || demoReadOnly) {
                     return;
                 }
+
+                copyStatus.textContent = '';
+                sendDemoStatus.textContent = (
+                    'Demo: bericht niet verzonden. '
+                    + 'De bronkoppeling is nog niet actief.'
+                );
+            });
+
+            copyButton.addEventListener('click', async () => {
+                const value = textarea.value.trim();
+
+                if (!value || demoReadOnly) {
+                    return;
+                }
+
+                sendDemoStatus.textContent = '';
 
                 try {
                     if (navigator.clipboard && window.isSecureContext) {
@@ -210,9 +271,12 @@
                         }
                     }
 
-                    status.textContent = 'Antwoord gekopieerd.';
+                    copyStatus.textContent = 'Concept gekopieerd.';
                 } catch (error) {
-                    status.textContent = 'Kopiëren niet gelukt. Selecteer het antwoord handmatig.';
+                    copyStatus.textContent = (
+                        'Kopiëren niet gelukt. '
+                        + 'Selecteer het antwoord handmatig.'
+                    );
                 }
             });
         })();
