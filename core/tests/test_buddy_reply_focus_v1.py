@@ -156,7 +156,8 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             "Ik moest vandaag weer aan je denken.",
         )
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Kopiëren naar bronplatform")
+        self.assertContains(response, "Concept kopiëren")
+        self.assertContains(response, "Verzenden (demo)")
         self.assertContains(
             response,
             "Wijzigingen in dit vak worden niet opgeslagen.",
@@ -168,8 +169,16 @@ class BuddyReplyFocusV1ViewTests(TestCase):
 
         html = response.content.decode()
         textarea_tag = self._opening_tag(html, "buddy-reply-draft")
+        send_button_tag = self._opening_tag(
+            html,
+            "buddy-reply-send-demo",
+        )
 
         self.assertNotIn("readonly", textarea_tag)
+        self.assertIn('type="button"', send_button_tag)
+        self.assertNotIn("disabled", send_button_tag)
+        self.assertNotIn('type="submit"', send_button_tag)
+        self.assertNotIn("fetch(", html)
         self.assertNotIn("Buddy versturen", html)
         self.assertNotIn("Verstuur concept", html)
 
@@ -185,15 +194,21 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         self.assertTrue(response.context["demo_read_only"])
         self.assertContains(response, "Antwoord opstellen")
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Kopiëren naar bronplatform")
+        self.assertContains(response, "Concept kopiëren")
+        self.assertContains(response, "Verzenden (demo)")
 
         html = response.content.decode()
         textarea_tag = self._opening_tag(html, "buddy-reply-draft")
         copy_button_tag = self._opening_tag(html, "buddy-reply-copy")
+        send_button_tag = self._opening_tag(
+            html,
+            "buddy-reply-send-demo",
+        )
 
         self.assertIn("readonly", textarea_tag)
         self.assertIn('aria-readonly="true"', textarea_tag)
         self.assertIn("disabled", copy_button_tag)
+        self.assertIn("disabled", send_button_tag)
 
 
     def test_operator_action_stays_below_messages_without_buddy_height_gap(self):
