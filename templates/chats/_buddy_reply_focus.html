@@ -302,6 +302,9 @@
             const demoReadOnly =
                 sendDemoButton.dataset.demoReadOnly === 'true';
             const previewUrl = root.dataset.sendPreviewUrl;
+            const sendDemoButtonLabel =
+                sendDemoButton.textContent;
+            let previewController = null;
 
             const resetPreview = () => {
                 previewPanel.hidden = true;
@@ -312,14 +315,24 @@
             };
 
             const updateButtonState = () => {
-                const disabled =
-                    demoReadOnly || textarea.value.trim() === '';
+                const disabled = (
+                    demoReadOnly
+                    || previewController !== null
+                    || textarea.value.trim() === ''
+                );
 
                 sendDemoButton.disabled = disabled;
                 copyButton.disabled = disabled;
             };
 
             textarea.addEventListener('input', () => {
+                if (previewController) {
+                    previewController.abort();
+                    previewController = null;
+                }
+
+                sendDemoButton.textContent =
+                    sendDemoButtonLabel;
                 updateButtonState();
                 resetPreview();
                 sendDemoStatus.textContent = '';
@@ -335,11 +348,15 @@
                     return;
                 }
 
-                const originalButtonText =
-                    sendDemoButton.textContent;
+                if (previewController) {
+                    previewController.abort();
+                }
 
-                sendDemoButton.disabled = true;
+                const controller = new AbortController();
+                previewController = controller;
+
                 sendDemoButton.textContent = 'Preview maken…';
+                updateButtonState();
                 copyStatus.textContent = '';
                 sendDemoStatus.textContent = '';
                 resetPreview();
@@ -350,6 +367,7 @@
                         {
                             method: 'POST',
                             credentials: 'same-origin',
+                            signal: controller.signal,
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRFToken': csrfInput.value,
@@ -372,6 +390,13 @@
                         throw new Error(
                             payload.error || 'preview_failed'
                         );
+                    }
+
+                    if (
+                        controller.signal.aborted
+                        || textarea.value !== value
+                    ) {
+                        return;
                     }
 
                     previewPanel.hidden = false;
@@ -417,14 +442,19 @@
                         + 'Er is niets verzonden.'
                     );
                 } catch (error) {
-                    sendDemoStatus.textContent = (
-                        'Preview maken is niet gelukt. '
-                        + 'Er is niets opgeslagen of verzonden.'
-                    );
+                    if (error.name !== 'AbortError') {
+                        sendDemoStatus.textContent = (
+                            'Preview maken is niet gelukt. '
+                            + 'Er is niets opgeslagen of verzonden.'
+                        );
+                    }
                 } finally {
-                    sendDemoButton.textContent =
-                        originalButtonText;
-                    updateButtonState();
+                    if (previewController === controller) {
+                        previewController = null;
+                        sendDemoButton.textContent =
+                            sendDemoButtonLabel;
+                        updateButtonState();
+                    }
                 }
             });
 
