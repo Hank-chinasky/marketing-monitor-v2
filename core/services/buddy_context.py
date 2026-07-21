@@ -1,19 +1,14 @@
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict, dataclass
-import re
 from typing import Any
+
+from core.services.contact_data_sanitizer import (
+    sanitize_contact_data,
+)
 
 
 BUDDY_CONTEXT_SCHEMA_VERSION = "buddy-context-v1"
 DEFAULT_RECENT_MESSAGE_LIMIT = 8
-
-_EMAIL_PATTERN = re.compile(
-    r"\b[^\s@]+@[^\s@]+\.[^\s@]+\b",
-)
-_PHONE_CANDIDATE_PATTERN = re.compile(
-    r"(?<!\w)(?:\+?\d[\d\s().-]{6,}\d)(?!\w)"
-)
-
 
 @dataclass(frozen=True)
 class BuddyContextMessage:
@@ -46,31 +41,13 @@ def _text(value: Any) -> str:
     return str(value or "").strip()
 
 
-def _mask_phone_candidate(match: re.Match[str]) -> str:
-    candidate = match.group(0)
-    digit_count = sum(character.isdigit() for character in candidate)
-    has_international_prefix = candidate.lstrip().startswith("+")
-
-    if digit_count >= 9:
-        return "[phone]"
-
-    if has_international_prefix and digit_count >= 8:
-        return "[phone]"
-
-    return candidate
-
-
 def _redact_sensitive_text(value: Any) -> str:
-    text = _text(value)
-    if not text:
-        return ""
-
-    text = _EMAIL_PATTERN.sub("[email]", text)
-    text = _PHONE_CANDIDATE_PATTERN.sub(
-        _mask_phone_candidate,
-        text,
+    result = sanitize_contact_data(
+        _text(value),
+        email_replacement="[email]",
+        phone_replacement="[phone]",
     )
-    return text
+    return result.sanitized_text
 
 
 def _timestamp(value: Any) -> str:
