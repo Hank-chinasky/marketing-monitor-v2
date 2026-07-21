@@ -3,6 +3,7 @@
     data-buddy-reply-focus="v1"
     data-operator-composer="v1"
     data-buddy-reply-status="{{ operator_reply_draft.status }}"
+    data-send-preview-url="{% url 'sanitized-send-preview' %}"
 >
     <style>
         .chat-buddy-reply-focus {
@@ -55,6 +56,33 @@
             gap: 0.5rem;
             flex-wrap: wrap;
             margin-top: 0.65rem;
+        }
+
+        .chat-sanitized-send-preview {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid #94a3b8;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .chat-sanitized-send-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .chat-sanitized-send-preview pre {
+            margin: 0.65rem 0 0;
+            padding: 0.7rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #f8fafc;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font: inherit;
         }
 
         .chat-buddy-provider-error {
@@ -168,6 +196,37 @@
             ></span>
         </div>
 
+        <span hidden data-send-preview-csrf>
+            {% csrf_token %}
+        </span>
+
+        <div
+            class="chat-sanitized-send-preview"
+            data-sanitized-send-preview
+            hidden
+        >
+            <div class="chat-sanitized-send-preview-header">
+                <strong>Verzendpreview</strong>
+                <span
+                    class="badge"
+                    data-sanitized-preview-badge
+                ></span>
+            </div>
+
+            <pre data-sanitized-preview-text></pre>
+
+            <p
+                class="muted"
+                data-sanitized-preview-detail
+                style="margin:0.65rem 0 0;"
+            ></p>
+
+            <p class="muted" style="margin:0.45rem 0 0;">
+                <strong>Preview-only:</strong>
+                er is niets opgeslagen of naar een bron verzonden.
+            </p>
+        </div>
+
         <p
             id="buddy-reply-persistence-note"
             class="muted"
@@ -187,7 +246,9 @@
 
     <script>
         (() => {
-            const root = document.querySelector('[data-buddy-reply-focus="v1"]');
+            const root = document.querySelector(
+                '[data-buddy-reply-focus="v1"]'
+            );
 
             if (!root) {
                 return;
@@ -206,6 +267,22 @@
             const copyStatus = root.querySelector(
                 '[data-buddy-copy-status]'
             );
+            const previewPanel = root.querySelector(
+                '[data-sanitized-send-preview]'
+            );
+            const previewBadge = root.querySelector(
+                '[data-sanitized-preview-badge]'
+            );
+            const previewText = root.querySelector(
+                '[data-sanitized-preview-text]'
+            );
+            const previewDetail = root.querySelector(
+                '[data-sanitized-preview-detail]'
+            );
+            const csrfInput = root.querySelector(
+                '[data-send-preview-csrf] '
+                + 'input[name="csrfmiddlewaretoken"]'
+            );
 
             if (
                 !textarea
@@ -213,41 +290,172 @@
                 || !sendDemoStatus
                 || !copyButton
                 || !copyStatus
+                || !previewPanel
+                || !previewBadge
+                || !previewText
+                || !previewDetail
+                || !csrfInput
             ) {
                 return;
             }
 
             const demoReadOnly =
                 sendDemoButton.dataset.demoReadOnly === 'true';
+            const previewUrl = root.dataset.sendPreviewUrl;
+            const sendDemoButtonLabel =
+                sendDemoButton.textContent;
+            let previewController = null;
+
+            const resetPreview = () => {
+                previewPanel.hidden = true;
+                previewBadge.textContent = '';
+                previewBadge.className = 'badge';
+                previewText.textContent = '';
+                previewDetail.textContent = '';
+            };
 
             const updateButtonState = () => {
-                const disabled =
-                    demoReadOnly || textarea.value.trim() === '';
+                const disabled = (
+                    demoReadOnly
+                    || previewController !== null
+                    || textarea.value.trim() === ''
+                );
 
                 sendDemoButton.disabled = disabled;
                 copyButton.disabled = disabled;
             };
 
             textarea.addEventListener('input', () => {
+                if (previewController) {
+                    previewController.abort();
+                    previewController = null;
+                }
+
+                sendDemoButton.textContent =
+                    sendDemoButtonLabel;
                 updateButtonState();
+                resetPreview();
                 sendDemoStatus.textContent = '';
                 copyStatus.textContent = '';
             });
 
             updateButtonState();
 
-            sendDemoButton.addEventListener('click', () => {
-                const value = textarea.value.trim();
+            sendDemoButton.addEventListener('click', async () => {
+                const value = textarea.value;
 
-                if (!value || demoReadOnly) {
+                if (!value.trim() || demoReadOnly) {
                     return;
                 }
 
+                if (previewController) {
+                    previewController.abort();
+                }
+
+                const controller = new AbortController();
+                previewController = controller;
+
+                sendDemoButton.textContent = 'Preview maken…';
+                updateButtonState();
                 copyStatus.textContent = '';
-                sendDemoStatus.textContent = (
-                    'Demo: bericht niet verzonden. '
-                    + 'De bronkoppeling is nog niet actief.'
-                );
+                sendDemoStatus.textContent = '';
+                resetPreview();
+
+                try {
+                    const response = await fetch(
+                        previewUrl,
+                        {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            signal: controller.signal,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfInput.value,
+                            },
+                            body: JSON.stringify({
+                                message: value,
+                            }),
+                        }
+                    );
+
+                    let payload = {};
+
+                    try {
+                        payload = await response.json();
+                    } catch (error) {
+                        throw new Error('invalid_preview_response');
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(
+                            payload.error || 'preview_failed'
+                        );
+                    }
+
+                    if (
+                        controller.signal.aborted
+                        || textarea.value !== value
+                    ) {
+                        return;
+                    }
+
+                    previewPanel.hidden = false;
+                    previewText.textContent =
+                        payload.preview_text || '';
+
+                    const matchLabels = {
+                        email: 'e-mailadres',
+                        phone: 'telefoonnummer',
+                    };
+
+                    const detectedTypes = (
+                        payload.match_types || []
+                    ).map(
+                        (matchType) => (
+                            matchLabels[matchType] || matchType
+                        )
+                    );
+
+                    if (payload.changed) {
+                        previewBadge.textContent =
+                            'Contactgegevens geblokkeerd';
+                        previewBadge.className =
+                            'badge badge-red';
+                        previewDetail.textContent = (
+                            'Gevonden en gemaskeerd: '
+                            + detectedTypes.join(', ')
+                            + '. Controleer de aangepaste tekst.'
+                        );
+                    } else {
+                        previewBadge.textContent =
+                            'Geen contactgegevens gevonden';
+                        previewBadge.className =
+                            'badge badge-green';
+                        previewDetail.textContent = (
+                            'De tekst is ongewijzigd. '
+                            + 'Menselijke controle blijft verplicht.'
+                        );
+                    }
+
+                    sendDemoStatus.textContent = (
+                        'Demo: verzendpreview gemaakt. '
+                        + 'Er is niets verzonden.'
+                    );
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        sendDemoStatus.textContent = (
+                            'Preview maken is niet gelukt. '
+                            + 'Er is niets opgeslagen of verzonden.'
+                        );
+                    }
+                } finally {
+                    if (previewController === controller) {
+                        previewController = null;
+                        sendDemoButton.textContent =
+                            sendDemoButtonLabel;
+                        updateButtonState();
+                    }
+                }
             });
 
             copyButton.addEventListener('click', async () => {
@@ -260,7 +468,10 @@
                 sendDemoStatus.textContent = '';
 
                 try {
-                    if (navigator.clipboard && window.isSecureContext) {
+                    if (
+                        navigator.clipboard
+                        && window.isSecureContext
+                    ) {
                         await navigator.clipboard.writeText(value);
                     } else {
                         textarea.focus();
@@ -271,7 +482,8 @@
                         }
                     }
 
-                    copyStatus.textContent = 'Concept gekopieerd.';
+                    copyStatus.textContent =
+                        'Concept gekopieerd.';
                 } catch (error) {
                     copyStatus.textContent = (
                         'Kopiëren niet gelukt. '

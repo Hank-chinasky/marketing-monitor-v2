@@ -178,7 +178,20 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         self.assertIn('type="button"', send_button_tag)
         self.assertNotIn("disabled", send_button_tag)
         self.assertNotIn('type="submit"', send_button_tag)
-        self.assertNotIn("fetch(", html)
+        self.assertEqual(html.count("fetch("), 1)
+        self.assertIn("new AbortController()", html)
+        self.assertIn("signal: controller.signal", html)
+        self.assertIn("textarea.value !== value", html)
+        self.assertIn("error.name !== 'AbortError'", html)
+        self.assertIn(
+            reverse("sanitized-send-preview"),
+            html,
+        )
+        self.assertIn("Verzendpreview", html)
+        self.assertIn(
+            "Preview-only:",
+            html,
+        )
         self.assertNotIn("Buddy versturen", html)
         self.assertNotIn("Verstuur concept", html)
 
