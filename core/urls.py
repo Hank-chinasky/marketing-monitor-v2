@@ -27,6 +27,7 @@ from core.shared_core_views import (
     ChatHubView,
     FeederHubView,
 )
+from core.send_preview_views import SanitizedSendPreviewView
 from core.views import (
     ChannelDetailView,
     ChannelListView,
@@ -56,6 +57,11 @@ urlpatterns = [
         name="adultadsuite-triggers",
     ),
     path("chats/", ChatHubView.as_view(), name="chat-hub"),
+    path(
+        "chats/send-preview/",
+        SanitizedSendPreviewView.as_view(),
+        name="sanitized-send-preview",
+    ),
     path("feeder/", FeederHubView.as_view(), name="feeder-hub"),
     path("approvals/create/", ApprovalCreateView.as_view(), name="approval-create"),
     path(
