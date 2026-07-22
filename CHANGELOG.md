@@ -1,5 +1,100 @@
 # Changelog
 
+## 2026-07-22 — Safe Source Handoff v1 merged
+
+### Status
+
+- Safe Source Handoff v1 is gemerged naar `main`.
+- Pull request: `#109`
+- Feature commit:
+  - `45a780de397aababfb9b94627fe243a118c55bde`
+- Merge commit:
+  - `ee8497b8f8d8a5a05ff9d98c1fe908e2a243df45`
+- Nog niet gedeployed naar productie.
+- Huidige productiecommit blijft:
+  - `e77ecea04ab16464a72b6307fc1fa2e83547da2a`
+- Geen database- of infrastructuurmigratie uitgevoerd.
+- Echte verzending blijft uit.
+
+### Added
+
+- Veilige, source-aware operatorhandoff na de gesanitiseerde verzendpreview.
+- Broncontext in het previewpaneel met:
+  - bronplatform;
+  - profiel/platformhandle;
+  - source-site en site-ID;
+  - externe thread-ID.
+- Nieuwe actie `Veilige tekst kopiëren`.
+- Aparte JavaScript-state `safePreviewText` voor de laatst geldige server-preview.
+- Veilige clipboardfallback via een tijdelijk read-only textarea-element.
+- Instructie om de bron handmatig te openen en de broncontext te controleren.
+
+### Changed
+
+- `Verzenden (demo)` is hernoemd naar `Verzendpreview maken`.
+- `Concept kopiëren` is vervangen door `Veilige tekst kopiëren`.
+- Alleen de gesanitiseerde `preview_text` kan naar het clipboard worden gekopieerd.
+- De kopieeractie blijft verborgen en geblokkeerd totdat een geldige preview bestaat.
+- Een wijziging in het antwoordveld wist en blokkeert de vorige previewhandoff.
+- De oorspronkelijke composerinhoud wordt niet rechtstreeks gekopieerd.
+- `profile_url` wordt niet in de gerenderde chatpagina opgenomen.
+- Er wordt geen onbewezen bron- of thread-deeplink aangeboden.
+
+### Operator flow
+
+1. Antwoord controleren.
+2. Verzendpreview maken.
+3. Contactgegevens server-side sanitizen.
+4. Veilige previewtekst controleren.
+5. Veilige previewtekst kopiëren.
+6. Bron, profiel, site en thread-ID controleren.
+7. Bron handmatig openen.
+8. Operator verzendt handmatig.
+
+### Guardrails
+
+- Geen echte verzending.
+- Geen automatische sendactie.
+- Geen bronwriteback of bronadapter.
+- Geen automatische navigatie.
+- Geen externe platformaanroep.
+- Geen opslag van preview- of clipboarddata.
+- Geen modelwijzigingen.
+- Geen migrations.
+- Geen route-, settings- of env-wijzigingen.
+- Geen Docker-, Compose- of VPS-wijzigingen.
+- Geen ongecontroleerde `profile_url` in de HTML.
+- Demo-viewers blijven read-only.
+- Menselijke controle blijft verplicht.
+
+### Files changed
+
+- `templates/chats/_buddy_reply_focus.html`
+- `core/tests/test_buddy_reply_focus_v1.py`
+- `core/tests/test_shared_core_v1_views.py`
+
+### Tested
+
+- Gerichte tests:
+  - 15 tests OK
+- Shared Core-regressietests:
+  - 2 tests OK
+- Volledige testsuite:
+  - 382 tests OK
+- Django system check:
+  - geen issues
+- Migration drift check:
+  - `No changes detected`
+- Diffcontrole:
+  - geen whitespace- of patchproblemen
+
+### Deploy
+
+- Nog geen productie-deploy uitgevoerd.
+- Geen containers gewijzigd.
+- Geen databasebackup voor deze slice gemaakt.
+- Productiedeploy vereist een afzonderlijke expliciete deploy-go.
+
 ## 2026-07-21 — Sanitized Send Preview v1 live
 
 ### Status
