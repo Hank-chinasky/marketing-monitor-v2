@@ -1,17 +1,18 @@
 # Changelog
 
-## 2026-07-22 — Safe Source Handoff v1 merged
+## 2026-07-22 — Safe Source Handoff v1 live
 
 ### Status
 
-- Safe Source Handoff v1 is gemerged naar `main`.
+- Safe Source Handoff v1 is gemerged en live gedeployed.
 - Pull request: `#109`
 - Feature commit:
   - `45a780de397aababfb9b94627fe243a118c55bde`
-- Merge commit:
+- Runtime merge commit:
   - `ee8497b8f8d8a5a05ff9d98c1fe908e2a243df45`
-- Nog niet gedeployed naar productie.
-- Huidige productiecommit blijft:
+- Productiecommit:
+  - `f6c1a5b9f354259f71d1e4f8c2ec70625cf0c422`
+- Vorige productie- en rollbackcommit:
   - `e77ecea04ab16464a72b6307fc1fa2e83547da2a`
 - Geen database- of infrastructuurmigratie uitgevoerd.
 - Echte verzending blijft uit.
@@ -90,10 +91,51 @@
 
 ### Deploy
 
-- Nog geen productie-deploy uitgevoerd.
-- Geen containers gewijzigd.
-- Geen databasebackup voor deze slice gemaakt.
-- Productiedeploy vereist een afzonderlijke expliciete deploy-go.
+- Live gedeployed op 2026-07-22.
+- Deploytijd:
+  - `2026-07-22T13:10:41Z`
+- Productiecommit:
+  - `f6c1a5b9f354259f71d1e4f8c2ec70625cf0c422`
+- Nieuwe container:
+  - `fb627427500bfd63d6e9fba2f395665597fd746c145a4b1fd9a80c0aa1285ec5`
+- Nieuw image:
+  - `sha256:08cb333dfb9681df6e846c66df54e72badae72549c432411302544ba39323f0c`
+- Rollback-image:
+  - `creatorworkboard-ops-rollback:e77ecea-20260722T123227Z`
+- Databasebackup:
+  - `/opt/commandcenter/backups/creatorworkboard-ops/db-predeploy-20260722T123227Z-e77ecea.sqlite3`
+- Databasebackup SHA-256:
+  - `cb2beb53abb4700f26e514a56b24450bb3828f1ca0aaaa08ad707f63a1ec0912`
+- Deploymanifest:
+  - `/opt/commandcenter/backups/creatorworkboard-ops/deploy-20260722T131041Z-f6c1a5b.txt`
+- Containerstatus:
+  - `healthy`
+- Django system check:
+  - geen issues
+- Migration drift:
+  - geen
+- Interne healthcheck:
+  - `200`
+- Publieke Basic Auth-grens:
+  - `401`
+- Geen rollback nodig geweest.
+
+### Production smoke
+
+- Contactgegevens worden correct gesanitized.
+- Veilige previewtekst kan correct worden gekopieerd.
+- De oorspronkelijke onveilige composerinhoud wordt niet gekopieerd.
+- Tekstwijziging maakt de vorige preview en kopieeractie ongeldig.
+- Bron, profiel, site en thread-ID zijn zichtbaar.
+- Geen ongecontroleerde bron- of profieldeeplink zichtbaar.
+- Eén interne previewrequest per actie.
+- Geen externe platformrequest waargenomen.
+- Demo-viewercontrole niet op productie uitgevoerd omdat nog geen:
+  - `demo-viewer` gebruiker;
+  - `demo_viewer` groep;
+  - afgeschermde productiedemodata
+  aanwezig zijn.
+- Read-only demogedrag blijft gedekt door de groene geautomatiseerde tests.
 
 ## 2026-07-21 — Sanitized Send Preview v1 live
 
