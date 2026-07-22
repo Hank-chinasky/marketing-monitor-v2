@@ -1,5 +1,130 @@
 # Changelog
 
+## 2026-07-21 — Sanitized Send Preview v1 live
+
+### Status
+
+- Sanitized Send Preview v1 is gemerged en live gedeployed.
+- Pull request: `#107`
+- Feature commits:
+  - `390909a` — Add sanitized send preview v1
+  - `8eadd0a` — Prevent stale sanitized preview responses
+- Merge commit / productiecommit:
+  - `e77ecea04ab16464a72b6307fc1fa2e83547da2a`
+- Vorige productie- en rollbackcommit:
+  - `cad2dbd4fd34a85dcbbb709c71d0678ad9d1c4fe`
+- Geen database- of infrastructuurmigratie uitgevoerd.
+- Venice blijft uit.
+- Echte verzending blijft uit.
+
+### Added
+
+- Nieuwe interne, POST-only previewroute:
+  - `/chats/send-preview/`
+- Nieuwe `SanitizedSendPreviewView` voor gecontroleerde verzendpreview.
+- Server-side sanitizing via de bestaande centrale Contact Data Sanitizer v1.
+- Previewpaneel in de Operator Composer met:
+  - gesanitiseerde previewtekst;
+  - status `Contactgegevens geblokkeerd`;
+  - status `Geen contactgegevens gevonden`;
+  - gevonden matchtypes voor e-mail en telefoon;
+  - expliciete preview-only melding.
+- CSRF-beveiligde same-origin JSON-request.
+- Maximale previewlengte van 10.000 tekens.
+- `Cache-Control: private, no-store`.
+- Fail-closed responseveld:
+  - `send_available: false`
+- Stale-responsebescherming met:
+  - `AbortController`;
+  - annuleren van een lopende previewrequest bij tekstwijziging;
+  - controle dat de response nog bij de actuele tekst hoort.
+
+### Changed
+
+- De bestaande knop `Verzenden (demo)` maakt nu uitsluitend een veilige preview.
+- De oorspronkelijke tekst in het antwoordveld blijft ongewijzigd.
+- De preview verdwijnt zodra de operator de concepttekst wijzigt.
+- De bestaande kopieeractie blijft buiten deze slice ongewijzigd.
+- Er wordt exact één interne fetch uitgevoerd per previewklik.
+
+### Guardrails
+
+- Geen echte verzending.
+- Geen automatische actie.
+- Geen bronadapter of writeback.
+- Geen Chatties- of Eurotikken-aanroep.
+- Geen databaseopslag van de preview.
+- Geen modelwijzigingen.
+- Geen migrations.
+- Geen settings- of env-wijzigingen.
+- Geen providerwijziging.
+- Demo-viewers blijven read-only.
+- Menselijke controle blijft verplicht.
+
+### Files changed
+
+- `core/send_preview_views.py`
+- `core/urls.py`
+- `templates/chats/_buddy_reply_focus.html`
+- `core/tests/test_sanitized_send_preview_v1.py`
+- `core/tests/test_buddy_reply_focus_v1.py`
+
+### Tested
+
+- 24 gerichte tests:
+  - OK
+- Volledige testsuite:
+  - 382 tests OK
+- Django system check:
+  - geen issues
+- Migration drift check:
+  - `No changes detected`
+- Handmatige browsercontrole:
+  - contactgegevens worden gemaskeerd;
+  - datum, tijd en ordernummer blijven intact;
+  - preview verdwijnt na tekstwijziging;
+  - één interne `POST /chats/send-preview/`;
+  - status `200`;
+  - geen externe request zichtbaar.
+
+### Deploy
+
+- Productiecommit:
+  - `e77ecea04ab16464a72b6307fc1fa2e83547da2a`
+- Container:
+  - `creatorworkboard-ops-web-1`
+  - status `healthy`
+- Interne healthcheck:
+  - `200`
+- Publieke healthcheck zonder Basic Auth:
+  - `401`
+- Migrations:
+  - geen
+- Venice:
+  - uit
+- Echte verzending:
+  - uit
+
+### Rollback and backup
+
+- Rollback image:
+  - `creatorworkboard-ops-rollback:cad2dbd-20260721T214337Z`
+- Databasebackup:
+  - `/opt/commandcenter/backups/creatorworkboard-ops/db-predeploy-20260721T214118Z-cad2dbd.sqlite3`
+- Databasebackup SHA-256:
+  - `cb2beb53abb4700f26e514a56b24450bb3828f1ca0aaaa08ad707f63a1ec0912`
+- Deploymanifest:
+  - `/opt/commandcenter/backups/creatorworkboard-ops/deploy-20260721T214337Z-e77ecea.txt`
+
+### Operational note
+
+- Twee eerdere deploypogingen stopten vóór de live containerswitch:
+  - eerst omdat Django settings niet waren geïnitialiseerd;
+  - daarna omdat ten onrechte `config.settings` werd gebruikt.
+- De repository en live container bleven tijdens beide mislukte pogingen ongewijzigd.
+- De definitieve backup werd veilig gemaakt via `python manage.py shell`, waardoor de werkelijke settingsmodule `marketing_monitor.settings` werd gebruikt.
+- De uiteindelijke deploy is daarna volledig geslaagd zonder rollback.
+
 ## 2026-05-31 — Buddy draft quality v1 live
 
 ### Status
