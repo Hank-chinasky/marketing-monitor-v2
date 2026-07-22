@@ -167,7 +167,7 @@
                 data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
                 {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
             >
-                Verzenden (demo)
+                Verzendpreview maken
             </button>
 
             <button
@@ -176,9 +176,10 @@
                 class="secondary-button"
                 data-buddy-copy-button
                 data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
-                {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
+                hidden
+                disabled
             >
-                Concept kopiëren
+                Veilige tekst kopiëren
             </button>
 
             <span
@@ -221,6 +222,76 @@
                 style="margin:0.65rem 0 0;"
             ></p>
 
+            <div
+                data-safe-source-handoff
+                style="
+                    margin-top:0.75rem;
+                    padding-top:0.75rem;
+                    border-top:1px solid #cbd5e1;
+                "
+            >
+                <strong>Bronhandoff</strong>
+
+                <dl
+                    style="
+                        display:grid;
+                        grid-template-columns:
+                            repeat(auto-fit, minmax(150px, 1fr));
+                        gap:0.55rem;
+                        margin:0.55rem 0 0;
+                    "
+                >
+                    <div>
+                        <dt><strong>Bron</strong></dt>
+                        <dd style="margin:0.2rem 0 0;">
+                            {{ selected_thread.get_source_system_display }}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt><strong>Profiel</strong></dt>
+                        <dd style="margin:0.2rem 0 0;">
+                            {% if selected_thread.channel %}
+                                {{ selected_thread.channel.get_platform_display }}
+                                /
+                                {{ selected_thread.channel.handle }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt><strong>Site</strong></dt>
+                        <dd style="margin:0.2rem 0 0;">
+                            {% if selected_thread.source_site_label %}
+                                {{ selected_thread.source_site_label }}
+                                {% if selected_thread.source_site_id %}
+                                    · {{ selected_thread.source_site_id }}
+                                {% endif %}
+                            {% elif selected_thread.source_site_id %}
+                                {{ selected_thread.source_site_id }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    <div>
+                        <dt><strong>Thread-ID</strong></dt>
+                        <dd style="margin:0.2rem 0 0;">
+                            {{ selected_thread.source_thread_id }}
+                        </dd>
+                    </div>
+                </dl>
+
+                <p class="muted" style="margin:0.55rem 0 0;">
+                    Er is nog geen gecontroleerde thread-deeplink.
+                    Open de bron handmatig en controleer site,
+                    profiel en thread-ID voordat je verzendt.
+                </p>
+            </div>
+
             <p class="muted" style="margin:0.45rem 0 0;">
                 <strong>Preview-only:</strong>
                 er is niets opgeslagen of naar een bron verzonden.
@@ -232,11 +303,11 @@
             class="muted"
             style="margin:0.65rem 0 0;"
         >
-            <strong>Demo:</strong>
+            <strong>Veilige operatorflow:</strong>
             Wijzigingen in dit vak worden niet opgeslagen.
-            Verzenden (demo) voert geen bronactie uit.
-            Er wordt niets opgeslagen of verzonden.
-            Gebruik Concept kopiëren alleen als tijdelijke fallback.
+            Verzendpreview maken voert geen bronactie uit.
+            Gebruik alleen Veilige tekst kopiëren na een geslaagde preview.
+            Open daarna de bron handmatig en match de thread-ID.
         </p>
     {% else %}
         <p class="muted" style="margin-bottom:0;">
@@ -305,13 +376,18 @@
             const sendDemoButtonLabel =
                 sendDemoButton.textContent;
             let previewController = null;
+            let safePreviewText = '';
 
             const resetPreview = () => {
+                safePreviewText = '';
                 previewPanel.hidden = true;
                 previewBadge.textContent = '';
                 previewBadge.className = 'badge';
                 previewText.textContent = '';
                 previewDetail.textContent = '';
+                copyButton.hidden = true;
+                copyButton.disabled = true;
+                copyStatus.textContent = '';
             };
 
             const updateButtonState = () => {
@@ -322,7 +398,6 @@
                 );
 
                 sendDemoButton.disabled = disabled;
-                copyButton.disabled = disabled;
             };
 
             textarea.addEventListener('input', () => {
@@ -399,9 +474,11 @@
                         return;
                     }
 
+                    safePreviewText = String(
+                        payload.preview_text || ''
+                    );
                     previewPanel.hidden = false;
-                    previewText.textContent =
-                        payload.preview_text || '';
+                    previewText.textContent = safePreviewText;
 
                     const matchLabels = {
                         email: 'e-mailadres',
@@ -437,8 +514,15 @@
                         );
                     }
 
+                    copyButton.hidden =
+                        safePreviewText.trim() === '';
+                    copyButton.disabled = (
+                        demoReadOnly
+                        || safePreviewText.trim() === ''
+                    );
+
                     sendDemoStatus.textContent = (
-                        'Demo: verzendpreview gemaakt. '
+                        'Veilige verzendpreview gemaakt. '
                         + 'Er is niets verzonden.'
                     );
                 } catch (error) {
@@ -459,23 +543,51 @@
             });
 
             copyButton.addEventListener('click', async () => {
-                const value = textarea.value.trim();
-
-                if (!value || demoReadOnly) {
+                if (
+                    !safePreviewText.trim()
+                    || demoReadOnly
+                    || previewPanel.hidden
+                    || copyButton.disabled
+                ) {
                     return;
                 }
 
                 sendDemoStatus.textContent = '';
+                copyStatus.textContent = '';
+
+                let fallbackTextarea = null;
 
                 try {
                     if (
                         navigator.clipboard
                         && window.isSecureContext
                     ) {
-                        await navigator.clipboard.writeText(value);
+                        await navigator.clipboard.writeText(
+                            safePreviewText
+                        );
                     } else {
-                        textarea.focus();
-                        textarea.select();
+                        fallbackTextarea =
+                            document.createElement('textarea');
+
+                        fallbackTextarea.value =
+                            safePreviewText;
+
+                        fallbackTextarea.setAttribute(
+                            'readonly',
+                            ''
+                        );
+
+                        fallbackTextarea.style.position =
+                            'fixed';
+
+                        fallbackTextarea.style.opacity =
+                            '0';
+
+                        document.body.appendChild(
+                            fallbackTextarea
+                        );
+
+                        fallbackTextarea.select();
 
                         if (!document.execCommand('copy')) {
                             throw new Error('copy_failed');
@@ -483,12 +595,16 @@
                     }
 
                     copyStatus.textContent =
-                        'Concept gekopieerd.';
+                        'Veilige previewtekst gekopieerd.';
                 } catch (error) {
                     copyStatus.textContent = (
                         'Kopiëren niet gelukt. '
-                        + 'Selecteer het antwoord handmatig.'
+                        + 'Selecteer de veilige previewtekst handmatig.'
                     );
+                } finally {
+                    if (fallbackTextarea) {
+                        fallbackTextarea.remove();
+                    }
                 }
             });
         })();

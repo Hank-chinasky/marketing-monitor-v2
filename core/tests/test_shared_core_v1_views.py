@@ -967,8 +967,8 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Bestaand Buddy-concept")
         self.assertContains(response, "Hoi, kun je mij morgen helpen?")
         self.assertContains(response, "Dankjewel! We komen morgen met update.")
-        self.assertContains(response, "Concept kopiëren")
-        self.assertContains(response, "Verzenden (demo)")
+        self.assertContains(response, "Veilige tekst kopiëren")
+        self.assertContains(response, "Verzendpreview maken")
 
         html = response.content.decode()
 

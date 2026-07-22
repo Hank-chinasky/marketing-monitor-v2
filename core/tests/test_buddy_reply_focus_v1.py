@@ -94,6 +94,8 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             channel=self.channel,
             source_system=ConversationThread.SourceSystem.CHATTIES,
             source_thread_id="DEMO-BUDDY-REPLY-THREAD",
+            source_site_id="SITE-42",
+            source_site_label="Chatties demo",
             status=ConversationThread.Status.WAITING_ON_OPERATOR,
             last_message_at=timezone.now(),
             thread_summary="Warme lopende democonversatie.",
@@ -156,8 +158,19 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             "Ik moest vandaag weer aan je denken.",
         )
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Concept kopiëren")
-        self.assertContains(response, "Verzenden (demo)")
+        self.assertContains(response, "Veilige tekst kopiëren")
+        self.assertContains(response, "Verzendpreview maken")
+        self.assertContains(response, "Bronhandoff")
+        self.assertContains(response, "Chatties demo")
+        self.assertContains(response, "SITE-42")
+        self.assertContains(
+            response,
+            "DEMO-BUDDY-REPLY-THREAD",
+        )
+        self.assertNotContains(
+            response,
+            self.channel.profile_url,
+        )
         self.assertContains(
             response,
             "Wijzigingen in dit vak worden niet opgeslagen.",
@@ -173,16 +186,43 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             html,
             "buddy-reply-send-demo",
         )
-
+        copy_button_tag = self._opening_tag(
+            html,
+            "buddy-reply-copy",
+        )
         self.assertNotIn("readonly", textarea_tag)
         self.assertIn('type="button"', send_button_tag)
         self.assertNotIn("disabled", send_button_tag)
         self.assertNotIn('type="submit"', send_button_tag)
+        self.assertIn("hidden", copy_button_tag)
+        self.assertIn("disabled", copy_button_tag)
+        self.assertNotIn(
+            'id="buddy-open-source-profile"',
+            html,
+        )
         self.assertEqual(html.count("fetch("), 1)
         self.assertIn("new AbortController()", html)
         self.assertIn("signal: controller.signal", html)
         self.assertIn("textarea.value !== value", html)
         self.assertIn("error.name !== 'AbortError'", html)
+        self.assertIn("let safePreviewText = '';", html)
+        self.assertIn("copyButton.hidden = true", html)
+        self.assertIn("copyButton.disabled = true", html)
+        self.assertIn(
+            "navigator.clipboard.writeText(",
+            html,
+        )
+        self.assertIn("safePreviewText", html)
+        self.assertIn(
+            "document.createElement('textarea')",
+            html,
+        )
+        self.assertNotIn(
+            "navigator.clipboard.writeText(value)",
+            html,
+        )
+        self.assertNotIn("Concept kopiëren", html)
+        self.assertNotIn("Verzenden (demo)", html)
         self.assertIn(
             reverse("sanitized-send-preview"),
             html,
@@ -207,8 +247,8 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         self.assertTrue(response.context["demo_read_only"])
         self.assertContains(response, "Antwoord opstellen")
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Concept kopiëren")
-        self.assertContains(response, "Verzenden (demo)")
+        self.assertContains(response, "Veilige tekst kopiëren")
+        self.assertContains(response, "Verzendpreview maken")
 
         html = response.content.decode()
         textarea_tag = self._opening_tag(html, "buddy-reply-draft")
@@ -220,8 +260,13 @@ class BuddyReplyFocusV1ViewTests(TestCase):
 
         self.assertIn("readonly", textarea_tag)
         self.assertIn('aria-readonly="true"', textarea_tag)
+        self.assertIn("hidden", copy_button_tag)
         self.assertIn("disabled", copy_button_tag)
         self.assertIn("disabled", send_button_tag)
+        self.assertNotIn(
+            'id="buddy-open-source-profile"',
+            html,
+        )
 
 
     def test_operator_action_stays_below_messages_without_buddy_height_gap(self):
