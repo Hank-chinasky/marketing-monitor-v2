@@ -342,6 +342,7 @@ class ConversationThread(models.Model):
     class SourceSystem(models.TextChoices):
         MARA_CHAT = "mara_chat", "Mara chat"
         CHATTIES = "chatties", "Chatties"
+        EUROTIKKEN = "eurotikken", "Eurotikken"
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
