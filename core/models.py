@@ -373,6 +373,10 @@ class ConversationThread(models.Model):
     source_site_label = models.CharField(max_length=255, blank=True, default="")
     source_participant_a_id = models.CharField(max_length=100, blank=True, default="")
     source_participant_b_id = models.CharField(max_length=100, blank=True, default="")
+    source_profile_label = models.CharField(max_length=160, blank=True, default="")
+    source_profile_username = models.CharField(max_length=160, blank=True, default="")
+    source_customer_label = models.CharField(max_length=160, blank=True, default="")
+    source_customer_username = models.CharField(max_length=160, blank=True, default="")
     status = models.CharField(
         max_length=32,
         choices=Status.choices,

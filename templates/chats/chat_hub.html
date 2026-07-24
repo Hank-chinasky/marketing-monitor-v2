@@ -17,19 +17,44 @@
     </div>
 
     <div class="panel chat-compact-context" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Klantcontext</h3>
+        <h3 style="margin-top:0;">Profiel & gebruiker</h3>
         {% if selected_thread %}
             <p style="margin-bottom:0;">
-                <strong>{{ selected_thread.creator.display_name }}</strong><br>
+                <strong>Profiel:</strong>
+                {% if selected_thread.source_profile_label %}
+                    {{ selected_thread.source_profile_label }}
+                {% else %}
+                    {{ selected_thread.creator.display_name }}
+                {% endif %}
+                <br>
+
                 <span class="muted">
-                    {{ selected_thread.creator.get_customer_stage_display }}
-                    {% if selected_thread.channel %}
-                        · {{ selected_thread.channel.get_platform_display }} / {{ selected_thread.channel.handle }}
+                    Profielgebruikersnaam:
+                    {{ selected_thread.source_profile_username|default:"-" }}
+                </span>
+                <br>
+
+                <strong>Gebruiker:</strong>
+                {{ selected_thread.source_customer_label|default:"-" }}
+                <br>
+
+                <span class="muted">
+                    Gebruikersnaam:
+                    {{ selected_thread.source_customer_username|default:"-" }}
+                </span>
+                <br>
+
+                <span class="muted">
+                    Bron: {{ selected_thread.get_source_system_display }}
+                    {% if selected_thread.source_site_label %}
+                        · {{ selected_thread.source_site_label }}
                     {% endif %}
                 </span>
             </p>
         {% else %}
-            <p class="muted" style="margin-bottom:0;">Selecteer een gesprek voor klantcontext.</p>
+            <p class="muted" style="margin-bottom:0;">
+                Selecteer een gesprek voor profiel- en gebruikerscontext.
+            </p>
         {% endif %}
     </div>
 

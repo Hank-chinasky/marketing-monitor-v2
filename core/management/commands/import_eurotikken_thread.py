@@ -13,7 +13,9 @@ from core.services.eurotikken_identity import (
     build_eurotikken_thread_source_id,
 )
 
-SCHEMA = "eurotikken-thread-export-v1"
+SCHEMA_V1 = "eurotikken-thread-export-v1"
+SCHEMA_V2 = "eurotikken-thread-export-v2"
+SUPPORTED_SCHEMAS = {SCHEMA_V1, SCHEMA_V2}
 SOURCE = ConversationThread.SourceSystem.EUROTIKKEN
 SOURCE_TZ = "Europe/Amsterdam"
 MAX_MESSAGES = 50
@@ -24,6 +26,15 @@ def _num(value, name):
     if not value.isdigit():
         raise CommandError(f"{name} must be numeric.")
     return str(int(value))
+
+
+def _label(value, name):
+    if not isinstance(value, str) or not value.strip():
+        raise CommandError(f"{name} must be a non-empty string.")
+    normalized = value.strip()
+    if len(normalized) > 160:
+        raise CommandError(f"{name} may not exceed 160 characters.")
+    return normalized
 
 
 def _source_time(value, name):
@@ -94,8 +105,16 @@ class Command(BaseCommand):
             customer_id,
         )
 
+        schema_version = payload.get("schema_version")
+        if schema_version not in SUPPORTED_SCHEMAS:
+            raise CommandError(
+                "schema_version mismatch: expected one of {!r}, received {!r}.".format(
+                    sorted(SUPPORTED_SCHEMAS),
+                    schema_version,
+                )
+            )
+
         expected = {
-            "schema_version": SCHEMA,
             "source_system": SOURCE,
             "source_site_id": site_id,
             "source_profile_id": profile_id,
@@ -110,10 +129,33 @@ class Command(BaseCommand):
                     f"received {payload.get(field)!r}."
                 )
 
-        site_label = payload.get("source_site_label")
-        if not isinstance(site_label, str) or not site_label.strip():
-            raise CommandError("source_site_label must be a non-empty string.")
-        site_label = site_label.strip()
+        site_label = _label(
+            payload.get("source_site_label"),
+            "source_site_label",
+        )
+
+        if schema_version == SCHEMA_V2:
+            source_profile_label = _label(
+                payload.get("source_profile_label"),
+                "source_profile_label",
+            )
+            source_profile_username = _label(
+                payload.get("source_profile_username"),
+                "source_profile_username",
+            )
+            source_customer_label = _label(
+                payload.get("source_customer_label"),
+                "source_customer_label",
+            )
+            source_customer_username = _label(
+                payload.get("source_customer_username"),
+                "source_customer_username",
+            )
+        else:
+            source_profile_label = creator.display_name.strip()
+            source_profile_username = ""
+            source_customer_label = f"Eurotikken customer {customer_id}"
+            source_customer_username = ""
 
         raw_messages = payload.get("messages")
         if not isinstance(raw_messages, list) or not raw_messages:
@@ -193,6 +235,17 @@ class Command(BaseCommand):
             source_system=SOURCE,
             source_thread_id=thread_id,
         ).first()
+
+        if thread and schema_version == SCHEMA_V1:
+            source_profile_label = (
+                thread.source_profile_label or source_profile_label
+            )
+            source_profile_username = thread.source_profile_username
+            source_customer_label = (
+                thread.source_customer_label or source_customer_label
+            )
+            source_customer_username = thread.source_customer_username
+
         if thread:
             expected_thread = {
                 "creator_id": creator.id,
@@ -235,12 +288,52 @@ class Command(BaseCommand):
             )
         pending = [item for item in normalized if item["message_id"] not in existing_ids]
 
+        desired_thread_identity = {
+            "source_profile_label": source_profile_label,
+            "source_profile_username": source_profile_username,
+            "source_customer_label": source_customer_label,
+            "source_customer_username": source_customer_username,
+        }
+        thread_identity_changes = {}
+        would_update_message_labels = 0
+
+        if thread:
+            thread_identity_changes = {
+                field: value
+                for field, value in desired_thread_identity.items()
+                if getattr(thread, field) != value
+            }
+            would_update_message_labels += (
+                ConversationMessage.objects.filter(
+                    thread=thread,
+                    source_system=SOURCE,
+                    source_sender_id=profile_id,
+                )
+                .exclude(sender_label=source_profile_label)
+                .count()
+            )
+            would_update_message_labels += (
+                ConversationMessage.objects.filter(
+                    thread=thread,
+                    source_system=SOURCE,
+                    source_sender_id=customer_id,
+                )
+                .exclude(sender_label=source_customer_label)
+                .count()
+            )
+
         if not options["apply"]:
             self.stdout.write("DRY RUN — no database changes.")
             self.stdout.write(f"source_thread_id={thread_id}")
             self.stdout.write(f"payload_messages={len(normalized)}")
             self.stdout.write(f"existing_messages={len(existing_ids)}")
             self.stdout.write(f"would_create_messages={len(pending)}")
+            self.stdout.write(
+                f"would_update_thread_identity={bool(thread_identity_changes)}"
+            )
+            self.stdout.write(
+                f"would_update_message_labels={would_update_message_labels}"
+            )
             self.stdout.write(f"target_status={target_status}")
             return
 
@@ -255,10 +348,46 @@ class Command(BaseCommand):
                     "source_site_label": site_label,
                     "source_participant_a_id": participant_a,
                     "source_participant_b_id": participant_b,
+                    "source_profile_label": source_profile_label,
+                    "source_profile_username": source_profile_username,
+                    "source_customer_label": source_customer_label,
+                    "source_customer_username": source_customer_username,
                     "status": target_status,
                     "last_message_at": latest["occurred_at"],
                     "active": True,
                 },
+            )
+
+            thread_identity_update_fields = []
+            if not thread_created:
+                for field, value in desired_thread_identity.items():
+                    if getattr(thread, field) != value:
+                        setattr(thread, field, value)
+                        thread_identity_update_fields.append(field)
+
+                if thread_identity_update_fields:
+                    thread.save(
+                        update_fields=thread_identity_update_fields + ["updated_at"]
+                    )
+
+            message_labels_updated = 0
+            message_labels_updated += (
+                ConversationMessage.objects.filter(
+                    thread=thread,
+                    source_system=SOURCE,
+                    source_sender_id=profile_id,
+                )
+                .exclude(sender_label=source_profile_label)
+                .update(sender_label=source_profile_label)
+            )
+            message_labels_updated += (
+                ConversationMessage.objects.filter(
+                    thread=thread,
+                    source_system=SOURCE,
+                    source_sender_id=customer_id,
+                )
+                .exclude(sender_label=source_customer_label)
+                .update(sender_label=source_customer_label)
             )
 
             existing_ids = set(
@@ -273,9 +402,9 @@ class Command(BaseCommand):
                     thread=thread,
                     direction=item["direction"],
                     sender_label=(
-                        creator.display_name
-                        if item["direction"] == ConversationMessage.Direction.OUTBOUND
-                        else f"Eurotikken customer {customer_id}"
+                        source_profile_label
+                        if item["sender_id"] == profile_id
+                        else source_customer_label
                     ),
                     source_message_id=item["message_id"],
                     source_system=SOURCE,
@@ -301,6 +430,8 @@ class Command(BaseCommand):
                 "Applied Eurotikken import: "
                 f"thread_created={thread_created} "
                 f"messages_created={len(to_create)} "
-                f"messages_skipped={len(normalized) - len(to_create)}"
+                f"messages_skipped={len(normalized) - len(to_create)} "
+                f"thread_identity_updated={bool(thread_identity_update_fields)} "
+                f"message_labels_updated={message_labels_updated}"
             )
         )
