@@ -398,7 +398,35 @@
         .chat-compact-context p {
             line-height: 1.45;
         }
+        .chat-message-history-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin: 0 0 0.75rem;
+            padding: 0.6rem 0.7rem;
+            border: 1px solid #dbeafe;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
         @media (min-width: 1101px) {
+            /* Sticky Buddy context v1 */
+            .shared-core-pane[aria-label="Werkvlak kolom"] {
+                overflow: visible;
+            }
+
+            .chat-message-buddy-layout {
+                align-items: start;
+            }
+
+            .chat-buddy-surface {
+                position: sticky;
+                top: 0.75rem;
+                align-self: start;
+            }
+
             .chat-sticky-context {
                 position: sticky;
                 top: 0.75rem;
@@ -687,6 +715,44 @@
                 <div class="panel chat-message-panel">
                     <h3 style="margin-top:0;">Berichten</h3>
                     <p class="muted" style="margin-top:0;">Read-only berichtenstroom uit de geselecteerde thread.</p>
+
+                    {% if conversation_message_count %}
+                        <div
+                            class="chat-message-history-controls"
+                            data-message-history-controls="v1"
+                        >
+                            <span class="muted">
+                                {% if conversation_history_expanded %}
+                                    Volledige geschiedenis:
+                                    {{ conversation_message_count }} berichten.
+                                {% else %}
+                                    Laatste {{ conversation_messages|length }}
+                                    van {{ conversation_message_count }} berichten.
+                                {% endif %}
+                            </span>
+
+                            {% if conversation_history_expanded %}
+                                {% if conversation_message_count > 5 %}
+                                    <a
+                                        class="secondary-button"
+                                        href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                                    >
+                                        Toon alleen laatste 5
+                                    </a>
+                                {% endif %}
+                            {% elif conversation_hidden_message_count %}
+                                <a
+                                    class="secondary-button"
+                                    href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}&amp;history=all"
+                                >
+                                    Toon eerdere
+                                    {{ conversation_hidden_message_count }}
+                                    berichten
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
                     <ul class="clean">
                         {% for message in conversation_messages %}
                             <li style="margin-bottom:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid #e5e7eb;">
