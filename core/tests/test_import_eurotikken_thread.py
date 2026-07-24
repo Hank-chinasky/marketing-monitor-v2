@@ -36,7 +36,7 @@ class ImportEurotikkenThreadCommandTests(TestCase):
 
     def _payload(self):
         return {
-            "schema_version": "eurotikken-thread-export-v1",
+            "schema_version": "eurotikken-thread-export-v2",
             "source_system": "eurotikken",
             "source_site_id": "25",
             "source_site_label": "datesamen.nl",
@@ -44,6 +44,10 @@ class ImportEurotikkenThreadCommandTests(TestCase):
             "source_customer_id": "60010",
             "source_timezone": "Europe/Amsterdam",
             "source_thread_id": "eurotikken:25:2390:60010",
+            "source_profile_label": "Sonja",
+            "source_profile_username": "Sonja",
+            "source_customer_label": "jupke",
+            "source_customer_username": "jupke",
             "messages": [
                 {
                     "source_message_id": "5191811",
@@ -113,6 +117,10 @@ class ImportEurotikkenThreadCommandTests(TestCase):
         self.assertEqual(thread.source_site_label, "datesamen.nl")
         self.assertEqual(thread.source_participant_a_id, "2390")
         self.assertEqual(thread.source_participant_b_id, "60010")
+        self.assertEqual(thread.source_profile_label, "Sonja")
+        self.assertEqual(thread.source_profile_username, "Sonja")
+        self.assertEqual(thread.source_customer_label, "jupke")
+        self.assertEqual(thread.source_customer_username, "jupke")
         self.assertEqual(
             thread.status,
             ConversationThread.Status.WAITING_ON_OPERATOR,
@@ -132,7 +140,7 @@ class ImportEurotikkenThreadCommandTests(TestCase):
             ],
         )
         self.assertEqual(messages[0].sender_label, "Sonja")
-        self.assertEqual(messages[1].sender_label, "Eurotikken customer 60010")
+        self.assertEqual(messages[1].sender_label, "jupke")
 
         local_time = timezone.localtime(
             messages[1].occurred_at,
@@ -152,8 +160,129 @@ class ImportEurotikkenThreadCommandTests(TestCase):
         self.assertIn("thread_created=False", output)
         self.assertIn("messages_created=0", output)
         self.assertIn("messages_skipped=2", output)
+        self.assertIn("thread_identity_updated=False", output)
+        self.assertIn("message_labels_updated=0", output)
         self.assertEqual(ConversationThread.objects.count(), 1)
         self.assertEqual(ConversationMessage.objects.count(), 2)
+
+    def test_apply_repairs_existing_thread_and_message_labels(self):
+        with TemporaryDirectory() as directory:
+            path = self._write_payload(directory)
+            self._call(path, apply=True)
+
+            thread = ConversationThread.objects.get()
+            thread.source_profile_label = ""
+            thread.source_profile_username = ""
+            thread.source_customer_label = ""
+            thread.source_customer_username = ""
+            thread.save(
+                update_fields=[
+                    "source_profile_label",
+                    "source_profile_username",
+                    "source_customer_label",
+                    "source_customer_username",
+                ]
+            )
+
+            ConversationMessage.objects.filter(
+                thread=thread,
+                direction=ConversationMessage.Direction.OUTBOUND,
+            ).update(sender_label="Old profile label")
+
+            ConversationMessage.objects.filter(
+                thread=thread,
+                direction=ConversationMessage.Direction.INBOUND,
+            ).update(sender_label="Eurotikken customer 60010")
+
+            output = self._call(path, apply=True)
+
+        thread.refresh_from_db()
+
+        messages = list(
+            ConversationMessage.objects.order_by("occurred_at", "id")
+        )
+
+        self.assertIn("thread_identity_updated=True", output)
+        self.assertIn("message_labels_updated=2", output)
+
+        self.assertEqual(thread.source_profile_label, "Sonja")
+        self.assertEqual(thread.source_profile_username, "Sonja")
+        self.assertEqual(thread.source_customer_label, "jupke")
+        self.assertEqual(thread.source_customer_username, "jupke")
+
+        self.assertEqual(
+            [message.sender_label for message in messages],
+            ["Sonja", "jupke"],
+        )
+        self.assertEqual(ConversationMessage.objects.count(), 2)
+
+    def test_v1_payload_uses_bounded_fallback_for_new_thread(self):
+        payload = self._payload()
+        payload["schema_version"] = "eurotikken-thread-export-v1"
+        payload.pop("source_profile_label")
+        payload.pop("source_profile_username")
+        payload.pop("source_customer_label")
+        payload.pop("source_customer_username")
+
+        with TemporaryDirectory() as directory:
+            output = self._call(
+                self._write_payload(directory, payload),
+                apply=True,
+            )
+
+        thread = ConversationThread.objects.get()
+
+        messages = list(
+            ConversationMessage.objects.order_by("occurred_at", "id")
+        )
+
+        self.assertIn("thread_created=True", output)
+        self.assertEqual(thread.source_profile_label, "Sonja")
+        self.assertEqual(thread.source_profile_username, "")
+        self.assertEqual(
+            thread.source_customer_label,
+            "Eurotikken customer 60010",
+        )
+        self.assertEqual(thread.source_customer_username, "")
+
+        self.assertEqual(
+            [message.sender_label for message in messages],
+            ["Sonja", "Eurotikken customer 60010"],
+        )
+
+    def test_v1_payload_does_not_downgrade_existing_v2_identity(self):
+        with TemporaryDirectory() as directory:
+            path = self._write_payload(directory)
+            self._call(path, apply=True)
+
+            payload = self._payload()
+            payload["schema_version"] = "eurotikken-thread-export-v1"
+            payload.pop("source_profile_label")
+            payload.pop("source_profile_username")
+            payload.pop("source_customer_label")
+            payload.pop("source_customer_username")
+
+            path = self._write_payload(directory, payload)
+            output = self._call(path, apply=True)
+
+        thread = ConversationThread.objects.get()
+
+        messages = list(
+            ConversationMessage.objects.order_by("occurred_at", "id")
+        )
+
+        self.assertIn("thread_identity_updated=False", output)
+        self.assertIn("message_labels_updated=0", output)
+
+        self.assertEqual(thread.source_profile_label, "Sonja")
+        self.assertEqual(thread.source_profile_username, "Sonja")
+        self.assertEqual(thread.source_customer_label, "jupke")
+        self.assertEqual(thread.source_customer_username, "jupke")
+
+        self.assertEqual(
+            [message.sender_label for message in messages],
+            ["Sonja", "jupke"],
+        )
 
     def test_rejects_payload_identity_mismatch(self):
         payload = self._payload()

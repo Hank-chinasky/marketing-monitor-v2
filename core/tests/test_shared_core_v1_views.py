@@ -467,6 +467,49 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertNotIn("Berichten eerst. Daarna status, notitie en opvolging.", before_messages)
         self.assertNotIn("Minder afleiding. Werk één gesprek of opvolgstap bewust af.", before_messages)
         self.assertNotIn("Top chat focus", html)
+    def test_chats_context_shows_source_profile_and_customer_identity(self):
+        self.thread.source_system = (
+            ConversationThread.SourceSystem.EUROTIKKEN
+        )
+        self.thread.source_site_label = "datesamen.nl"
+        self.thread.source_profile_label = "Sonja"
+        self.thread.source_profile_username = "Sonja"
+        self.thread.source_customer_label = "jupke"
+        self.thread.source_customer_username = "jupke"
+        self.thread.save(
+            update_fields=[
+                "source_system",
+                "source_site_label",
+                "source_profile_label",
+                "source_profile_username",
+                "source_customer_label",
+                "source_customer_username",
+            ]
+        )
+
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Profiel & gebruiker")
+        self.assertContains(response, "Profiel:")
+        self.assertContains(response, "Profielgebruikersnaam:")
+        self.assertContains(response, "Sonja")
+        self.assertContains(response, "Gebruiker:")
+        self.assertContains(response, "Gebruikersnaam:")
+        self.assertContains(response, "jupke")
+        self.assertContains(response, "Bron:")
+        self.assertContains(response, "Eurotikken")
+        self.assertContains(response, "datesamen.nl")
+        self.assertNotContains(
+            response,
+            "Eurotikken customer 60010",
+        )
+
     def test_chats_message_panel_renders_selected_thread_messages_read_only(self):
         older_message = ConversationMessage.objects.create(
             thread=self.thread,
