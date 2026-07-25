@@ -411,6 +411,64 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Customer stage")
         self.assertContains(response, "Inside paywall")
 
+    def test_chat_buddy_stays_sticky_without_internal_scroll(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        html = response.content.decode()
+
+        css_marker = "/* Sticky Buddy context v1 */"
+        self.assertIn(css_marker, html)
+
+        css = html[html.index(css_marker):]
+
+        self.assertIn(
+            '.shared-core-pane[aria-label="Werkvlak kolom"]',
+            css,
+        )
+        self.assertIn(
+            "overflow: visible;",
+            css,
+        )
+        self.assertIn(
+            ".chat-buddy-surface {",
+            css,
+        )
+        self.assertIn(
+            "position: sticky;",
+            css,
+        )
+        self.assertIn(
+            "top: 0.75rem;",
+            css,
+        )
+
+        buddy_rule_start = css.index(
+            ".chat-buddy-surface {"
+        )
+        buddy_rule_end = css.index(
+            "}",
+            buddy_rule_start,
+        )
+        buddy_rule = css[
+            buddy_rule_start:buddy_rule_end
+        ]
+
+        self.assertNotIn(
+            "overflow",
+            buddy_rule,
+        )
+        self.assertNotIn(
+            "max-height",
+            buddy_rule,
+        )
+
     def test_chats_workfloor_normal_mode_places_messages_before_follow_up_action(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
@@ -588,6 +646,130 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Operator")
         self.assertContains(response, "Focus operatorbericht.")
         self.assertNotContains(response, "Importeer berichten")
+
+    def test_chats_defaults_to_last_five_messages_and_can_expand_history(self):
+        self.thread.conversation_messages.all().delete()
+
+        base_time = timezone.now() - timedelta(minutes=12)
+        messages = []
+
+        for number in range(1, 13):
+            messages.append(
+                ConversationMessage.objects.create(
+                    thread=self.thread,
+                    direction=ConversationMessage.Direction.INBOUND,
+                    sender_label="Customer",
+                    body=f"Geschiedenis {number:02d}.",
+                    occurred_at=base_time + timedelta(minutes=number),
+                )
+            )
+
+        self.client.force_login(self.user)
+
+        default_response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(default_response.status_code, 200)
+        self.assertEqual(
+            default_response.context["conversation_message_count"],
+            12,
+        )
+        self.assertEqual(
+            default_response.context[
+                "conversation_hidden_message_count"
+            ],
+            7,
+        )
+        self.assertFalse(
+            default_response.context[
+                "conversation_history_expanded"
+            ]
+        )
+        self.assertEqual(
+            list(default_response.context["conversation_messages"]),
+            messages[-5:],
+        )
+
+        self.assertContains(
+            default_response,
+            "Laatste 5",
+        )
+        self.assertContains(
+            default_response,
+            "van 12 berichten.",
+        )
+        self.assertContains(
+            default_response,
+            "Toon eerdere",
+        )
+        self.assertContains(
+            default_response,
+            "7",
+        )
+
+        for number in range(1, 8):
+            self.assertNotContains(
+                default_response,
+                f"Geschiedenis {number:02d}.",
+            )
+
+        for number in range(8, 13):
+            self.assertContains(
+                default_response,
+                f"Geschiedenis {number:02d}.",
+            )
+
+        expanded_response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "thread": self.thread.pk,
+                "history": "all",
+            },
+        )
+
+        self.assertEqual(expanded_response.status_code, 200)
+        self.assertEqual(
+            expanded_response.context["conversation_message_count"],
+            12,
+        )
+        self.assertEqual(
+            expanded_response.context[
+                "conversation_hidden_message_count"
+            ],
+            0,
+        )
+        self.assertTrue(
+            expanded_response.context[
+                "conversation_history_expanded"
+            ]
+        )
+        self.assertEqual(
+            list(expanded_response.context["conversation_messages"]),
+            messages,
+        )
+
+        self.assertContains(
+            expanded_response,
+            "Volledige geschiedenis:",
+        )
+        self.assertContains(
+            expanded_response,
+            "12 berichten.",
+        )
+        self.assertContains(
+            expanded_response,
+            "Toon alleen laatste 5",
+        )
+        self.assertContains(
+            expanded_response,
+            "Geschiedenis 01.",
+        )
+        self.assertContains(
+            expanded_response,
+            "Geschiedenis 12.",
+        )
 
     def test_chats_message_panel_shows_empty_state_without_messages(self):
         self.client.force_login(self.user)

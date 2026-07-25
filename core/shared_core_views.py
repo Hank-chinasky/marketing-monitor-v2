@@ -901,6 +901,23 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             conversation_messages = list(
                 selected_thread.conversation_messages.order_by("occurred_at", "id")
             )
+        conversation_messages = list(conversation_messages)
+        conversation_message_count = len(conversation_messages)
+        conversation_history_expanded = (
+            self.request.GET.get("history") == "all"
+        )
+
+        if (
+            not conversation_history_expanded
+            and conversation_message_count > 5
+        ):
+            conversation_messages = conversation_messages[-5:]
+
+        conversation_hidden_message_count = max(
+            0,
+            conversation_message_count - len(conversation_messages),
+        )
+
         operator_reply_draft = build_operator_reply_draft(
             selected_thread,
             conversation_messages,
@@ -1055,6 +1072,13 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "operator_queue": operator_queue,
             "selected_thread": selected_thread,
             "conversation_messages": conversation_messages,
+            "conversation_message_count": conversation_message_count,
+            "conversation_hidden_message_count": (
+                conversation_hidden_message_count
+            ),
+            "conversation_history_expanded": (
+                conversation_history_expanded
+            ),
             "operator_reply_draft": operator_reply_draft,
             "latest_draft": latest_draft,
             "completeness_alerts": completeness_alerts,
