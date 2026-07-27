@@ -234,3 +234,91 @@ class BuddyContextPacketV1Tests(SimpleTestCase):
         self.assertNotIn("secret.example", serialized)
         self.assertNotIn("geheime toegangsinformatie", serialized)
         self.assertNotIn("secret@example.com", serialized)
+
+
+class BuddyContextOperatorProfileTests(SimpleTestCase):
+    def test_packet_allows_only_safe_profile_and_customer_fields(self):
+        packet = build_buddy_context_packet(
+            thread(),
+            [message("inbound", "Hallo, hoe is het?")],
+            buddy_assist={
+                "profile_context": {
+                    "display_name": "Sonja",
+                    "age": 53,
+                    "city": "Geleen",
+                    "region": "Limburg",
+                    "country": "Nederland",
+                    "marital_status": "Gescheiden",
+                    "goal": "Liefde",
+                    "occupation": "Administratief medewerkster",
+                    "summary": "Sinds kort weer vrijgezel",
+                    "source_checked": True,
+                    "source_reviewed": True,
+                    "birth_date": "1973-01-01",
+                    "source_profile_id": "2390",
+                    "profile_extra_info": "verboden vrije tekst",
+                    "postcode": "6161",
+                    "media": [
+                        {
+                            "reveal_url": (
+                                "https://datesamen.nl/media/"
+                                "uploaded_files/sonja.jpg"
+                            )
+                        }
+                    ],
+                },
+                "customer_context": {
+                    "display_name": "jupke",
+                    "age": 77,
+                    "region": "Limburg",
+                    "country": "Nederland",
+                    "marital_status": "Weduwnaar",
+                    "goal": "Samen Genieten",
+                    "source_checked": False,
+                    "source_reviewed": True,
+                    "source_user_id": "60055",
+                    "birth_date": "1949-01-01",
+                    "access_notes": "geheime notitie",
+                },
+            },
+            language="nl",
+        )
+
+        self.assertEqual(
+            packet["profile_context"]["display_name"],
+            "Sonja",
+        )
+        self.assertEqual(
+            packet["profile_context"]["occupation"],
+            "Administratief medewerkster",
+        )
+        self.assertEqual(
+            packet["customer_context"]["display_name"],
+            "jupke",
+        )
+        self.assertFalse(
+            packet["customer_context"]["source_checked"]
+        )
+        self.assertTrue(
+            packet["customer_context"]["source_reviewed"]
+        )
+        self.assertNotIn(
+            "source_checked",
+            packet["profile_context"],
+        )
+        self.assertNotIn(
+            "source_reviewed",
+            packet["profile_context"],
+        )
+
+        serialized = json.dumps(packet)
+
+        self.assertNotIn("birth_date", serialized)
+        self.assertNotIn("source_profile_id", serialized)
+        self.assertNotIn("source_user_id", serialized)
+        self.assertNotIn("profile_extra_info", serialized)
+        self.assertNotIn("postcode", serialized)
+        self.assertNotIn("reveal_url", serialized)
+        self.assertNotIn("uploaded_files", serialized)
+        self.assertNotIn("access_notes", serialized)
+        self.assertNotIn("geheime notitie", serialized)

@@ -410,6 +410,28 @@ class ConversationThread(models.Model):
         return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"
 
 
+class ConversationContextSnapshot(models.Model):
+    thread = models.OneToOneField(
+        ConversationThread,
+        on_delete=models.CASCADE,
+        related_name="context_snapshot",
+    )
+    schema_version = models.CharField(max_length=80)
+    source_sha256 = models.CharField(max_length=64)
+    profile_context = models.JSONField(default=dict, blank=True)
+    customer_context = models.JSONField(default=dict, blank=True)
+    profile_media = models.JSONField(default=list, blank=True)
+    customer_media = models.JSONField(default=list, blank=True)
+    data_quality = models.JSONField(default=dict, blank=True)
+    imported_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.thread.source_system} / "
+            f"{self.thread.source_thread_id} / context"
+        )
+
+
 class ThreadFollowUpStatus(models.Model):
     class Status(models.TextChoices):
         WARM = "warm", "Warm"

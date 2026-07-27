@@ -16,10 +16,15 @@
         </p>
     </div>
 
-    <div class="panel chat-compact-context" style="margin-bottom:0.75rem;">
+    <div
+        class="panel chat-compact-context"
+        style="margin-bottom:0.75rem;"
+        data-operator-context="v1"
+    >
         <h3 style="margin-top:0;">Profiel & gebruiker</h3>
+
         {% if selected_thread %}
-            <p style="margin-bottom:0;">
+            <p style="margin-bottom:0.65rem;">
                 <strong>Profiel:</strong>
                 {% if selected_thread.source_profile_label %}
                     {{ selected_thread.source_profile_label }}
@@ -51,6 +56,164 @@
                     {% endif %}
                 </span>
             </p>
+
+            {% if operator_context.available %}
+                <div style="margin-bottom:0.8rem;">
+                    <strong>PROFIEL</strong>
+
+                    <p style="margin:0.35rem 0 0;">
+                        <strong>
+                            {{ operator_context.profile.display_name|default:"Onbekend" }}
+                        </strong>
+                        <br>
+
+                        {{ operator_context.profile.age|default:"Onbekend" }} jaar
+                        {% if operator_context.profile.city %}
+                            · {{ operator_context.profile.city }}
+                        {% endif %}
+                        {% if operator_context.profile.marital_status %}
+                            · {{ operator_context.profile.marital_status }}
+                        {% endif %}
+                        <br>
+
+                        {% if operator_context.profile.region %}
+                            {{ operator_context.profile.region }}
+                        {% endif %}
+                        {% if operator_context.profile.country %}
+                            · {{ operator_context.profile.country }}
+                        {% endif %}
+                    </p>
+
+                    {% if operator_context.profile.goal %}
+                        <p style="margin:0.35rem 0 0;">
+                            <strong>Doel:</strong>
+                            {{ operator_context.profile.goal }}
+                        </p>
+                    {% endif %}
+
+                    {% if operator_context.profile.occupation %}
+                        <p style="margin:0.35rem 0 0;">
+                            <strong>Werk:</strong>
+                            {{ operator_context.profile.occupation }}
+                        </p>
+                    {% endif %}
+
+                    {% if operator_context.profile.summary %}
+                        <p style="margin:0.35rem 0 0;">
+                            {{ operator_context.profile.summary }}
+                        </p>
+                    {% endif %}
+
+                    {% if operator_context.profile.source_checked and operator_context.profile.source_reviewed %}
+                        <p style="margin:0.45rem 0 0;">
+                            <span class="badge badge-green">
+                                Gecontroleerd
+                            </span>
+                        </p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <strong>KLANT</strong>
+
+                    <p style="margin:0.35rem 0 0;">
+                        <strong>
+                            {{ operator_context.customer.display_name|default:"Onbekend" }}
+                        </strong>
+                        <br>
+
+                        {{ operator_context.customer.age|default:"Onbekend" }} jaar
+                        {% if operator_context.customer.region %}
+                            · {{ operator_context.customer.region }}
+                        {% endif %}
+                        {% if operator_context.customer.marital_status %}
+                            · {{ operator_context.customer.marital_status }}
+                        {% endif %}
+                        <br>
+
+                        {% if operator_context.customer.country %}
+                            {{ operator_context.customer.country }}
+                        {% endif %}
+                    </p>
+
+                    {% if operator_context.customer.goal %}
+                        <p style="margin:0.35rem 0 0;">
+                            <strong>Doel:</strong>
+                            {{ operator_context.customer.goal }}
+                        </p>
+                    {% endif %}
+
+                    {% if operator_context.customer_reliability_warning %}
+                        <p style="margin:0.45rem 0 0;">
+                            <span class="badge badge-yellow">
+                                Beoordeeld, niet bron-gecontroleerd
+                            </span>
+                        </p>
+                    {% elif operator_context.customer.source_checked %}
+                        <p style="margin:0.45rem 0 0;">
+                            <span class="badge badge-green">
+                                Gecontroleerd
+                            </span>
+                        </p>
+                    {% endif %}
+
+                    {% with media=operator_context.customer_media.0 %}
+                        {% if media %}
+                            <div style="margin-top:0.75rem;">
+                                <strong>
+                                    Klantfoto
+                                    ({{ operator_context.customer_media|length }})
+                                </strong>
+
+                                <div
+                                    id="customer-context-photo-placeholder"
+                                    class="muted"
+                                    style="
+                                        margin-top:0.45rem;
+                                        padding:0.7rem;
+                                        border:1px dashed #94a3b8;
+                                        border-radius:8px;
+                                    "
+                                >
+                                    Foto is afgedekt en wordt pas na een
+                                    expliciete klik geladen.
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="secondary-button"
+                                    data-customer-photo-reveal="v1"
+                                    data-reveal-url="{{ media.reveal_url }}"
+                                    aria-controls="customer-context-photo"
+                                    aria-expanded="false"
+                                    style="margin-top:0.55rem;"
+                                >
+                                    Foto tonen
+                                </button>
+
+                                <img
+                                    id="customer-context-photo"
+                                    hidden
+                                    alt="Klantfoto van {{ operator_context.customer.display_name|default:'de gebruiker' }}"
+                                    referrerpolicy="no-referrer"
+                                    loading="lazy"
+                                    decoding="async"
+                                    style="
+                                        display:block;
+                                        max-width:100%;
+                                        margin-top:0.65rem;
+                                        border-radius:8px;
+                                    "
+                                >
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            {% else %}
+                <p class="muted" style="margin-bottom:0;">
+                    Nog geen gecontroleerde bronprofielcontext beschikbaar.
+                </p>
+            {% endif %}
         {% else %}
             <p class="muted" style="margin-bottom:0;">
                 Selecteer een gesprek voor profiel- en gebruikerscontext.
@@ -1014,6 +1177,59 @@
         </div>
         </details>
     {% endif %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const revealButton = document.querySelector(
+                "[data-customer-photo-reveal='v1']"
+            );
+
+            if (!revealButton) {
+                return;
+            }
+
+            const imageId = revealButton.getAttribute(
+                "aria-controls"
+            );
+            const image = document.getElementById(imageId);
+            const placeholder = document.getElementById(
+                "customer-context-photo-placeholder"
+            );
+            const revealUrl = revealButton.dataset.revealUrl;
+
+            if (!image || !placeholder || !revealUrl) {
+                return;
+            }
+
+            revealButton.addEventListener("click", () => {
+                const isExpanded = (
+                    revealButton.getAttribute("aria-expanded")
+                    === "true"
+                );
+
+                if (isExpanded) {
+                    image.removeAttribute("src");
+                    image.hidden = true;
+                    placeholder.hidden = false;
+                    revealButton.textContent = "Foto tonen";
+                    revealButton.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+                    return;
+                }
+
+                image.setAttribute("src", revealUrl);
+                image.hidden = false;
+                placeholder.hidden = true;
+                revealButton.textContent = "Foto verbergen";
+                revealButton.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
+            });
+        });
+    </script>
 {% endblock %}
 
 {% block right_pane %}

@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from core.models import (
     BuddyDraft,
+    ConversationContextSnapshot,
     ConversationMessage,
     ConversationThread,
     Creator,
@@ -1589,3 +1590,281 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, 'name="next_step" value="Geen"')
         self.assertContains(response, 'name="blocker" value="Nog iets"')
         self.assertContains(response, 'option value="review_nodig" selected')
+
+
+class EurotikkenOperatorContextViewTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+
+        self.user = user_model.objects.create_user(
+            username="eurotikken-context-operator",
+            password="x",
+            is_active=True,
+        )
+        self.operator = Operator.objects.create(user=self.user)
+
+        self.creator = Creator.objects.create(
+            display_name="Sonja",
+            status=Creator.Status.ACTIVE,
+            consent_status=Creator.ConsentStatus.ACTIVE,
+            customer_stage=Creator.CustomerStage.LEAD,
+        )
+        self.channel = CreatorChannel.objects.create(
+            creator=self.creator,
+            platform=CreatorChannel.Platform.OTHER,
+            handle="eurotikken-sonja",
+            status=CreatorChannel.Status.ACTIVE,
+            access_mode=CreatorChannel.AccessMode.OPERATOR_DIRECT,
+            recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
+            credential_status=CreatorChannel.CredentialStatus.KNOWN,
+        )
+        OperatorAssignment.objects.create(
+            operator=self.operator,
+            creator=self.creator,
+            scope=OperatorAssignment.Scope.FULL_MANAGEMENT,
+            starts_at=timezone.now() - timedelta(days=1),
+            active=True,
+        )
+
+        self.thread = ConversationThread.objects.create(
+            creator=self.creator,
+            channel=self.channel,
+            source_system=ConversationThread.SourceSystem.EUROTIKKEN,
+            source_thread_id="eurotikken:25:2390:60010",
+            source_site_id="25",
+            source_site_label="DateSamen",
+            source_profile_label="Sonja",
+            source_profile_username="Sonja",
+            source_customer_label="jupke",
+            source_customer_username="jupke",
+            status=ConversationThread.Status.WAITING_ON_OPERATOR,
+            last_message_at=timezone.now(),
+            thread_summary="Lopend persoonlijk gesprek.",
+            open_loop="Pak de laatste persoonlijke vraag op.",
+            guardrails="Niet generiek openen.",
+            last_handoff_note="Behoud de bestaande lijn.",
+            last_approved_reply_style="Warm en persoonlijk.",
+        )
+        ConversationMessage.objects.create(
+            thread=self.thread,
+            direction=ConversationMessage.Direction.INBOUND,
+            sender_label="jupke",
+            body="Hoe gaat het vandaag met je?",
+            occurred_at=timezone.now(),
+        )
+
+        self.snapshot = (
+            ConversationContextSnapshot.objects.create(
+                thread=self.thread,
+                schema_version=(
+                    "eurotikken-operator-context-v1"
+                ),
+                source_sha256="a" * 64,
+                profile_context={
+                    "display_name": "Sonja",
+                    "age": 53,
+                    "city": "Geleen",
+                    "region": "Limburg",
+                    "country": "Nederland",
+                    "marital_status": "Gescheiden",
+                    "goal": "Liefde",
+                    "occupation": (
+                        "Administratief medewerkster"
+                    ),
+                    "summary": (
+                        "Sinds kort weer vrijgezel"
+                    ),
+                    "source_checked": True,
+                    "source_reviewed": True,
+                },
+                customer_context={
+                    "display_name": "jupke",
+                    "age": 77,
+                    "city": "",
+                    "region": "Limburg",
+                    "country": "Nederland",
+                    "marital_status": "Weduwnaar",
+                    "goal": "Samen Genieten",
+                    "source_checked": False,
+                    "source_reviewed": True,
+                },
+                customer_media=[
+                    {
+                        "source_media_id": "50429",
+                        "source_owner_user_id": "60055",
+                        "source_path": (
+                            "uploaded_files/"
+                            "000000_jan.JPG"
+                        ),
+                        "media_type": "image",
+                        "is_primary": True,
+                        "active": True,
+                        "allow_external_ai": False,
+                        "requires_operator_reveal": True,
+                        "default_visibility": "covered",
+                    }
+                ],
+            )
+        )
+
+    @staticmethod
+    def _opening_tag(html, element_id):
+        marker = f'id="{element_id}"'
+        start = html.index(marker)
+        tag_start = html.rfind("<", 0, start)
+        tag_end = html.index(">", start)
+        return html[tag_start : tag_end + 1]
+
+    def test_chat_view_shows_compact_source_context(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            response.context["operator_context"]["available"]
+        )
+        self.assertContains(response, "Administratief medewerkster")
+        self.assertContains(response, "Sinds kort weer vrijgezel")
+        self.assertContains(response, "Weduwnaar")
+        self.assertContains(response, "Samen Genieten")
+        self.assertContains(response, "Gecontroleerd")
+        self.assertContains(
+            response,
+            "Beoordeeld, niet bron-gecontroleerd",
+        )
+
+        self.assertEqual(
+            response.context["buddy_assist"][
+                "reliability_label"
+            ],
+            "Middel",
+        )
+        self.assertIn(
+            "niet aan de bron gecontroleerd",
+            response.context["buddy_assist"][
+                "reliability_reason"
+            ],
+        )
+
+        buddy_context = str(
+            response.context["buddy_assist"]
+        )
+        self.assertNotIn("reveal_url", buddy_context)
+        self.assertNotIn("source_media_id", buddy_context)
+        self.assertNotIn("uploaded_files", buddy_context)
+
+    def test_customer_photo_is_not_loaded_before_click(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+        html = response.content.decode()
+
+        image_tag = self._opening_tag(
+            html,
+            "customer-context-photo",
+        )
+
+        self.assertNotIn(" src=", image_tag)
+        self.assertIn(" hidden", image_tag)
+        self.assertIn(
+            'referrerpolicy="no-referrer"',
+            image_tag,
+        )
+        self.assertIn('loading="lazy"', image_tag)
+        self.assertIn('decoding="async"', image_tag)
+
+        self.assertIn(
+            (
+                'data-reveal-url="'
+                "https://datesamen.nl/media/"
+                "uploaded_files/000000_jan.JPG"
+                '"'
+            ),
+            html,
+        )
+        self.assertIn(
+            'document.addEventListener("DOMContentLoaded"',
+            html,
+        )
+        self.assertContains(response, "Klantfoto")
+        self.assertContains(response, "Foto tonen")
+        self.assertContains(
+            response,
+            "Beoordeeld, niet bron-gecontroleerd",
+        )
+        self.assertIn('aria-expanded="false"', html)
+        self.assertIn(
+            'revealButton.addEventListener("click"',
+            html,
+        )
+        self.assertIn(
+            'image.removeAttribute("src")',
+            html,
+        )
+        self.assertIn("Foto verbergen", html)
+        self.assertRegex(
+            html,
+            (
+                r'revealButton\.setAttribute\(\s*'
+                r'"aria-expanded",\s*"true"\s*\)'
+            ),
+        )
+        self.assertRegex(
+            html,
+            (
+                r'revealButton\.setAttribute\(\s*'
+                r'"aria-expanded",\s*"false"\s*\)'
+            ),
+        )
+        self.assertIn(
+            'id="customer-context-photo-placeholder"',
+            html,
+        )
+        self.assertNotIn("onclick=", html)
+
+    def test_missing_snapshot_is_non_blocking_completeness_alert(self):
+        self.snapshot.delete()
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Bronprofielcontext ontbreekt.",
+        )
+        self.assertFalse(
+            response.context["operator_context"]["available"]
+        )
+        self.assertNotEqual(
+            response.context["access_state"]["status"],
+            "blocked",
+        )
+
+    def test_buddy_surface_remains_exactly_once(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+        html = response.content.decode()
+
+        self.assertEqual(
+            html.count('id="chat-buddy-context"'),
+            1,
+        )
+        self.assertEqual(
+            html.count("Buddy Context Surface"),
+            1,
+        )
