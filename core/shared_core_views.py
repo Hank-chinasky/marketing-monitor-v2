@@ -2,7 +2,11 @@ from typing import Any
 from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import (
+    ObjectDoesNotExist,
+    PermissionDenied,
+    ValidationError,
+)
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -21,6 +25,7 @@ from core.models import (
 from core.services.buddy_provider import get_configured_buddy_provider
 from core.services.buddy_reply import build_operator_reply_draft
 from core.services.demo_access import is_demo_viewer
+from core.services.operator_context import build_operator_context
 from core.services.operator_queue import build_operator_queue
 from core.services.scope import (
     get_active_assignments_for_operator,
@@ -616,6 +621,16 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             alerts.append("Creator consent staat niet op actief.")
         if not channel:
             alerts.append("Geen channel gekoppeld aan deze thread.")
+
+        if (
+            selected_thread.source_system
+            == ConversationThread.SourceSystem.EUROTIKKEN
+        ):
+            try:
+                selected_thread.context_snapshot
+            except ObjectDoesNotExist:
+                alerts.append("Bronprofielcontext ontbreekt.")
+
         if not selected_thread.guardrails:
             alerts.append("Guardrails ontbreken; policy-context is onvolledig.")
         if not selected_thread.open_loop:
@@ -699,7 +714,12 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
     def _get_threads(self):
         return list(
             get_scoped_conversation_thread_queryset(self.request.user)
-            .select_related("creator", "channel", "follow_up_status")
+            .select_related(
+                "creator",
+                "channel",
+                "follow_up_status",
+                "context_snapshot",
+            )
             .order_by("-last_message_at", "-id")
         )
 
@@ -883,6 +903,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         access_state = self._build_access_state(selected_thread, assignment)
         latest_draft = get_latest_buddy_draft(selected_thread) if selected_thread else None
         completeness_alerts = self._build_completeness_alerts(selected_thread)
+        operator_context = build_operator_context(selected_thread)
 
         follow_up_status = None
         if selected_thread:
@@ -895,6 +916,32 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             completeness_alerts,
             follow_up_status=follow_up_status,
         )
+
+        if operator_context["available"]:
+            buddy_assist["profile_context"] = dict(
+                operator_context["profile"]
+            )
+            buddy_assist["customer_context"] = dict(
+                operator_context["customer"]
+            )
+
+        if operator_context["customer_review_missing"]:
+            buddy_assist["reliability_label"] = "Laag"
+            buddy_assist["reliability_badge"] = "badge-red"
+            buddy_assist["reliability_reason"] = (
+                "Klantcontext is nog niet gereviewd."
+            )
+        elif (
+            operator_context["customer_reliability_warning"]
+            and buddy_assist["reliability_label"] != "Laag"
+        ):
+            buddy_assist["reliability_label"] = "Middel"
+            buddy_assist["reliability_badge"] = "badge-yellow"
+            buddy_assist["reliability_reason"] = (
+                "Klantcontext is gereviewd, maar niet aan de "
+                "bron gecontroleerd."
+            )
+
         chat_scan_context = self._build_chat_scan_context(selected_thread)
         conversation_messages = []
         if selected_thread:
@@ -1082,6 +1129,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "operator_reply_draft": operator_reply_draft,
             "latest_draft": latest_draft,
             "completeness_alerts": completeness_alerts,
+            "operator_context": operator_context,
             "buddy_assist": buddy_assist,
             "chat_focus_items": chat_scan_context["chat_focus_items"],
             "latest_handoff_scan": chat_scan_context["latest_handoff_scan"],

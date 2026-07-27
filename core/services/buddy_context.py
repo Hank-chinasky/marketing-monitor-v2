@@ -33,6 +33,8 @@ class BuddyContextPacket:
     open_loop: str
     do_not_do: str
     recommended_next_action: str
+    profile_context: dict[str, Any]
+    customer_context: dict[str, Any]
     reliability: dict[str, str]
     missing_context: list[str]
 
@@ -128,6 +130,64 @@ def _safe_recent_messages(
     return safe_messages[-safe_limit:]
 
 
+PROFILE_CONTEXT_TEXT_FIELDS = (
+    "display_name",
+    "city",
+    "region",
+    "country",
+    "marital_status",
+    "goal",
+    "occupation",
+    "summary",
+)
+
+CUSTOMER_CONTEXT_TEXT_FIELDS = (
+    "display_name",
+    "city",
+    "region",
+    "country",
+    "marital_status",
+    "goal",
+)
+
+CUSTOMER_CONTEXT_BOOLEAN_FIELDS = (
+    "source_checked",
+    "source_reviewed",
+)
+
+
+def _safe_person_context(
+    value: Any,
+    *,
+    text_fields: Iterable[str],
+    boolean_fields: Iterable[str] = (),
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        return {}
+
+    result: dict[str, Any] = {}
+
+    age = value.get("age")
+    if (
+        isinstance(age, int)
+        and not isinstance(age, bool)
+        and 18 <= age <= 130
+    ):
+        result["age"] = age
+
+    for field in text_fields:
+        safe_value = _redact_sensitive_text(value.get(field))
+        if safe_value:
+            result[field] = safe_value
+
+    for field in boolean_fields:
+        raw_value = value.get(field)
+        if isinstance(raw_value, bool):
+            result[field] = raw_value
+
+    return result
+
+
 def _safe_missing_context(values: Iterable[Any]) -> list[str]:
     result = []
 
@@ -209,6 +269,15 @@ def build_buddy_context_packet(
         ),
         recommended_next_action=_redact_sensitive_text(
             assist.get("recommended_next_action", "")
+        ),
+        profile_context=_safe_person_context(
+            assist.get("profile_context"),
+            text_fields=PROFILE_CONTEXT_TEXT_FIELDS,
+        ),
+        customer_context=_safe_person_context(
+            assist.get("customer_context"),
+            text_fields=CUSTOMER_CONTEXT_TEXT_FIELDS,
+            boolean_fields=CUSTOMER_CONTEXT_BOOLEAN_FIELDS,
         ),
         reliability={
             "label": _text(
