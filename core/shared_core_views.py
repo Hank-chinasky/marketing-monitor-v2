@@ -925,7 +925,13 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 operator_context["customer"]
             )
 
-        if (
+        if operator_context["customer_review_missing"]:
+            buddy_assist["reliability_label"] = "Laag"
+            buddy_assist["reliability_badge"] = "badge-red"
+            buddy_assist["reliability_reason"] = (
+                "Klantcontext is nog niet gereviewd."
+            )
+        elif (
             operator_context["customer_reliability_warning"]
             and buddy_assist["reliability_label"] != "Laag"
         ):

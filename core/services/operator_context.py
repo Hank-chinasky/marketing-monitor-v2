@@ -161,6 +161,7 @@ def build_operator_context(thread: Any) -> dict[str, Any]:
         "customer": {},
         "customer_media": [],
         "customer_reliability_warning": False,
+        "customer_review_missing": False,
     }
 
     if thread is None:
@@ -203,6 +204,10 @@ def build_operator_context(thread: Any) -> dict[str, Any]:
             source_site_id=source_site_id,
         ),
         "customer_reliability_warning": (
-            customer["source_checked"] is False
+            customer["source_reviewed"] is True
+            and customer["source_checked"] is False
+        ),
+        "customer_review_missing": (
+            customer["source_reviewed"] is False
         ),
     }

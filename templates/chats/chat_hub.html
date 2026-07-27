@@ -143,7 +143,13 @@
                         </p>
                     {% endif %}
 
-                    {% if operator_context.customer_reliability_warning %}
+                    {% if operator_context.customer_review_missing %}
+                        <p style="margin:0.45rem 0 0;">
+                            <span class="badge badge-red">
+                                Nog niet beoordeeld
+                            </span>
+                        </p>
+                    {% elif operator_context.customer_reliability_warning %}
                         <p style="margin:0.45rem 0 0;">
                             <span class="badge badge-yellow">
                                 Beoordeeld, niet bron-gecontroleerd

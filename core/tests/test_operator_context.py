@@ -99,6 +99,27 @@ class OperatorContextTests(TestCase):
             context["customer_reliability_warning"]
         )
 
+    def test_unreviewed_customer_context_is_not_medium(self):
+        customer_context = dict(
+            self.snapshot.customer_context
+        )
+        customer_context["source_reviewed"] = False
+        customer_context["source_checked"] = False
+
+        self.snapshot.customer_context = customer_context
+        self.snapshot.save(
+            update_fields=["customer_context"]
+        )
+
+        context = build_operator_context(self.thread)
+
+        self.assertTrue(
+            context["customer_review_missing"]
+        )
+        self.assertFalse(
+            context["customer_reliability_warning"]
+        )
+
     def test_builds_media_url_only_from_hard_mapping(self):
         context = build_operator_context(self.thread)
 

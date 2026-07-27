@@ -1757,6 +1757,49 @@ class EurotikkenOperatorContextViewTests(TestCase):
         self.assertNotIn("source_media_id", buddy_context)
         self.assertNotIn("uploaded_files", buddy_context)
 
+    def test_unreviewed_customer_context_lowers_reliability(
+        self,
+    ):
+        customer_context = dict(
+            self.snapshot.customer_context
+        )
+        customer_context["source_reviewed"] = False
+        customer_context["source_checked"] = False
+
+        self.snapshot.customer_context = customer_context
+        self.snapshot.save(
+            update_fields=["customer_context"]
+        )
+
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Nog niet beoordeeld",
+        )
+        self.assertNotContains(
+            response,
+            "Beoordeeld, niet bron-gecontroleerd",
+        )
+        self.assertEqual(
+            response.context["buddy_assist"][
+                "reliability_label"
+            ],
+            "Laag",
+        )
+        self.assertIn(
+            "nog niet gereviewd",
+            response.context["buddy_assist"][
+                "reliability_reason"
+            ],
+        )
+
     def test_customer_photo_is_not_loaded_before_click(self):
         self.client.force_login(self.user)
 
