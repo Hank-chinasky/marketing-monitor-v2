@@ -1688,6 +1688,36 @@ class EurotikkenOperatorContextViewTests(TestCase):
                     "source_checked": False,
                     "source_reviewed": True,
                 },
+                profile_media=[
+                    {
+                        "source_media_id": "9619",
+                        "source_owner_user_id": "2390",
+                        "source_path": (
+                            "uploaded_files/"
+                            "sonja-second.webp"
+                        ),
+                        "media_type": "image",
+                        "is_primary": False,
+                        "active": True,
+                        "allow_external_ai": False,
+                        "requires_operator_reveal": True,
+                        "default_visibility": "covered",
+                    },
+                    {
+                        "source_media_id": "9618",
+                        "source_owner_user_id": "2390",
+                        "source_path": (
+                            "uploaded_files/"
+                            "sonja-primary.JPG"
+                        ),
+                        "media_type": "image",
+                        "is_primary": True,
+                        "active": True,
+                        "allow_external_ai": False,
+                        "requires_operator_reveal": True,
+                        "default_visibility": "covered",
+                    },
+                ],
                 customer_media=[
                     {
                         "source_media_id": "50429",
@@ -1799,6 +1829,182 @@ class EurotikkenOperatorContextViewTests(TestCase):
                 "reliability_reason"
             ],
         )
+
+
+    def test_thread_shows_compact_profile_identity_and_content_link(
+        self,
+    ):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Bekijk profielcontent",
+        )
+        self.assertContains(response, "(2)")
+
+        image_tag = self._opening_tag(
+            html,
+            "profile-context-photo",
+        )
+
+        self.assertIn(
+            (
+                'src="https://datesamen.nl/media/'
+                'uploaded_files/sonja-primary.JPG"'
+            ),
+            image_tag,
+        )
+        self.assertNotIn(" hidden", image_tag)
+        self.assertIn('width="68"', image_tag)
+        self.assertIn('height="68"', image_tag)
+        self.assertIn(
+            'referrerpolicy="no-referrer"',
+            image_tag,
+        )
+        self.assertIn('loading="lazy"', image_tag)
+
+        content_url = reverse(
+            "profile-content",
+            kwargs={"thread_pk": self.thread.pk},
+        )
+        self.assertIn(
+            f'href="{content_url}"',
+            html,
+        )
+
+    def test_profile_content_surface_is_read_only_and_thread_scoped(
+        self,
+    ):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse(
+                "profile-content",
+                kwargs={"thread_pk": self.thread.pk},
+            )
+        )
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Profielcontent")
+        self.assertContains(response, "Sonja")
+        self.assertContains(response, "DateSamen")
+        self.assertContains(response, "2 items")
+        self.assertContains(response, "Read-only")
+        self.assertContains(response, "Primair")
+
+        self.assertEqual(
+            html.count(
+                'data-profile-content-item="v1"'
+            ),
+            2,
+        )
+        self.assertIn(
+            (
+                'src="https://datesamen.nl/media/'
+                'uploaded_files/sonja-primary.JPG"'
+            ),
+            html,
+        )
+        self.assertIn(
+            (
+                'src="https://datesamen.nl/media/'
+                'uploaded_files/sonja-second.webp"'
+            ),
+            html,
+        )
+        self.assertNotIn(
+            "uploaded_files/000000_jan.JPG",
+            html,
+        )
+        self.assertContains(
+            response,
+            (
+                "Alleen bekijken. Uploaden, wijzigen "
+                "en verwijderen zijn niet beschikbaar."
+            ),
+        )
+        self.assertNotIn('type="file"', html)
+        self.assertNotIn(
+            'name="profile_media"',
+            html,
+        )
+        self.assertNotIn(
+            'data-profile-content-write=',
+            html,
+        )
+        self.assertNotIn(
+            'data-profile-content-delete=',
+            html,
+        )
+
+        post_response = self.client.post(
+            reverse(
+                "profile-content",
+                kwargs={
+                    "thread_pk": self.thread.pk,
+                },
+            ),
+            {},
+        )
+        self.assertEqual(
+            post_response.status_code,
+            405,
+        )
+
+        self.assertIn(
+            f'href="/chats/?thread={self.thread.pk}"',
+            html,
+        )
+
+    def test_profile_content_return_link_preserves_focus_mode(
+        self,
+    ):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse(
+                "profile-content",
+                kwargs={"thread_pk": self.thread.pk},
+            ),
+            {"focus": "1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            (
+                f'/chats/?thread={self.thread.pk}'
+                '&amp;focus=1'
+            ),
+        )
+
+    def test_profile_content_rejects_out_of_scope_thread(
+        self,
+    ):
+        user_model = get_user_model()
+        outsider = user_model.objects.create_user(
+            username="profile-content-outsider",
+            password="x",
+            is_active=True,
+        )
+        self.client.force_login(outsider)
+
+        response = self.client.get(
+            reverse(
+                "profile-content",
+                kwargs={"thread_pk": self.thread.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
 
     def test_customer_photo_is_not_loaded_before_click(self):
         self.client.force_login(self.user)

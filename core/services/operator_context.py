@@ -98,6 +98,85 @@ def _safe_relative_media_path(value: Any) -> str:
     return source_path
 
 
+def _build_profile_media(
+    raw_media: Any,
+    *,
+    source_system: str,
+    source_site_id: str,
+) -> list[dict[str, Any]]:
+    """Build validated operator-facing profile media.
+
+    Profile media represents the identity/content of the profile the
+    operator is working as. It is therefore separate from customer
+    media and does not inherit the customer-photo reveal interface.
+
+    URLs are still built only from the hard source allowlist and a
+    validated relative image path. Media remains excluded from
+    external AI context.
+    """
+
+    if not isinstance(raw_media, list):
+        return []
+
+    base_url = SOURCE_MEDIA_BASE_URLS.get(
+        (source_system, source_site_id)
+    )
+    if not base_url:
+        return []
+
+    result = []
+    seen_urls = set()
+
+    # The current bounded importer supplies at most 10 records.
+    # A larger bound keeps this read-only surface usable for future
+    # source adapters without turning it into an unbounded asset dump.
+    for raw_item in raw_media[:100]:
+        if not isinstance(raw_item, dict):
+            continue
+        if raw_item.get("media_type") != "image":
+            continue
+        if raw_item.get("allow_external_ai") is not False:
+            continue
+        if raw_item.get("active") is False:
+            continue
+
+        source_media_id = _text(
+            raw_item.get("source_media_id")
+        )
+        if not source_media_id.isdigit():
+            continue
+
+        source_path = _safe_relative_media_path(
+            raw_item.get("source_path")
+        )
+        if not source_path:
+            continue
+
+        display_url = urljoin(base_url, source_path)
+        if display_url in seen_urls:
+            continue
+
+        seen_urls.add(display_url)
+        result.append(
+            {
+                "display_url": display_url,
+                "is_primary": (
+                    raw_item.get("is_primary") is True
+                ),
+            }
+        )
+
+    # Primary identity first; remaining media keep stable URL ordering.
+    result.sort(
+        key=lambda item: (
+            not item["is_primary"],
+            item["display_url"],
+        )
+    )
+
+    return result
+
+
 def _build_customer_media(
     raw_media: Any,
     *,
@@ -159,6 +238,7 @@ def build_operator_context(thread: Any) -> dict[str, Any]:
         "available": False,
         "profile": {},
         "customer": {},
+        "profile_media": [],
         "customer_media": [],
         "customer_reliability_warning": False,
         "customer_review_missing": False,
@@ -198,6 +278,11 @@ def build_operator_context(thread: Any) -> dict[str, Any]:
         "available": True,
         "profile": profile,
         "customer": customer,
+        "profile_media": _build_profile_media(
+            snapshot.profile_media,
+            source_system=source_system,
+            source_site_id=source_site_id,
+        ),
         "customer_media": _build_customer_media(
             snapshot.customer_media,
             source_system=source_system,
