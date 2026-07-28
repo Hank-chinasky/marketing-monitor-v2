@@ -61,6 +61,61 @@
                 <div style="margin-bottom:0.8rem;">
                     <strong>PROFIEL</strong>
 
+                    {% with media=operator_context.profile_media.0 %}
+                        {% if media %}
+                            <div
+                                data-profile-identity="v1"
+                                style="
+                                    display:flex;
+                                    align-items:center;
+                                    gap:0.65rem;
+                                    margin-top:0.45rem;
+                                "
+                            >
+                                <img
+                                    id="profile-context-photo"
+                                    src="{{ media.display_url }}"
+                                    alt="Profielfoto van {{ operator_context.profile.display_name|default:'het actieve profiel' }}"
+                                    referrerpolicy="no-referrer"
+                                    loading="lazy"
+                                    decoding="async"
+                                    width="68"
+                                    height="68"
+                                    style="
+                                        display:block;
+                                        flex:0 0 68px;
+                                        width:68px;
+                                        height:68px;
+                                        object-fit:cover;
+                                        border-radius:10px;
+                                        border:1px solid #cbd5e1;
+                                    "
+                                >
+
+                                <div style="min-width:0;">
+                                    <a
+                                        class="secondary-button"
+                                        href="{% url 'profile-content' selected_thread.pk %}{% if focus_mode %}?focus=1{% endif %}"
+                                        style="
+                                            display:inline-block;
+                                            line-height:1.25;
+                                        "
+                                    >
+                                        Bekijk profielcontent
+                                        ({{ operator_context.profile_media|length }})
+                                    </a>
+
+                                    <div
+                                        class="muted"
+                                        style="margin-top:0.3rem;"
+                                    >
+                                        Read-only broncontent
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
                     <p style="margin:0.35rem 0 0;">
                         <strong>
                             {{ operator_context.profile.display_name|default:"Onbekend" }}

@@ -1314,6 +1314,54 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         return redirect(f"{reverse('chat-hub')}?{query}")
 
 
+class ProfileContentView(LoginRequiredMixin, TemplateView):
+    """Read-only source-aware profile content surface."""
+
+    template_name = "chats/profile_content.html"
+    http_method_names = ["get", "head", "options"]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        thread = get_object_or_404(
+            get_scoped_conversation_thread_queryset(
+                self.request.user
+            ),
+            pk=kwargs["thread_pk"],
+        )
+        operator_context = build_operator_context(thread)
+
+        if not operator_context["available"]:
+            raise Http404(
+                "Profile context is unavailable."
+            )
+
+        return_query = {"thread": thread.pk}
+        focus_mode = self.request.GET.get("focus") == "1"
+        if focus_mode:
+            return_query["focus"] = 1
+
+        context.update(
+            {
+                "thread": thread,
+                "operator_context": operator_context,
+                "profile_media": operator_context[
+                    "profile_media"
+                ],
+                "profile_media_count": len(
+                    operator_context["profile_media"]
+                ),
+                "focus_mode": focus_mode,
+                "return_url": (
+                    f"{reverse('chat-hub')}?"
+                    f"{urlencode(return_query)}"
+                ),
+            }
+        )
+
+        return context
+
+
 class FeederHubView(LoginRequiredMixin, TemplateView):
     template_name = "feeder/feeder_hub.html"
 

@@ -60,6 +60,36 @@ class OperatorContextTests(TestCase):
                     "source_checked": False,
                     "source_reviewed": True,
                 },
+                profile_media=[
+                    {
+                        "source_media_id": "9619",
+                        "source_owner_user_id": "2390",
+                        "source_path": (
+                            "uploaded_files/"
+                            "sonja-second.webp"
+                        ),
+                        "media_type": "image",
+                        "is_primary": False,
+                        "active": True,
+                        "allow_external_ai": False,
+                        "requires_operator_reveal": True,
+                        "default_visibility": "covered",
+                    },
+                    {
+                        "source_media_id": "9618",
+                        "source_owner_user_id": "2390",
+                        "source_path": (
+                            "uploaded_files/"
+                            "sonja-primary.JPG"
+                        ),
+                        "media_type": "image",
+                        "is_primary": True,
+                        "active": True,
+                        "allow_external_ai": False,
+                        "requires_operator_reveal": True,
+                        "default_visibility": "covered",
+                    },
+                ],
                 customer_media=[
                     {
                         "source_media_id": "50429",
@@ -142,6 +172,79 @@ class OperatorContextTests(TestCase):
         self.assertNotIn("source_path", serialized)
         self.assertNotIn("source_owner_user_id", serialized)
 
+
+    def test_builds_profile_media_with_primary_first(self):
+        context = build_operator_context(self.thread)
+
+        self.assertEqual(
+            context["profile_media"],
+            [
+                {
+                    "display_url": (
+                        "https://datesamen.nl/media/"
+                        "uploaded_files/sonja-primary.JPG"
+                    ),
+                    "is_primary": True,
+                },
+                {
+                    "display_url": (
+                        "https://datesamen.nl/media/"
+                        "uploaded_files/sonja-second.webp"
+                    ),
+                    "is_primary": False,
+                },
+            ],
+        )
+
+        serialized = json.dumps(context["profile_media"])
+
+        self.assertNotIn("source_media_id", serialized)
+        self.assertNotIn("source_path", serialized)
+        self.assertNotIn(
+            "source_owner_user_id",
+            serialized,
+        )
+
+    def test_profile_media_filters_unsafe_or_ai_enabled_items(
+        self,
+    ):
+        self.snapshot.profile_media = [
+            *self.snapshot.profile_media,
+            {
+                "source_media_id": "9620",
+                "source_path": "../unsafe.jpg",
+                "media_type": "image",
+                "is_primary": False,
+                "active": True,
+                "allow_external_ai": False,
+            },
+            {
+                "source_media_id": "9621",
+                "source_path": (
+                    "uploaded_files/ai-enabled.jpg"
+                ),
+                "media_type": "image",
+                "is_primary": False,
+                "active": True,
+                "allow_external_ai": True,
+            },
+        ]
+        self.snapshot.save(
+            update_fields=["profile_media"]
+        )
+
+        context = build_operator_context(self.thread)
+
+        self.assertEqual(
+            len(context["profile_media"]),
+            2,
+        )
+        serialized = json.dumps(
+            context["profile_media"]
+        )
+        self.assertNotIn("unsafe.jpg", serialized)
+        self.assertNotIn("ai-enabled.jpg", serialized)
+
     def test_unknown_source_mapping_returns_no_media_url(self):
         self.thread.source_site_id = "999"
         self.thread.save(update_fields=["source_site_id"])
@@ -149,6 +252,7 @@ class OperatorContextTests(TestCase):
         context = build_operator_context(self.thread)
 
         self.assertTrue(context["available"])
+        self.assertEqual(context["profile_media"], [])
         self.assertEqual(context["customer_media"], [])
 
     def test_missing_snapshot_returns_unavailable_context(self):
@@ -157,4 +261,5 @@ class OperatorContextTests(TestCase):
         context = build_operator_context(self.thread)
 
         self.assertFalse(context["available"])
+        self.assertEqual(context["profile_media"], [])
         self.assertEqual(context["customer_media"], [])

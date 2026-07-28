@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div
+    style="
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:1rem;
+        flex-wrap:wrap;
+        margin-bottom:1rem;
+    "
+>
+    <div>
+        <h1 style="margin-bottom:0.3rem;">
+            Profielcontent
+        </h1>
+
+        <p class="muted" style="margin:0;">
+            {{ operator_context.profile.display_name|default:"Onbekend profiel" }}
+            · {{ thread.get_source_system_display }}
+            {% if thread.source_site_label %}
+                · {{ thread.source_site_label }}
+            {% endif %}
+        </p>
+    </div>
+
+    <a class="quick-link" href="{{ return_url }}">
+        Terug naar gesprek
+    </a>
+</div>
+
+<div
+    class="panel"
+    style="
+        margin-bottom:1rem;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:1rem;
+        flex-wrap:wrap;
+    "
+>
+    <div>
+        <strong>{{ profile_media_count }} item{{ profile_media_count|pluralize }}</strong>
+        <div class="muted" style="margin-top:0.2rem;">
+            Alleen bekijken. Uploaden, wijzigen en verwijderen zijn niet beschikbaar.
+        </div>
+    </div>
+
+    <span class="badge badge-blue">Read-only</span>
+</div>
+
+{% if profile_media %}
+    <div
+        data-profile-content-grid="v1"
+        style="
+            display:grid;
+            grid-template-columns:repeat(
+                auto-fill,
+                minmax(190px, 1fr)
+            );
+            gap:1rem;
+        "
+    >
+        {% for media in profile_media %}
+            <article
+                class="panel"
+                data-profile-content-item="v1"
+                style="
+                    margin:0;
+                    padding:0.75rem;
+                    min-width:0;
+                "
+            >
+                <img
+                    src="{{ media.display_url }}"
+                    alt="Profielcontent van {{ operator_context.profile.display_name|default:'het actieve profiel' }}"
+                    referrerpolicy="no-referrer"
+                    loading="lazy"
+                    decoding="async"
+                    style="
+                        display:block;
+                        width:100%;
+                        aspect-ratio:1 / 1;
+                        object-fit:cover;
+                        border-radius:10px;
+                        background:#f1f5f9;
+                    "
+                >
+
+                <div
+                    style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+                        gap:0.5rem;
+                        margin-top:0.65rem;
+                    "
+                >
+                    <span>Afbeelding {{ forloop.counter }}</span>
+
+                    {% if media.is_primary %}
+                        <span class="badge badge-green">
+                            Primair
+                        </span>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="panel">
+        <p style="margin:0;">
+            Geen gevalideerde profielcontent beschikbaar in deze contextsnapshot.
+        </p>
+    </div>
+{% endif %}
+{% endblock %}
