@@ -275,6 +275,54 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertTrue(response.context["focus_mode"])
 
 
+
+    def test_chats_focus_mode_has_visible_entry_exit_and_reduced_layout(self):
+        self.client.force_login(self.user)
+
+        normal_response = self.client.get(
+            reverse("chat-hub"),
+            {"thread": self.thread.pk},
+        )
+        focus_response = self.client.get(
+            reverse("chat-hub"),
+            {"focus": "1", "thread": self.thread.pk},
+        )
+
+        self.assertEqual(normal_response.status_code, 200)
+        self.assertEqual(focus_response.status_code, 200)
+
+        normal_html = normal_response.content.decode()
+        focus_html = focus_response.content.decode()
+
+        self.assertIn('data-chat-mode="full"', normal_html)
+        self.assertIn("Focusstand openen", normal_html)
+        self.assertNotIn('data-focus-layout="v1"', normal_html)
+        self.assertIn(
+            f'?thread={self.thread.pk}&amp;focus=1',
+            normal_html,
+        )
+
+        self.assertIn('data-chat-mode="focus"', focus_html)
+        self.assertIn('data-focus-layout="v1"', focus_html)
+        self.assertIn("Focusstand actief", focus_html)
+        self.assertIn("Focusstand verlaten", focus_html)
+        self.assertNotIn("Focusstand openen", focus_html)
+        self.assertIn(".chat-pressure-queue,", focus_html)
+        self.assertIn(".chat-secondary-details,", focus_html)
+        self.assertIn(".chat-focus-secondary,", focus_html)
+        self.assertIn(
+            '.shared-core-pane[aria-label="Handoff kolom"]',
+            focus_html,
+        )
+        self.assertIn(
+            f'href="{reverse("chat-hub")}?thread={self.thread.pk}"',
+            focus_html,
+        )
+        self.assertIn(
+            f'?thread={self.handoff_thread.pk}&amp;focus=1',
+            focus_html,
+        )
+
     def test_chats_focus_mode_buddy_context_has_safe_empty_state_without_thread(self):
         ConversationThread.objects.filter(creator=self.creator).delete()
 
