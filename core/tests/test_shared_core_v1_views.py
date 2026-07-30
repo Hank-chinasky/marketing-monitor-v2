@@ -323,6 +323,334 @@ class SharedCoreV1ViewsTests(TestCase):
             focus_html,
         )
 
+
+    def test_chats_source_filter_limits_threads_queue_and_selector(self):
+        self.thread.source_system = (
+            ConversationThread.SourceSystem.CHATTIES
+        )
+        self.thread.save(update_fields=["source_system"])
+        self.handoff_thread.source_system = (
+            ConversationThread.SourceSystem.EUROTIKKEN
+        )
+        self.handoff_thread.save(
+            update_fields=["source_system"]
+        )
+
+        self.client.force_login(self.user)
+
+        chatties_response = self.client.get(
+            reverse("chat-hub"),
+            {"source": "chatties"},
+        )
+
+        self.assertEqual(
+            chatties_response.status_code,
+            200,
+        )
+        self.assertEqual(
+            chatties_response.context["source_filter"],
+            "chatties",
+        )
+        self.assertEqual(
+            chatties_response.context[
+                "source_filter_label"
+            ],
+            "Chatties",
+        )
+        self.assertEqual(
+            [
+                thread.pk
+                for thread in chatties_response.context[
+                    "threads"
+                ]
+            ],
+            [self.thread.pk],
+        )
+        self.assertEqual(
+            chatties_response.context[
+                "selected_thread"
+            ],
+            self.thread,
+        )
+        self.assertEqual(
+            {
+                item["thread"].pk
+                for item in chatties_response.context[
+                    "operator_queue"
+                ]["items"]
+            },
+            {self.thread.pk},
+        )
+        self.assertContains(
+            chatties_response,
+            'data-source-filter="v1"',
+        )
+        self.assertContains(
+            chatties_response,
+            "Actieve bron: Chatties",
+        )
+        self.assertContains(
+            chatties_response,
+            "shared-core-thread",
+        )
+        self.assertNotContains(
+            chatties_response,
+            "priority-handoff-thread",
+        )
+
+        eurotikken_response = self.client.get(
+            reverse("chat-hub"),
+            {"source": "eurotikken"},
+        )
+
+        self.assertEqual(
+            eurotikken_response.status_code,
+            200,
+        )
+        self.assertEqual(
+            eurotikken_response.context["source_filter"],
+            "eurotikken",
+        )
+        self.assertEqual(
+            [
+                thread.pk
+                for thread in eurotikken_response.context[
+                    "threads"
+                ]
+            ],
+            [self.handoff_thread.pk],
+        )
+        self.assertEqual(
+            eurotikken_response.context[
+                "selected_thread"
+            ],
+            self.handoff_thread,
+        )
+        self.assertContains(
+            eurotikken_response,
+            "Actieve bron: Eurotikken",
+        )
+        self.assertContains(
+            eurotikken_response,
+            "priority-handoff-thread",
+        )
+        self.assertNotContains(
+            eurotikken_response,
+            "shared-core-thread",
+        )
+
+        invalid_response = self.client.get(
+            reverse("chat-hub"),
+            {"source": "niet-bestaand"},
+        )
+
+        self.assertEqual(
+            invalid_response.context["source_filter"],
+            "",
+        )
+        self.assertEqual(
+            {
+                thread.pk
+                for thread in invalid_response.context[
+                    "threads"
+                ]
+            },
+            {
+                self.thread.pk,
+                self.handoff_thread.pk,
+            },
+        )
+
+    def test_chats_source_filter_rejects_thread_outside_filter_and_shows_empty_state(self):
+        self.thread.source_system = (
+            ConversationThread.SourceSystem.CHATTIES
+        )
+        self.thread.save(update_fields=["source_system"])
+        self.handoff_thread.source_system = (
+            ConversationThread.SourceSystem.EUROTIKKEN
+        )
+        self.handoff_thread.save(
+            update_fields=["source_system"]
+        )
+
+        self.client.force_login(self.user)
+
+        mismatch_response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "source": "chatties",
+                "thread": self.handoff_thread.pk,
+            },
+        )
+
+        self.assertEqual(
+            mismatch_response.status_code,
+            200,
+        )
+        self.assertIsNone(
+            mismatch_response.context["selected_thread"]
+        )
+        self.assertTrue(
+            mismatch_response.context[
+                "source_filter_thread_mismatch"
+            ]
+        )
+        self.assertContains(
+            mismatch_response,
+            "Het gevraagde gesprek valt buiten het actieve bronfilter Chatties.",
+        )
+        self.assertNotContains(
+            mismatch_response,
+            "priority-handoff-thread",
+        )
+
+        ConversationThread.objects.filter(
+            creator=self.creator
+        ).update(
+            source_system=(
+                ConversationThread.SourceSystem.MARA_CHAT
+            )
+        )
+
+        empty_response = self.client.get(
+            reverse("chat-hub"),
+            {"source": "eurotikken"},
+        )
+
+        self.assertEqual(empty_response.status_code, 200)
+        self.assertTrue(
+            empty_response.context["source_filter_empty"]
+        )
+        self.assertEqual(
+            empty_response.context["threads"],
+            [],
+        )
+        self.assertContains(
+            empty_response,
+            "Binnen Eurotikken zijn geen gesprekken beschikbaar in deze werkvoorraad.",
+        )
+        self.assertContains(
+            empty_response,
+            "Er wordt niet automatisch naar een andere bron overgeschakeld.",
+        )
+
+    def test_chats_source_filter_persists_through_focus_links_and_forms(self):
+        self.thread.source_system = (
+            ConversationThread.SourceSystem.CHATTIES
+        )
+        self.thread.save(update_fields=["source_system"])
+        self.handoff_thread.source_system = (
+            ConversationThread.SourceSystem.EUROTIKKEN
+        )
+        self.handoff_thread.save(
+            update_fields=["source_system"]
+        )
+
+        self.client.force_login(self.user)
+
+        normal_response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "source": "chatties",
+                "thread": self.thread.pk,
+            },
+        )
+        normal_html = normal_response.content.decode()
+
+        self.assertIn(
+            (
+                f'?thread={self.thread.pk}'
+                '&amp;source=chatties'
+                '&amp;focus=1'
+            ),
+            normal_html,
+        )
+        self.assertIn(
+            'name="source" value="chatties"',
+            normal_html,
+        )
+
+        focus_response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "source": "chatties",
+                "thread": self.thread.pk,
+                "focus": "1",
+            },
+        )
+        focus_html = focus_response.content.decode()
+
+        self.assertTrue(
+            focus_response.context["focus_mode"]
+        )
+        self.assertEqual(
+            focus_response.context["source_filter"],
+            "chatties",
+        )
+        self.assertIn(
+            (
+                f'?thread={self.thread.pk}'
+                '&amp;source=chatties'
+            ),
+            focus_html,
+        )
+        self.assertIn(
+            'name="source" value="chatties"',
+            focus_html,
+        )
+        self.assertIn(
+            'name="focus" value="1"',
+            focus_html,
+        )
+        self.assertNotIn(
+            "priority-handoff-thread",
+            focus_html,
+        )
+
+    def test_chats_source_filter_blocks_post_for_thread_from_other_source(self):
+        self.thread.source_system = (
+            ConversationThread.SourceSystem.CHATTIES
+        )
+        self.thread.save(update_fields=["source_system"])
+        self.handoff_thread.source_system = (
+            ConversationThread.SourceSystem.EUROTIKKEN
+        )
+        self.handoff_thread.save(
+            update_fields=["source_system"]
+        )
+        old_note = self.handoff_thread.last_handoff_note
+
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("chat-hub"),
+            {
+                "source": "chatties",
+                "thread": self.handoff_thread.pk,
+                "handoff_summary": (
+                    "Dit mag niet op Eurotikken worden opgeslagen."
+                ),
+                "next_step": "Onjuiste bronactie.",
+                "close_signal": "review_nodig",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.handoff_thread.refresh_from_db()
+        self.assertEqual(
+            self.handoff_thread.last_handoff_note,
+            old_note,
+        )
+        self.assertContains(
+            response,
+            "Geen actieve thread geselecteerd voor handoff-afsluiting.",
+        )
+        self.assertTrue(
+            response.context[
+                "source_filter_thread_mismatch"
+            ]
+        )
+
     def test_chats_focus_mode_buddy_context_has_safe_empty_state_without_thread(self):
         ConversationThread.objects.filter(creator=self.creator).delete()
 
@@ -1927,6 +2255,34 @@ class EurotikkenOperatorContextViewTests(TestCase):
             html,
         )
 
+    def test_thread_profile_content_link_preserves_source_and_focus(
+        self,
+    ):
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("chat-hub"),
+            {
+                "thread": self.thread.pk,
+                "source": "eurotikken",
+                "focus": "1",
+            },
+        )
+        html = response.content.decode()
+        content_url = reverse(
+            "profile-content",
+            kwargs={"thread_pk": self.thread.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            (
+                f'href="{content_url}?focus=1'
+                '&amp;source=eurotikken"'
+            ),
+            html,
+        )
+
     def test_profile_content_surface_is_read_only_and_thread_scoped(
         self,
     ):
@@ -2022,7 +2378,10 @@ class EurotikkenOperatorContextViewTests(TestCase):
                 "profile-content",
                 kwargs={"thread_pk": self.thread.pk},
             ),
-            {"focus": "1"},
+            {
+                "focus": "1",
+                "source": "eurotikken",
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -2031,6 +2390,7 @@ class EurotikkenOperatorContextViewTests(TestCase):
             (
                 f'/chats/?thread={self.thread.pk}'
                 '&amp;focus=1'
+                '&amp;source=eurotikken'
             ),
         )
 

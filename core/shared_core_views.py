@@ -88,6 +88,23 @@ TEMPLATE_ALLOWED_PLACEHOLDERS = {
 }
 PLACEHOLDER_NOISE_VALUES = {"-", "n/a", "na", "none", "null", "onbekend", "geen", "tbd"}
 
+CHAT_SOURCE_FILTER_OPTIONS = (
+    ("", "Alle"),
+    (
+        ConversationThread.SourceSystem.CHATTIES,
+        "Chatties",
+    ),
+    (
+        ConversationThread.SourceSystem.EUROTIKKEN,
+        "Eurotikken",
+    ),
+)
+CHAT_SOURCE_FILTER_VALUES = {
+    value
+    for value, _label in CHAT_SOURCE_FILTER_OPTIONS
+    if value
+}
+
 
 def _safe_template_format(template_body: str, values: dict[str, str]) -> str:
     result = template_body
@@ -711,19 +728,62 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "reason": "Thread/context/policy en operator-scope zijn voldoende voor actie.",
         }
 
-    def _get_threads(self):
-        return list(
-            get_scoped_conversation_thread_queryset(self.request.user)
+    def _get_source_filter(self, *, source="get"):
+        request_values = (
+            self.request.POST
+            if source == "post"
+            else self.request.GET
+        )
+        source_filter = (
+            request_values.get("source") or ""
+        ).strip().lower()
+
+        if source_filter not in CHAT_SOURCE_FILTER_VALUES:
+            return ""
+
+        return source_filter
+
+    def _get_focus_mode(self, *, source="get"):
+        request_values = (
+            self.request.POST
+            if source == "post"
+            else self.request.GET
+        )
+        return request_values.get("focus") == "1"
+
+    def _get_threads(self, source_filter=""):
+        queryset = (
+            get_scoped_conversation_thread_queryset(
+                self.request.user
+            )
             .select_related(
                 "creator",
                 "channel",
                 "follow_up_status",
                 "context_snapshot",
             )
-            .order_by("-last_message_at", "-id")
         )
 
-    def _resolve_selected_thread(self, threads, *, source="get", fallback_to_first=True):
+        if source_filter:
+            queryset = queryset.filter(
+                source_system=source_filter
+            )
+
+        return list(
+            queryset.order_by(
+                "-last_message_at",
+                "-id",
+            )
+        )
+
+    def _resolve_selected_thread(
+        self,
+        threads,
+        *,
+        source="get",
+        fallback_to_first=True,
+        fallback_on_invalid=True,
+    ):
         selected_thread = None
         selected_thread_param = ""
 
@@ -734,11 +794,26 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         if selected_thread_param.isdigit():
             selected_thread = next(
-                (thread for thread in threads if thread.pk == int(selected_thread_param)),
+                (
+                    thread
+                    for thread in threads
+                    if thread.pk == int(selected_thread_param)
+                ),
                 None,
             )
 
-        if selected_thread is None and fallback_to_first and threads:
+        if (
+            selected_thread_param
+            and selected_thread is None
+            and not fallback_on_invalid
+        ):
+            return None
+
+        if (
+            selected_thread is None
+            and fallback_to_first
+            and threads
+        ):
             selected_thread = threads[0]
 
         return selected_thread
@@ -769,14 +844,64 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "opvolging_nodig": ConversationThread.Status.WAITING_ON_OPERATOR,
         }.get(close_signal)
 
+    def _build_source_filter_options(
+        self,
+        selected_thread,
+        *,
+        source_filter,
+        focus_mode,
+    ):
+        options = []
+
+        for value, label in CHAT_SOURCE_FILTER_OPTIONS:
+            query_values = {}
+
+            if value:
+                query_values["source"] = value
+
+            if (
+                selected_thread
+                and (
+                    not value
+                    or selected_thread.source_system == value
+                )
+            ):
+                query_values["thread"] = selected_thread.pk
+
+            if focus_mode:
+                query_values["focus"] = 1
+
+            query = urlencode(query_values)
+            url = reverse("chat-hub")
+            if query:
+                url = f"{url}?{query}"
+
+            options.append(
+                {
+                    "value": value,
+                    "label": label,
+                    "active": source_filter == value,
+                    "url": url,
+                }
+            )
+
+        return options
+
     def _redirect_after_queue_completion(
         self,
         selected_thread,
         *,
         completion_kind,
     ):
-        refreshed_threads = self._get_threads()
-        operator_queue = build_operator_queue(refreshed_threads)
+        source_filter = self._get_source_filter(
+            source="post"
+        )
+        refreshed_threads = self._get_threads(
+            source_filter
+        )
+        operator_queue = build_operator_queue(
+            refreshed_threads
+        )
 
         next_item = next(
             (
@@ -797,6 +922,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         else:
             query_values["thread"] = selected_thread.pk
             query_values["queue_cycle_complete"] = 1
+
+        if source_filter:
+            query_values["source"] = source_filter
 
         if self.request.POST.get("focus") == "1":
             query_values["focus"] = 1
@@ -879,14 +1007,47 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         thread_source="get",
         fallback_to_first=True,
     ):
-        demo_read_only = is_demo_viewer(self.request.user)
-        threads = self._get_threads()
+        demo_read_only = is_demo_viewer(
+            self.request.user
+        )
+        source_filter = self._get_source_filter(
+            source=thread_source
+        )
+        focus_mode = self._get_focus_mode(
+            source=thread_source
+        )
+        threads = self._get_threads(source_filter)
         operator_queue = build_operator_queue(threads)
         selected_thread = self._resolve_selected_thread(
             threads,
             source=thread_source,
             fallback_to_first=fallback_to_first,
+            fallback_on_invalid=not bool(source_filter),
         )
+
+        request_values = (
+            self.request.POST
+            if thread_source == "post"
+            else self.request.GET
+        )
+        selected_thread_param = (
+            request_values.get("thread") or ""
+        ).strip()
+        source_filter_thread_mismatch = bool(
+            source_filter
+            and selected_thread_param
+            and selected_thread is None
+        )
+        source_filter_options = (
+            self._build_source_filter_options(
+                selected_thread,
+                source_filter=source_filter,
+                focus_mode=focus_mode,
+            )
+        )
+        source_filter_label = dict(
+            CHAT_SOURCE_FILTER_OPTIONS
+        )[source_filter]
 
         assignment = get_active_assignment_for_user_and_creator(
             self.request.user,
@@ -1118,6 +1279,16 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "threads": threads,
             "operator_queue": operator_queue,
             "selected_thread": selected_thread,
+            "source_filter": source_filter,
+            "source_filter_label": source_filter_label,
+            "source_filter_options": source_filter_options,
+            "source_filter_active": bool(source_filter),
+            "source_filter_empty": bool(
+                source_filter and not threads
+            ),
+            "source_filter_thread_mismatch": (
+                source_filter_thread_mismatch
+            ),
             "conversation_messages": conversation_messages,
             "conversation_message_count": conversation_message_count,
             "conversation_hidden_message_count": (
@@ -1161,7 +1332,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             "follow_up_form": follow_up_form,
             "follow_up_saved": self.request.GET.get("follow_up_saved") == "1",
             "follow_up_submit_error": None,
-            "focus_mode": self.request.GET.get("focus") == "1",
+            "focus_mode": focus_mode,
             "queue_saved": (
                 self.request.GET.get("queue_saved")
                 if self.request.GET.get("queue_saved")
@@ -1253,7 +1424,15 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                     completion_kind="follow_up",
                 )
 
-            query_values = {"thread": selected_thread.pk, "follow_up_saved": 1}
+            query_values = {
+                "thread": selected_thread.pk,
+                "follow_up_saved": 1,
+            }
+            source_filter = self._get_source_filter(
+                source="post"
+            )
+            if source_filter:
+                query_values["source"] = source_filter
             if request.POST.get("focus") == "1":
                 query_values["focus"] = "1"
             query = urlencode(query_values)
@@ -1307,7 +1486,15 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 completion_kind="handoff",
             )
 
-        query_values = {"thread": selected_thread.pk, "saved": 1}
+        query_values = {
+            "thread": selected_thread.pk,
+            "saved": 1,
+        }
+        source_filter = self._get_source_filter(
+            source="post"
+        )
+        if source_filter:
+            query_values["source"] = source_filter
         if request.POST.get("focus") == "1":
             query_values["focus"] = "1"
         query = urlencode(query_values)
@@ -1341,6 +1528,14 @@ class ProfileContentView(LoginRequiredMixin, TemplateView):
         if focus_mode:
             return_query["focus"] = 1
 
+        source_filter = (
+            self.request.GET.get("source") or ""
+        ).strip().lower()
+        if source_filter not in CHAT_SOURCE_FILTER_VALUES:
+            source_filter = ""
+        if source_filter:
+            return_query["source"] = source_filter
+
         context.update(
             {
                 "thread": thread,
@@ -1352,6 +1547,7 @@ class ProfileContentView(LoginRequiredMixin, TemplateView):
                     operator_context["profile_media"]
                 ),
                 "focus_mode": focus_mode,
+                "source_filter": source_filter,
                 "return_url": (
                     f"{reverse('chat-hub')}?"
                     f"{urlencode(return_query)}"

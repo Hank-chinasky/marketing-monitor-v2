@@ -64,6 +64,8 @@
             {% csrf_token %}
             <input type="hidden" name="form_action" value="follow_up_status">
             <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
+            {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
+            {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
 
             <fieldset
                 class="chat-status-fieldset"
