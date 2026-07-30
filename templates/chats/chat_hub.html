@@ -95,7 +95,7 @@
                                 <div style="min-width:0;">
                                     <a
                                         class="secondary-button"
-                                        href="{% url 'profile-content' selected_thread.pk %}{% if focus_mode %}?focus=1{% endif %}"
+                                        href="{% url 'profile-content' selected_thread.pk %}{% if focus_mode or source_filter %}?{% if focus_mode %}focus=1{% if source_filter %}&amp;{% endif %}{% endif %}{% if source_filter %}source={{ source_filter }}{% endif %}{% endif %}"
                                         style="
                                             display:inline-block;
                                             line-height:1.25;
@@ -635,6 +635,27 @@
             background: #f8fafc;
         }
 
+        .chat-source-filter-panel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border-color: #bfdbfe;
+            background: #f8fbff;
+        }
+        .chat-source-filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+        .chat-source-filter-actions a[aria-current="page"] {
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+        }
+
         @media (min-width: 1101px) {
             /* Sticky Buddy context v1 */
             .shared-core-pane[aria-label="Werkvlak kolom"] {
@@ -783,14 +804,14 @@
                         </span>
                         <a
                             class="secondary-button"
-                            href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}"
+                            href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}"
                         >
                             Focusstand verlaten
                         </a>
                     {% else %}
                         <a
                             class="primary-button"
-                            href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}&amp;focus=1"
+                            href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}&amp;focus=1"
                         >
                             Focusstand openen
                         </a>
@@ -801,6 +822,7 @@
             {% if threads %}
                 <form method="get" class="chat-thread-form" style="margin:0;">
                     {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
+                    {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
                     <label for="thread-select" style="margin:0;">Gesprek:</label>
                     <select id="thread-select" name="thread" style="max-width:360px;">
                         {% for thread in threads %}
@@ -815,10 +837,65 @@
                     <button type="submit" class="secondary-button">Open</button>
                 </form>
             {% else %}
-                <div class="muted">Geen gesprekken beschikbaar binnen scope.</div>
+                <div class="muted">
+                    {% if source_filter %}
+                        Geen gesprekken beschikbaar binnen {{ source_filter_label }}.
+                    {% else %}
+                        Geen gesprekken beschikbaar binnen scope.
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
+
+    <nav
+        class="panel chat-source-filter-panel"
+        data-source-filter="v1"
+        aria-label="Filter werkvoorraad op bron"
+    >
+        <div class="chat-source-filter-actions">
+            <strong>Bron:</strong>
+            {% for option in source_filter_options %}
+                <a
+                    class="{% if option.active %}primary-button{% else %}secondary-button{% endif %}"
+                    href="{{ option.url }}"
+                    data-source-filter-value="{% if option.value %}{{ option.value }}{% else %}all{% endif %}"
+                    {% if option.active %}aria-current="page"{% endif %}
+                >
+                    {{ option.label }}
+                </a>
+            {% endfor %}
+        </div>
+        <span class="muted">
+            Actieve bron: {{ source_filter_label }}
+        </span>
+    </nav>
+
+    {% if source_filter_empty %}
+        <div
+            class="panel"
+            data-source-filter-empty="v1"
+            style="margin-bottom:0.75rem; border-color:#93c5fd; background:#eff6ff;"
+        >
+            <strong>Geen gesprekken binnen {{ source_filter_label }}</strong>
+            <div class="muted">
+                Binnen {{ source_filter_label }} zijn geen gesprekken beschikbaar in deze werkvoorraad.
+                Er wordt niet automatisch naar een andere bron overgeschakeld.
+            </div>
+        </div>
+    {% elif source_filter_thread_mismatch %}
+        <div
+            class="panel"
+            data-source-filter-mismatch="v1"
+            style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;"
+        >
+            <strong>Gesprek niet geopend</strong>
+            <div class="muted">
+                Het gevraagde gesprek valt buiten het actieve bronfilter {{ source_filter_label }}.
+                Kies een gesprek uit de gefilterde werkvoorraad.
+            </div>
+        </div>
+    {% endif %}
 
     <section
         class="panel chat-pressure-queue"
@@ -843,7 +920,7 @@
             {% if operator_queue.next_item %}
                 <a
                     class="primary-button"
-                    href="{% url 'chat-hub' %}?thread={{ operator_queue.next_item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                    href="{% url 'chat-hub' %}?thread={{ operator_queue.next_item.thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}"
                 >
                     Start eerstvolgende
                     <span class="chat-workfloor-sr-only">
@@ -898,7 +975,7 @@
                     {% for item in operator_queue.active_items %}
                         <a
                             class="chat-queue-item{% if selected_thread and selected_thread.pk == item.thread.pk %} active{% endif %}"
-                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}"
                         >
                             <div class="chat-queue-source">
                                 <strong>
@@ -952,7 +1029,7 @@
                     {% for item in operator_queue.parked_items %}
                         <a
                             class="chat-queue-item"
-                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}"
                         >
                             <div class="chat-queue-source">
                                 <strong>{{ item.thread.creator.display_name }}</strong>
@@ -1019,7 +1096,7 @@
                                 {% if conversation_message_count > 5 %}
                                     <a
                                         class="secondary-button"
-                                        href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
+                                        href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}"
                                     >
                                         Toon alleen laatste 5
                                     </a>
@@ -1027,7 +1104,7 @@
                             {% elif conversation_hidden_message_count %}
                                 <a
                                     class="secondary-button"
-                                    href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}&amp;history=all"
+                                    href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}&amp;history=all"
                                 >
                                     Toon eerdere
                                     {{ conversation_hidden_message_count }}
@@ -1165,6 +1242,7 @@
         <summary>Templates v1</summary>
         <form method="get" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:0.5rem; align-items:end;">
             {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
+            {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
             <input type="hidden" name="thread" value="{% if selected_thread %}{{ selected_thread.pk }}{% endif %}">
             <p style="margin:0;">
                 <label for="id_template_q">Zoek titel</label>
@@ -1188,7 +1266,7 @@
                         <strong>{{ template_item.title }}</strong>
                         <div class="muted">Type: {{ template_item.template_type }} · Tags: {{ template_item.tags|join:", " }}</div>
                     </div>
-                    <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ template_item.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}">Open</a>
+                    <a class="quick-link" href="?{% if focus_mode %}focus=1&amp;{% endif %}{% if source_filter %}source={{ source_filter }}&amp;{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&amp;template={{ template_item.id }}&amp;template_q={{ template_query }}&amp;template_type={{ template_type }}&amp;template_tag={{ template_tag }}">Open</a>
                 </div>
             {% empty %}
                 <div class="muted">Geen templates binnen filter.</div>
@@ -1203,7 +1281,7 @@
                 <p class="muted" style="margin:0 0 0.5rem;">Duplicaat / ingevuld</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ filled_template_body }}</pre>
                 {% if not demo_read_only %}
-                    <a class="quick-link" href="?{% if focus_mode %}focus=1&{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
+                    <a class="quick-link" href="?{% if focus_mode %}focus=1&amp;{% endif %}{% if source_filter %}source={{ source_filter }}&amp;{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&amp;template={{ selected_template.id }}&amp;template_q={{ template_query }}&amp;template_type={{ template_type }}&amp;template_tag={{ template_tag }}&amp;template_action=use">Markeer als gebruikt</a>
                 {% endif %}
             </div>
         {% endif %}
@@ -1245,6 +1323,7 @@
                     <form method="post">
                         {% csrf_token %}
                         {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
+                        {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
                         <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
                         <p>
                             <label for="id_handoff_summary">Laatste stand (verplicht)</label>

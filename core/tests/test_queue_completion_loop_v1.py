@@ -62,11 +62,12 @@ class QueueCompletionLoopV1Tests(TestCase):
         *,
         status=ConversationThread.Status.WAITING_ON_OPERATOR,
         minutes_ago=10,
+        source_system=ConversationThread.SourceSystem.CHATTIES,
     ):
         return ConversationThread.objects.create(
             creator=self.creator,
             channel=self.channel,
-            source_system=ConversationThread.SourceSystem.CHATTIES,
+            source_system=source_system,
             source_thread_id=source_thread_id,
             source_site_id="completion-source",
             source_site_label="Completion source",
@@ -245,6 +246,65 @@ class QueueCompletionLoopV1Tests(TestCase):
         self.assertContains(
             saved_response,
             "Er is geen ander actief gesprek om nu te openen.",
+        )
+
+
+    def test_save_and_next_stays_within_source_filter_and_preserves_focus(self):
+        current = self.make_thread(
+            "FILTER-CURRENT",
+            minutes_ago=5,
+        )
+        cross_source = self.make_thread(
+            "FILTER-EUROTIKKEN",
+            minutes_ago=90,
+            source_system=(
+                ConversationThread.SourceSystem.EUROTIKKEN
+            ),
+        )
+        next_chatties = self.make_thread(
+            "FILTER-NEXT-CHATTIES",
+            minutes_ago=30,
+        )
+
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("chat-hub"),
+            {
+                "form_action": "follow_up_status",
+                "thread": current.pk,
+                "source": "chatties",
+                "focus": "1",
+                "follow_up_status": (
+                    ThreadFollowUpStatus.Status.WARM
+                ),
+                "follow_up_note": (
+                    "Binnen Chatties afgehandeld."
+                ),
+                "queue_action": "save_and_next",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        query = self.query_values(response)
+
+        self.assertEqual(
+            query["thread"],
+            [str(next_chatties.pk)],
+        )
+        self.assertNotEqual(
+            query["thread"],
+            [str(cross_source.pk)],
+        )
+        self.assertEqual(query["source"], ["chatties"])
+        self.assertEqual(query["focus"], ["1"])
+        self.assertEqual(
+            query["queue_saved"],
+            ["follow_up"],
+        )
+        self.assertEqual(
+            query["queue_advanced"],
+            ["1"],
         )
 
     def test_workfloor_shows_direct_operator_action_with_focus_entry(self):
