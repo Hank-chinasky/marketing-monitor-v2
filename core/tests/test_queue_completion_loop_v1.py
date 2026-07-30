@@ -247,7 +247,7 @@ class QueueCompletionLoopV1Tests(TestCase):
             "Er is geen ander actief gesprek om nu te openen.",
         )
 
-    def test_workfloor_shows_direct_operator_action_without_focus_toggle(self):
+    def test_workfloor_shows_direct_operator_action_with_focus_entry(self):
         current = self.make_thread(
             "FOCUSED-OPERATOR-SURFACE",
             minutes_ago=15,
@@ -274,5 +274,6 @@ class QueueCompletionLoopV1Tests(TestCase):
             response,
             "Bekijk gesprekken die aandacht vragen",
         )
-        self.assertNotContains(response, "Focusstand")
-        self.assertNotContains(response, "Normale stand")
+        self.assertContains(response, "Focusstand openen")
+        self.assertNotContains(response, "Focusstand actief")
+        self.assertNotContains(response, "Focusstand verlaten")

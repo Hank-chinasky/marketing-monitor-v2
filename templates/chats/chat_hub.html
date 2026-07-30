@@ -8,7 +8,7 @@
 
 {% block left_pane %}
     <div class="chat-sticky-context">
-    <div class="panel" style="margin-bottom:0.75rem;">
+    <div class="panel chat-focus-secondary" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Mag ik hier werken?</h3>
         <p>
             <span class="badge {{ access_state.badge }}">{{ access_state.label }}</span>
@@ -729,13 +729,73 @@
         }
     </style>
 
-    <div class="panel" style="margin-bottom:0.5rem; padding:0.65rem 0.75rem;">
+    {% if focus_mode %}
+        <style data-focus-layout="v1">
+            .chat-pressure-queue,
+            .chat-secondary-details,
+            .chat-focus-secondary,
+            .shared-core-pane[aria-label="Handoff kolom"] {
+                display: none !important;
+            }
+
+            .shared-core-shell {
+                grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+                grid-template-areas: "context work";
+            }
+
+            [data-chat-mode="focus"] {
+                border-color: #7c3aed;
+                background: #f5f3ff;
+                box-shadow: 0 0 0 1px #7c3aed;
+            }
+
+            .chat-message-buddy-layout {
+                margin-bottom: 0;
+            }
+
+            @media (max-width: 1100px) {
+                .shared-core-shell {
+                    grid-template-columns: minmax(0, 1fr);
+                    grid-template-areas:
+                        "work"
+                        "context";
+                }
+            }
+        </style>
+    {% endif %}
+
+    <div
+        class="panel"
+        data-chat-mode="{% if focus_mode %}focus{% else %}full{% endif %}"
+        style="margin-bottom:0.5rem; padding:0.65rem 0.75rem;"
+    >
         <div class="chat-workfloor-top">
             <div class="chat-workfloor-actions">
                 <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}" title="Open AdultAdSuite dagstart" aria-label="Open AdultAdSuite dagstart">AdultAdSuite</a>
                 <span class="badge badge-blue">
                     Operatorwerkvloer
                 </span>
+
+                {% if selected_thread %}
+                    {% if focus_mode %}
+                        <span class="badge badge-green">
+                            Focusstand actief
+                        </span>
+                        <a
+                            class="secondary-button"
+                            href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}"
+                        >
+                            Focusstand verlaten
+                        </a>
+                    {% else %}
+                        <a
+                            class="primary-button"
+                            href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}&amp;focus=1"
+                        >
+                            Focusstand openen
+                        </a>
+                    {% endif %}
+                {% endif %}
             </div>
 
             {% if threads %}
@@ -838,7 +898,7 @@
                     {% for item in operator_queue.active_items %}
                         <a
                             class="chat-queue-item{% if selected_thread and selected_thread.pk == item.thread.pk %} active{% endif %}"
-                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}"
+                            href="{% url 'chat-hub' %}?thread={{ item.thread.pk }}{% if focus_mode %}&amp;focus=1{% endif %}"
                         >
                             <div class="chat-queue-source">
                                 <strong>
@@ -1093,7 +1153,7 @@
     </div>
 
     {% if selected_thread and selected_thread.thread_summary %}
-        <details class="panel" style="margin-bottom:0.75rem;">
+        <details class="panel chat-focus-secondary" style="margin-bottom:0.75rem;">
             <summary>Gespreksinfo</summary>
             <p class="muted" style="margin-bottom:0; margin-top:0.5rem;">
                 {{ selected_thread.thread_summary|linebreaksbr }}
