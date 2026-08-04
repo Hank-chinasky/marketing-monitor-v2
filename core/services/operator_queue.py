@@ -3,6 +3,10 @@ from __future__ import annotations
 from django.utils import timezone
 
 from core.models import ConversationThread, ThreadFollowUpStatus
+from core.services.source_identity import (
+    canonical_source_key,
+    canonical_source_label,
+)
 
 
 GROUP_NOW = "now"
@@ -260,7 +264,9 @@ def build_operator_queue(threads, *, now=None):
 
         source_label = (
             (thread.source_site_label or "").strip()
-            or thread.get_source_system_display()
+            or canonical_source_label(
+                thread.source_system
+            )
         )
         source_account = (
             thread.channel.handle
@@ -318,7 +324,9 @@ def build_operator_queue(threads, *, now=None):
 
     source_count = len(
         {
-            item["thread"].source_system
+            canonical_source_key(
+                item["thread"].source_system
+            )
             for item in items
         }
     )

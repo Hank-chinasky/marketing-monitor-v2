@@ -218,6 +218,38 @@ class OperatorPressureQueueV1Tests(TestCase):
         )
         self.assertEqual(queue["counts"]["sources"], 1)
 
+    def test_queue_counts_legacy_and_native_eurotikken_as_one_source(self):
+        legacy = self.make_thread(
+            source_system=ConversationThread.SourceSystem.MARA_CHAT,
+            source_thread_id="QUEUE-LEGACY-EUROTIKKEN",
+            source_label="",
+            channel=self.channel_a,
+            status=ConversationThread.Status.WAITING_ON_OPERATOR,
+            minutes_ago=10,
+        )
+        native = self.make_thread(
+            source_system=ConversationThread.SourceSystem.EUROTIKKEN,
+            source_thread_id="QUEUE-NATIVE-EUROTIKKEN",
+            source_label="",
+            channel=self.channel_b,
+            status=ConversationThread.Status.WAITING_ON_OPERATOR,
+            minutes_ago=20,
+        )
+
+        queue = build_operator_queue(
+            [legacy, native],
+            now=self.now,
+        )
+
+        self.assertEqual(queue["counts"]["sources"], 1)
+        self.assertEqual(
+            {
+                item["source_label"]
+                for item in queue["items"]
+            },
+            {"Eurotikken"},
+        )
+
     def test_chat_hub_renders_cross_source_queue_for_operator(self):
         warm = self.make_thread(
             source_system=ConversationThread.SourceSystem.CHATTIES,

@@ -406,6 +406,21 @@ class ConversationThread(models.Model):
             models.Index(fields=("last_message_at",), name="convthread_last_msg_idx"),
         ]
 
+    @property
+    def canonical_source_key(self) -> str:
+        from core.services.source_identity import canonical_source_key
+
+        return canonical_source_key(self.source_system)
+
+    @property
+    def canonical_source_label(self) -> str:
+        from core.services.source_identity import canonical_source_label
+
+        return canonical_source_label(
+            self.source_system,
+            fallback=self.get_source_system_display(),
+        )
+
     def __str__(self) -> str:
         return f"{self.creator.display_name} / {self.source_system} / {self.source_thread_id}"
 

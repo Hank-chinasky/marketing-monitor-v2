@@ -34,7 +34,7 @@
         <ul class="clean">
             <li><strong>Creator:</strong> {{ thread.creator.display_name }}</li>
             <li><strong>Channel:</strong> {% if thread.channel %}{{ thread.channel.platform }} / {{ thread.channel.handle }}{% else %}Geen channel gekoppeld.{% endif %}</li>
-            <li><strong>Source system:</strong> {{ thread.source_system }}</li>
+            <li><strong>Source:</strong> {{ thread.canonical_source_label }}</li>
             <li><strong>Status:</strong> {{ thread.status }}</li>
             <li><strong>Source thread ID:</strong> {{ thread.source_thread_id }}</li>
             <li><strong>Last message at:</strong> {{ thread.last_message_at|default:"-" }}</li>

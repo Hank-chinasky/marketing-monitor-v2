@@ -27,6 +27,11 @@ from core.services.buddy_reply import build_operator_reply_draft
 from core.services.demo_access import is_demo_viewer
 from core.services.operator_context import build_operator_context
 from core.services.operator_queue import build_operator_queue
+from core.services.source_identity import (
+    canonical_source_key,
+    canonical_source_label,
+    source_filter_values,
+)
 from core.services.scope import (
     get_active_assignments_for_operator,
     get_channel_queryset_for_user,
@@ -369,7 +374,7 @@ def build_buddy_assist_snapshot(
 
     session_brief_parts = [
         f"Status: {selected_thread.get_status_display()}",
-        f"Bron: {selected_thread.get_source_system_display()}",
+        f"Bron: {canonical_source_label(selected_thread.source_system)}",
         (
             f"Laatste operator-handoff: {selected_thread.last_operator_handoff_at}"
             if selected_thread.last_operator_handoff_at
@@ -766,7 +771,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         if source_filter:
             queryset = queryset.filter(
-                source_system=source_filter
+                source_system__in=source_filter_values(
+                    source_filter
+                )
             )
 
         return list(
@@ -863,7 +870,9 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 selected_thread
                 and (
                     not value
-                    or selected_thread.source_system == value
+                    or canonical_source_key(
+                        selected_thread.source_system
+                    ) == value
                 )
             ):
                 query_values["thread"] = selected_thread.pk

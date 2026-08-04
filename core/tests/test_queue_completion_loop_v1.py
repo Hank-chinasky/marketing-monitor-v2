@@ -307,6 +307,73 @@ class QueueCompletionLoopV1Tests(TestCase):
             ["1"],
         )
 
+    def test_save_and_next_crosses_legacy_and_native_eurotikken_alias(self):
+        current = self.make_thread(
+            "FILTER-LEGACY-EUROTIKKEN",
+            minutes_ago=5,
+            source_system=(
+                ConversationThread.SourceSystem.MARA_CHAT
+            ),
+        )
+        next_eurotikken = self.make_thread(
+            "FILTER-NATIVE-EUROTIKKEN",
+            minutes_ago=30,
+            source_system=(
+                ConversationThread.SourceSystem.EUROTIKKEN
+            ),
+        )
+        cross_source = self.make_thread(
+            "FILTER-CHATTIES-OUTSIDE",
+            minutes_ago=90,
+            source_system=(
+                ConversationThread.SourceSystem.CHATTIES
+            ),
+        )
+
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse("chat-hub"),
+            {
+                "form_action": "follow_up_status",
+                "thread": current.pk,
+                "source": "eurotikken",
+                "focus": "1",
+                "follow_up_status": (
+                    ThreadFollowUpStatus.Status.WARM
+                ),
+                "follow_up_note": (
+                    "Legacy Eurotikken-thread afgehandeld."
+                ),
+                "queue_action": "save_and_next",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        query = self.query_values(response)
+
+        self.assertEqual(
+            query["thread"],
+            [str(next_eurotikken.pk)],
+        )
+        self.assertNotEqual(
+            query["thread"],
+            [str(cross_source.pk)],
+        )
+        self.assertEqual(
+            query["source"],
+            ["eurotikken"],
+        )
+        self.assertEqual(query["focus"], ["1"])
+        self.assertEqual(
+            query["queue_saved"],
+            ["follow_up"],
+        )
+        self.assertEqual(
+            query["queue_advanced"],
+            ["1"],
+        )
+
     def test_workfloor_shows_direct_operator_action_with_focus_entry(self):
         current = self.make_thread(
             "FOCUSED-OPERATOR-SURFACE",
