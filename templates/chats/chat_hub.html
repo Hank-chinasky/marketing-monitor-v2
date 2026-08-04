@@ -50,7 +50,7 @@
                 <br>
 
                 <span class="muted">
-                    Bron: {{ selected_thread.get_source_system_display }}
+                    Bron: {{ selected_thread.canonical_source_label }}
                     {% if selected_thread.source_site_label %}
                         · {{ selected_thread.source_site_label }}
                     {% endif %}
@@ -324,7 +324,7 @@
         {% if selected_thread %}
             <ul class="clean">
                 <li><strong>Thread status:</strong> {{ selected_thread.get_status_display }}</li>
-                <li><strong>Source:</strong> {{ selected_thread.get_source_system_display }}</li>
+                <li><strong>Source:</strong> {{ selected_thread.canonical_source_label }}</li>
                 <li><strong>Risk flags:</strong> {{ selected_thread.risk_flags|default:"-" }}</li>
                 {% if selected_thread.channel %}
                     <li><strong>Credential status:</strong> {{ selected_thread.channel.get_credential_status_display|default:"-" }}</li>

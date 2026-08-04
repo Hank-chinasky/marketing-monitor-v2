@@ -164,6 +164,29 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Customer stage")
         self.assertContains(response, "Inside paywall")
 
+    def test_conversation_detail_uses_canonical_eurotikken_label(self):
+        self.thread.source_system = (
+            ConversationThread.SourceSystem.MARA_CHAT
+        )
+        self.thread.save(update_fields=["source_system"])
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                "conversation-thread-detail",
+                kwargs={"pk": self.thread.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "<strong>Source:</strong> Eurotikken",
+            html=True,
+        )
+        self.assertNotContains(response, "Mara chat")
+        self.assertNotContains(response, "mara_chat")
+
     def test_chat_and_feeder_keep_fixed_pane_roles(self):
         self.client.force_login(self.user)
         chats = self.client.get(reverse("chat-hub"))
@@ -509,6 +532,59 @@ class SharedCoreV1ViewsTests(TestCase):
         ).update(
             source_system=(
                 ConversationThread.SourceSystem.MARA_CHAT
+            )
+        )
+
+        legacy_eurotikken_response = self.client.get(
+            reverse("chat-hub"),
+            {"source": "eurotikken"},
+        )
+
+        self.assertEqual(
+            legacy_eurotikken_response.status_code,
+            200,
+        )
+        self.assertFalse(
+            legacy_eurotikken_response.context[
+                "source_filter_empty"
+            ]
+        )
+        self.assertEqual(
+            {
+                thread.pk
+                for thread in legacy_eurotikken_response.context[
+                    "threads"
+                ]
+            },
+            {
+                self.thread.pk,
+                self.handoff_thread.pk,
+            },
+        )
+        self.assertEqual(
+            legacy_eurotikken_response.context[
+                "operator_queue"
+            ]["counts"]["sources"],
+            1,
+        )
+        self.assertContains(
+            legacy_eurotikken_response,
+            "Actieve bron: Eurotikken",
+        )
+        self.assertContains(
+            legacy_eurotikken_response,
+            "Bron: Eurotikken",
+        )
+        self.assertNotContains(
+            legacy_eurotikken_response,
+            "Mara chat",
+        )
+
+        ConversationThread.objects.filter(
+            creator=self.creator
+        ).update(
+            source_system=(
+                ConversationThread.SourceSystem.CHATTIES
             )
         )
 
