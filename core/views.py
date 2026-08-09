@@ -1,7 +1,7 @@
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -151,6 +151,279 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
     model = Creator
     template_name = "creators/creator_list.html"
     context_object_name = "creators"
+
+    PRESET_LABELS = {
+        "attention": "Aandacht eerst",
+        "all": "Alle creators",
+        "unassigned": "Zonder owner",
+        "consent": "Consent issues",
+        "paused": "Niet actief",
+    }
+
+    def get_base_queryset(self):
+        assignments = get_active_assignments_queryset().select_related(
+            "operator",
+            "operator__user",
+        )
+        if not is_admin_user(self.request.user):
+            assignments = get_active_assignments_for_operator(
+                get_operator_for_user(self.request.user)
+            ).select_related("operator", "operator__user")
+
+        channels = get_channel_queryset_for_user(self.request.user).order_by(
+            "platform",
+            "handle",
+        )
+
+        return (
+            super()
+            .get_queryset()
+            .select_related("primary_operator", "primary_operator__user")
+            .prefetch_related(
+                Prefetch(
+                    "assignments",
+                    queryset=assignments,
+                    to_attr="active_assignments_in_scope",
+                ),
+                Prefetch(
+                    "channels",
+                    queryset=channels,
+                    to_attr="channels_in_scope",
+                ),
+            )
+            .order_by("display_name", "pk")
+        )
+
+    def get_queryset(self):
+        return self.get_base_queryset()
+
+    @staticmethod
+    def get_channel_issue_badges(channels):
+        if not channels:
+            return ["geen channel"]
+
+        badges = []
+        if any(channel.credential_status == "needs_reset" for channel in channels):
+            badges.append("needs reset")
+        if any(not channel.two_factor_enabled for channel in channels):
+            badges.append("geen 2FA")
+        if any(
+            channel.vpn_required
+            and not (channel.approved_ip_label or channel.approved_egress_ip)
+            for channel in channels
+        ):
+            badges.append("VPN gap")
+        if any(not (channel.login_identifier or "").strip() for channel in channels):
+            badges.append("geen identifier")
+        if any(not (channel.last_operator_update or "").strip() for channel in channels):
+            badges.append("geen update")
+        return badges
+
+    @staticmethod
+    def get_latest_channel_update(channels):
+        channels_with_updates = [
+            channel for channel in channels if channel.last_operator_update_at
+        ]
+        if not channels_with_updates:
+            return None, ""
+
+        latest_channel = max(
+            channels_with_updates,
+            key=lambda channel: channel.last_operator_update_at,
+        )
+        return (
+            latest_channel.last_operator_update_at,
+            (latest_channel.last_operator_update or "").strip(),
+        )
+
+    @staticmethod
+    def get_assignment_labels(creator, assignments):
+        if not assignments:
+            return "Geen owner", "Geen actieve assignment"
+
+        if len(assignments) == 1:
+            assignment = assignments[0]
+            return str(assignment.operator), assignment.get_scope_display()
+
+        primary_owner = creator.primary_operator
+        if primary_owner and any(
+            assignment.operator_id == primary_owner.pk for assignment in assignments
+        ):
+            owner_label = str(primary_owner)
+        else:
+            owner_label = str(assignments[0].operator)
+
+        return owner_label, f"{len(assignments)} actieve assignments"
+
+    @staticmethod
+    def get_next_step(creator, assignments, active_channels, issue_badges, last_update_at):
+        if creator.consent_status != Creator.ConsentStatus.ACTIVE:
+            return "Bevestig of herstel de consentstatus."
+        if creator.status != Creator.Status.ACTIVE:
+            return "Beoordeel de creatorstatus en hervatting."
+        if not assignments:
+            return "Wijs een actieve owner en assignment toe."
+        if not active_channels:
+            return "Koppel of activeer het eerste channel."
+        if "needs reset" in issue_badges:
+            return "Herstel de channeltoegang."
+        if "geen 2FA" in issue_badges:
+            return "Rond de 2FA-inrichting af."
+        if "VPN gap" in issue_badges:
+            return "Leg de goedgekeurde VPN/IP-context vast."
+        if "geen identifier" in issue_badges:
+            return "Leg de channelidentifier vast."
+        if creator.content_ready_status in {
+            "",
+            Creator.ContentReadyStatus.WAITING_FOR_CREATOR,
+            Creator.ContentReadyStatus.BLOCKED,
+        }:
+            return "Werk de contentstatus en volgende levering bij."
+        if not last_update_at or "geen update" in issue_badges:
+            return "Leg de volgende operatorupdate vast."
+        return "Geen directe actie nodig."
+
+    def build_creator_row(self, creator):
+        assignments = list(creator.active_assignments_in_scope)
+        channels = list(creator.channels_in_scope)
+        active_channels = [
+            channel
+            for channel in channels
+            if channel.status == CreatorChannel.Status.ACTIVE
+        ]
+        issue_badges = self.get_channel_issue_badges(active_channels)
+        last_update_at, last_update_excerpt = self.get_latest_channel_update(channels)
+        primary_owner_label, assignment_label = self.get_assignment_labels(
+            creator,
+            assignments,
+        )
+        next_step = self.get_next_step(
+            creator,
+            assignments,
+            active_channels,
+            issue_badges,
+            last_update_at,
+        )
+        needs_attention = bool(
+            creator.status != Creator.Status.ACTIVE
+            or creator.consent_status != Creator.ConsentStatus.ACTIVE
+            or not assignments
+            or not active_channels
+            or issue_badges
+            or creator.content_ready_status
+            in {
+                "",
+                Creator.ContentReadyStatus.WAITING_FOR_CREATOR,
+                Creator.ContentReadyStatus.BLOCKED,
+            }
+            or not last_update_at
+        )
+
+        return {
+            "creator": creator,
+            "active_channel_count": len(active_channels),
+            "needs_attention": needs_attention,
+            "issue_badges": issue_badges,
+            "primary_owner_label": primary_owner_label,
+            "assignment_label": assignment_label,
+            "content_status_label": (
+                creator.get_content_ready_status_display()
+                if creator.content_ready_status
+                else "Niet vastgelegd"
+            ),
+            "last_update_at": last_update_at,
+            "last_update_excerpt": last_update_excerpt,
+            "next_step": next_step,
+            "is_unassigned": not assignments,
+            "has_consent_issue": (
+                creator.consent_status != Creator.ConsentStatus.ACTIVE
+            ),
+            "is_paused": creator.status != Creator.Status.ACTIVE,
+        }
+
+    def apply_search_and_field_filters(self, rows):
+        query = self.request.GET.get("q", "").strip().casefold()
+        status = self.request.GET.get("status", "").strip()
+        consent_status = self.request.GET.get("consent_status", "").strip()
+
+        filtered_rows = []
+        for row in rows:
+            creator = row["creator"]
+            if query and query not in " ".join(
+                [creator.display_name, creator.legal_name, creator.notes]
+            ).casefold():
+                continue
+            if status and creator.status != status:
+                continue
+            if consent_status and creator.consent_status != consent_status:
+                continue
+            filtered_rows.append(row)
+
+        return filtered_rows
+
+    @staticmethod
+    def apply_preset(rows, preset):
+        if preset == "attention":
+            return [row for row in rows if row["needs_attention"]]
+        if preset == "unassigned":
+            return [row for row in rows if row["is_unassigned"]]
+        if preset == "consent":
+            return [row for row in rows if row["has_consent_issue"]]
+        if preset == "paused":
+            return [row for row in rows if row["is_paused"]]
+        return rows
+
+    @staticmethod
+    def get_preset_counts(rows):
+        return {
+            "all": len(rows),
+            "attention": sum(row["needs_attention"] for row in rows),
+            "unassigned": sum(row["is_unassigned"] for row in rows),
+            "consent": sum(row["has_consent_issue"] for row in rows),
+            "paused": sum(row["is_paused"] for row in rows),
+        }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        all_rows = [self.build_creator_row(creator) for creator in context["creators"]]
+        all_rows.sort(
+            key=lambda row: (
+                not row["needs_attention"],
+                row["creator"].display_name.casefold(),
+                row["creator"].pk,
+            )
+        )
+
+        filtered_rows = self.apply_search_and_field_filters(all_rows)
+        preset_counts = self.get_preset_counts(filtered_rows)
+        preset = self.request.GET.get("preset", "").strip() or "attention"
+        if preset not in self.PRESET_LABELS:
+            preset = "attention"
+        creator_rows = self.apply_preset(filtered_rows, preset)
+
+        context["creators"] = [row["creator"] for row in creator_rows]
+        context["creator_rows"] = creator_rows
+        context["summary"] = {
+            "total_creators": len(all_rows),
+            "attention_count": sum(row["needs_attention"] for row in all_rows),
+            "unassigned_count": sum(row["is_unassigned"] for row in all_rows),
+            "consent_issue_count": sum(
+                row["has_consent_issue"] for row in all_rows
+            ),
+            "paused_count": sum(row["is_paused"] for row in all_rows),
+        }
+        context["preset_counts"] = preset_counts
+        context["visible_count"] = len(creator_rows)
+        context["active_preset"] = preset
+        context["current_preset_label"] = self.PRESET_LABELS[preset]
+        context["search_query"] = self.request.GET.get("q", "").strip()
+        context["current_status"] = self.request.GET.get("status", "").strip()
+        context["current_consent_status"] = self.request.GET.get(
+            "consent_status", ""
+        ).strip()
+        context["status_options"] = Creator.Status.choices
+        context["consent_status_options"] = Creator.ConsentStatus.choices
+        return context
 
     @classmethod
     def request_scoped_queryset(cls, request):
