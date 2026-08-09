@@ -1,5 +1,8 @@
+from io import StringIO
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -33,7 +36,7 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         self.demo_user.groups.add(demo_group)
 
         self.demo_creator = Creator.objects.create(
-            display_name="[DEMO] Luna Vale",
+            display_name="Luna",
             legal_name="",
             status=Creator.Status.ACTIVE,
             consent_status=Creator.ConsentStatus.ACTIVE,
@@ -115,7 +118,7 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         response = self.client.get(reverse("chat-hub"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "[DEMO] Luna Vale")
+        self.assertContains(response, "Luna")
         self.assertContains(response, "DEMO-READONLY-THREAD")
         self.assertNotContains(response, "Live Creator")
         self.assertNotContains(response, "LIVE-THREAD-MUST-NOT-SHOW")
@@ -347,3 +350,42 @@ class DemoReadOnlyAccessV1Tests(TestCase):
             "Close session & save handoff",
         )
         self.assertFalse(response.context["demo_read_only"])
+
+
+class DemoSeedCleanupTests(TestCase):
+    def test_reset_removes_marker_matched_creator_after_display_name_change(self):
+        renamed_demo = Creator.objects.create(
+            display_name="Renamed Demo Creator",
+            legal_name="",
+            status=Creator.Status.ACTIVE,
+            consent_status=Creator.ConsentStatus.ACTIVE,
+            customer_stage=Creator.CustomerStage.INSIDE_PAYWALL,
+            notes=DEMO_DATA_MARKER,
+        )
+        similar_but_not_demo = Creator.objects.create(
+            display_name="Marker Lookalike",
+            legal_name="",
+            status=Creator.Status.ACTIVE,
+            consent_status=Creator.ConsentStatus.ACTIVE,
+            customer_stage=Creator.CustomerStage.INSIDE_PAYWALL,
+            notes=f"prefix {DEMO_DATA_MARKER} suffix",
+        )
+
+        stdout = StringIO()
+
+        call_command(
+            "seed_buddy_demo_scenarios",
+            "--reset",
+            stdout=stdout,
+        )
+
+        self.assertFalse(
+            Creator.objects.filter(pk=renamed_demo.pk).exists()
+        )
+        self.assertTrue(
+            Creator.objects.filter(pk=similar_but_not_demo.pk).exists()
+        )
+        self.assertIn(
+            "Removed 1 matching demo creator(s).",
+            stdout.getvalue(),
+        )

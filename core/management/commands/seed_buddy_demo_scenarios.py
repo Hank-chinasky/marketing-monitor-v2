@@ -17,7 +17,7 @@ from core.models import (
 
 
 DEMO_MARKER = "buddy-demo-scenarios-v1"
-DEMO_CREATOR_NAME = "[DEMO] Luna Vale"
+DEMO_CREATOR_NAME = "Luna"
 DEMO_CHANNEL_HANDLE = "buddy-demo-luna"
 
 
@@ -104,7 +104,6 @@ class Command(BaseCommand):
 
     def _remove_existing_demo(self, *, write_output=True):
         demo_creators = Creator.objects.filter(
-            display_name=DEMO_CREATOR_NAME,
             notes=DEMO_MARKER,
         )
         creator_count = demo_creators.count()
