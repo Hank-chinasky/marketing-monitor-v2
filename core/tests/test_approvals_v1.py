@@ -174,7 +174,7 @@ class ApprovalsV1Tests(TestCase):
                 status=Approval.Status.PENDING,
             ).exists()
         )
-        self.assertContains(response, "Approval aangemaakt")
+        self.assertContains(response, "Approval created")
         self.assertContains(response, "Content approval")
 
     def test_create_action_adds_approval_and_run_log_message_in_feeder(self):
@@ -199,7 +199,7 @@ class ApprovalsV1Tests(TestCase):
                 status=Approval.Status.PENDING,
             ).exists()
         )
-        self.assertContains(response, "Approval aangemaakt")
+        self.assertContains(response, "Approval created")
         self.assertContains(response, "Access exception")
 
     def test_create_out_of_scope_thread_fails_closed(self):
@@ -303,7 +303,7 @@ class ApprovalsV1Tests(TestCase):
         self.assertEqual(approval.status, Approval.Status.APPROVED)
         self.assertEqual(approval.decided_by, self.user)
         self.assertIsNotNone(approval.decided_at)
-        self.assertContains(response, "Approval goedgekeurd")
+        self.assertContains(response, "Approval approved")
 
     def test_reject_action_updates_status_and_run_log_event(self):
         approval = Approval.objects.create(
@@ -324,7 +324,7 @@ class ApprovalsV1Tests(TestCase):
         self.assertEqual(approval.status, Approval.Status.REJECTED)
         self.assertEqual(approval.decided_by, self.user)
         self.assertIsNotNone(approval.decided_at)
-        self.assertContains(response, "Approval afgewezen")
+        self.assertContains(response, "Approval rejected")
 
     def test_out_of_scope_approval_actions_fail_closed(self):
         approval = Approval.objects.create(

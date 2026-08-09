@@ -80,13 +80,13 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertContains(response, "Buddy")
         self.assertContains(response, "Buddy status")
         self.assertContains(response, "Warm")
-        self.assertContains(response, "Waarom nu")
+        self.assertContains(response, "Why now")
         self.assertContains(
             response,
-            "Handmatig als warm gemarkeerd",
+            "Manually marked as warm",
         )
-        self.assertContains(response, "Laatste context")
-        self.assertContains(response, "Actieve profieltoon")
+        self.assertContains(response, "Latest context")
+        self.assertContains(response, "Active profile tone")
         self.assertContains(
             response,
             "Vertrouwd, plagerig en persoonlijk.",
@@ -96,21 +96,21 @@ class BuddySurfaceV0Tests(TestCase):
             response,
             "Pak de warme persoonlijke lijn op.",
         )
-        self.assertContains(response, "Niet doen")
+        self.assertContains(response, "Do not")
         self.assertContains(response, "Niet pushen zonder context.")
-        self.assertContains(response, "Volgende stap")
-        self.assertContains(response, "Betrouwbaarheid")
-        self.assertContains(response, "Hoog")
+        self.assertContains(response, "Next step")
+        self.assertContains(response, "Reliability")
+        self.assertContains(response, "High")
         self.assertContains(
             response,
-            "Kerncontext, bron en profieltoon zijn aanwezig.",
+            "Core context, source and profile tone are available.",
         )
 
         html = response.content.decode()
         self.assertEqual(html.count('id="chat-buddy-context"'), 1)
         self.assertEqual(html.count("Buddy Context Surface"), 1)
         self.assertIn('data-chat-layout="messages-buddy"', html)
-        self.assertLess(html.index("Berichten"), html.index("Buddy Context Surface"))
+        self.assertLess(html.index("Messages"), html.index("Buddy Context Surface"))
         self.assertNotIn("Buddy-slot", html)
         self.assertNotIn("Intern reply draft voorstel", html)
         self.assertNotIn("Demo-context / menselijk checken", html)
@@ -132,7 +132,7 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertIn("chat-message-stream", html)
         self.assertIn("chat-follow-up-panel", html)
         self.assertLess(
-            html.index("Berichten"),
+            html.index("Messages"),
             html.index("Follow-up status"),
         )
         self.assertLess(
@@ -144,10 +144,10 @@ class BuddySurfaceV0Tests(TestCase):
         self.assertIn("order: 3;", html)
         self.assertIn("@media (max-width: 1100px)", html)
         self.assertIn("@media (max-width: 720px)", html)
-        self.assertIn("Context & veiligheid", html)
-        self.assertIn("Operationele details", html)
+        self.assertIn("Context & safety", html)
+        self.assertIn("Operational details", html)
         self.assertIn("Templates v1", html)
-        self.assertIn("Sessie & overdracht", html)
+        self.assertIn("Session & handoff", html)
         self.assertNotIn(
             "grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);",
             html,
@@ -201,13 +201,13 @@ class BuddySurfaceV0Tests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Laag")
-        self.assertContains(response, "Risicosignaal aanwezig")
+        self.assertContains(response, "Low")
+        self.assertContains(response, "Risk signal present")
         self.assertContains(
             response,
-            "Niet handelen voordat risicosignalen handmatig zijn beoordeeld.",
+            "Do not act until risk signals have been reviewed manually.",
         )
         self.assertContains(
             response,
-            "Profieltoon ontbreekt; eerst handmatig bevestigen.",
+            "Profile tone is missing; confirm it manually first.",
         )

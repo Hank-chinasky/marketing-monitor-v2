@@ -95,7 +95,7 @@
     </style>
 
     <div class="chat-buddy-reply-header">
-        <h3 style="margin:0;">Antwoord opstellen</h3>
+        <h3 style="margin:0;">Compose reply</h3>
         <span class="badge {{ operator_reply_draft.status_badge }}">
             {{ operator_reply_draft.status_label }}
         </span>
@@ -103,7 +103,7 @@
 
     {% if selected_thread %}
         <div class="chat-buddy-latest-inbound">
-            <strong>Laatste klantbericht</strong>
+            <strong>Latest customer message</strong>
 
             {% if operator_reply_draft.latest_inbound_text %}
                 <blockquote>
@@ -111,19 +111,19 @@
                 </blockquote>
             {% else %}
                 <p class="muted" style="margin-bottom:0;">
-                    Geen inkomend klantbericht beschikbaar.
+                    No inbound customer message is available.
                 </p>
             {% endif %}
         </div>
 
         <label class="chat-buddy-reply-field" for="buddy-reply-draft">
-            Schrijf, bewerk en controleer het definitieve antwoord
+            Write, edit and review the final reply
             <textarea
                 id="buddy-reply-draft"
                 name="buddy_reply_draft"
                 spellcheck="true"
                 aria-describedby="buddy-reply-guidance buddy-reply-persistence-note"
-                placeholder="{% if demo_read_only %}Demoweergave: alleen-lezen{% else %}Typ hier het antwoord aan de klant{% endif %}"
+                placeholder="{% if demo_read_only %}Demo view: read-only{% else %}Type the reply to the customer here{% endif %}"
                 {% if demo_read_only %}readonly aria-readonly="true"{% endif %}
             >{{ operator_reply_draft.reply_text }}</textarea>
         </label>
@@ -134,26 +134,26 @@
             style="margin:0.5rem 0 0;"
         >
             {% if demo_read_only %}
-                Demoweergave: dit antwoord is alleen-lezen en kan niet worden gekopieerd.
+                Demo view: this reply is read-only and cannot be copied.
             {% elif operator_reply_draft.status == "existing_draft" or operator_reply_draft.status == "ready" %}
-                Buddy heeft een concept voorbereid. Controleer de profieltoon,
-                gesprekslijn en open loop voordat je het antwoord verzendt.
+                Buddy prepared a draft. Review the profile tone,
+                conversation flow and open loop before sending the reply.
             {% else %}
-                Buddy heeft nog geen antwoord voorbereid. Typ hier zelf het antwoord
-                aan de klant of laat het veld leeg.
+                Buddy has not prepared a reply yet. Type the customer reply
+                manually or leave the field blank.
             {% endif %}
         </p>
 
         {% if operator_reply_draft.provider_error %}
             <div class="chat-buddy-provider-error" role="alert">
-                <strong>Buddy-providerfout</strong>
+                <strong>Buddy provider error</strong>
                 <div>{{ operator_reply_draft.provider_error }}</div>
             </div>
         {% endif %}
 
         {% if operator_reply_draft.tone_note %}
             <p class="muted" style="margin:0.65rem 0 0;">
-                <strong>Controlepunt:</strong>
+                <strong>Review point:</strong>
                 {{ operator_reply_draft.tone_note }}
             </p>
         {% endif %}
@@ -167,7 +167,7 @@
                 data-demo-read-only="{% if demo_read_only %}true{% else %}false{% endif %}"
                 {% if demo_read_only or not operator_reply_draft.reply_text %}disabled{% endif %}
             >
-                Verzendpreview maken
+                Create send preview
             </button>
 
             <button
@@ -179,7 +179,7 @@
                 hidden
                 disabled
             >
-                Veilige tekst kopiëren
+                Copy safe text
             </button>
 
             <span
@@ -207,7 +207,7 @@
             hidden
         >
             <div class="chat-sanitized-send-preview-header">
-                <strong>Verzendpreview</strong>
+                <strong>Send preview</strong>
                 <span
                     class="badge"
                     data-sanitized-preview-badge
@@ -230,7 +230,7 @@
                     border-top:1px solid #cbd5e1;
                 "
             >
-                <strong>Bronhandoff</strong>
+                <strong>Source handoff</strong>
 
                 <dl
                     style="
@@ -242,14 +242,14 @@
                     "
                 >
                     <div>
-                        <dt><strong>Bron</strong></dt>
+                        <dt><strong>Source</strong></dt>
                         <dd style="margin:0.2rem 0 0;">
                             {{ selected_thread.canonical_source_label }}
                         </dd>
                     </div>
 
                     <div>
-                        <dt><strong>Profiel</strong></dt>
+                        <dt><strong>Profile</strong></dt>
                         <dd style="margin:0.2rem 0 0;">
                             {% if selected_thread.channel %}
                                 {{ selected_thread.channel.get_platform_display }}
@@ -286,15 +286,15 @@
                 </dl>
 
                 <p class="muted" style="margin:0.55rem 0 0;">
-                    Er is nog geen gecontroleerde thread-deeplink.
-                    Open de bron handmatig en controleer site,
-                    profiel en thread-ID voordat je verzendt.
+                    No verified thread deep link is available yet.
+                    Open the source manually and verify the site,
+                    profile and thread ID before sending.
                 </p>
             </div>
 
             <p class="muted" style="margin:0.45rem 0 0;">
                 <strong>Preview-only:</strong>
-                er is niets opgeslagen of naar een bron verzonden.
+                nothing has been saved or sent to a source.
             </p>
         </div>
 
@@ -303,15 +303,15 @@
             class="muted"
             style="margin:0.65rem 0 0;"
         >
-            <strong>Veilige operatorflow:</strong>
-            Wijzigingen in dit vak worden niet opgeslagen.
-            Verzendpreview maken voert geen bronactie uit.
-            Gebruik alleen Veilige tekst kopiëren na een geslaagde preview.
-            Open daarna de bron handmatig en match de thread-ID.
+            <strong>Safe operator flow:</strong>
+            Changes in this field are not saved.
+            Creating a send preview performs no source action.
+            Use Copy safe text only after a successful preview.
+            Then open the source manually and match the thread ID.
         </p>
     {% else %}
         <p class="muted" style="margin-bottom:0;">
-            Selecteer een gesprek om het laatste klantbericht en conceptvlak te openen.
+            Select a conversation to open the latest customer message and draft area.
         </p>
     {% endif %}
 
@@ -430,7 +430,7 @@
                 const controller = new AbortController();
                 previewController = controller;
 
-                sendDemoButton.textContent = 'Preview maken…';
+                sendDemoButton.textContent = 'Creating preview…';
                 updateButtonState();
                 copyStatus.textContent = '';
                 sendDemoStatus.textContent = '';
@@ -481,8 +481,8 @@
                     previewText.textContent = safePreviewText;
 
                     const matchLabels = {
-                        email: 'e-mailadres',
-                        phone: 'telefoonnummer',
+                        email: 'email address',
+                        phone: 'phone number',
                     };
 
                     const detectedTypes = (
@@ -495,22 +495,22 @@
 
                     if (payload.changed) {
                         previewBadge.textContent =
-                            'Contactgegevens geblokkeerd';
+                            'Contact details blocked';
                         previewBadge.className =
                             'badge badge-red';
                         previewDetail.textContent = (
-                            'Gevonden en gemaskeerd: '
+                            'Found and masked: '
                             + detectedTypes.join(', ')
-                            + '. Controleer de aangepaste tekst.'
+                            + '. Review the adjusted text.'
                         );
                     } else {
                         previewBadge.textContent =
-                            'Geen contactgegevens gevonden';
+                            'No contact details found';
                         previewBadge.className =
                             'badge badge-green';
                         previewDetail.textContent = (
-                            'De tekst is ongewijzigd. '
-                            + 'Menselijke controle blijft verplicht.'
+                            'The text is unchanged. '
+                            + 'Human review remains required.'
                         );
                     }
 
@@ -522,14 +522,14 @@
                     );
 
                     sendDemoStatus.textContent = (
-                        'Veilige verzendpreview gemaakt. '
-                        + 'Er is niets verzonden.'
+                        'Safe send preview created. '
+                        + 'Nothing was sent.'
                     );
                 } catch (error) {
                     if (error.name !== 'AbortError') {
                         sendDemoStatus.textContent = (
-                            'Preview maken is niet gelukt. '
-                            + 'Er is niets opgeslagen of verzonden.'
+                            'Could not create the preview. '
+                            + 'Nothing was saved or sent.'
                         );
                     }
                 } finally {
@@ -595,11 +595,11 @@
                     }
 
                     copyStatus.textContent =
-                        'Veilige previewtekst gekopieerd.';
+                        'Safe preview text copied.';
                 } catch (error) {
                     copyStatus.textContent = (
-                        'Kopiëren niet gelukt. '
-                        + 'Selecteer de veilige previewtekst handmatig.'
+                        'Copy failed. '
+                        + 'Select the safe preview text manually.'
                     );
                 } finally {
                     if (fallbackTextarea) {

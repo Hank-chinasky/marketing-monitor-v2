@@ -151,16 +151,16 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Antwoord opstellen")
-        self.assertContains(response, "Laatste klantbericht")
+        self.assertContains(response, "Compose reply")
+        self.assertContains(response, "Latest customer message")
         self.assertContains(
             response,
             "Ik moest vandaag weer aan je denken.",
         )
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Veilige tekst kopiëren")
-        self.assertContains(response, "Verzendpreview maken")
-        self.assertContains(response, "Bronhandoff")
+        self.assertContains(response, "Copy safe text")
+        self.assertContains(response, "Create send preview")
+        self.assertContains(response, "Source handoff")
         self.assertContains(response, "Chatties demo")
         self.assertContains(response, "SITE-42")
         self.assertContains(
@@ -173,7 +173,7 @@ class BuddyReplyFocusV1ViewTests(TestCase):
         )
         self.assertContains(
             response,
-            "Wijzigingen in dit vak worden niet opgeslagen.",
+            "Changes in this field are not saved.",
         )
         self.assertEqual(
             response.context["operator_reply_draft"]["status"],
@@ -221,19 +221,19 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             "navigator.clipboard.writeText(value)",
             html,
         )
-        self.assertNotIn("Concept kopiëren", html)
+        self.assertNotIn("Copy draft", html)
         self.assertNotIn("Verzenden (demo)", html)
         self.assertIn(
             reverse("sanitized-send-preview"),
             html,
         )
-        self.assertIn("Verzendpreview", html)
+        self.assertIn("Send preview", html)
         self.assertIn(
             "Preview-only:",
             html,
         )
         self.assertNotIn("Buddy versturen", html)
-        self.assertNotIn("Verstuur concept", html)
+        self.assertNotIn("Send draft", html)
 
     def test_demo_viewer_sees_same_reply_focus_read_only(self):
         self.client.force_login(self.demo_user)
@@ -245,10 +245,10 @@ class BuddyReplyFocusV1ViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["demo_read_only"])
-        self.assertContains(response, "Antwoord opstellen")
+        self.assertContains(response, "Compose reply")
         self.assertContains(response, self.draft.reply_text)
-        self.assertContains(response, "Veilige tekst kopiëren")
-        self.assertContains(response, "Verzendpreview maken")
+        self.assertContains(response, "Copy safe text")
+        self.assertContains(response, "Create send preview")
 
         html = response.content.decode()
         textarea_tag = self._opening_tag(html, "buddy-reply-draft")
@@ -366,10 +366,10 @@ class BuddyReplyFocusV1ViewTests(TestCase):
             response.context["operator_reply_draft"]["reply_text"],
             "",
         )
-        self.assertContains(response, "Nog geen Buddy-antwoord")
+        self.assertContains(response, "No Buddy reply yet")
         self.assertContains(
             response,
-            "Buddy heeft in deze staat geen antwoord gegenereerd.",
+            "Buddy has not generated a reply in this state.",
         )
         self.assertNotContains(
             response,

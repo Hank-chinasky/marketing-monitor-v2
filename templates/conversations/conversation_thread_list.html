@@ -4,7 +4,7 @@
 <h1>Conversation Threads</h1>
 
 <div style="margin-bottom:1rem;">
-    <a class="quick-link" href="{% url 'conversation-thread-create' %}">Nieuwe conversation thread</a>
+    <a class="quick-link" href="{% url 'conversation-thread-create' %}">New conversation thread</a>
 </div>
 
 <div class="panel">
@@ -19,12 +19,12 @@
                 {% if thread.channel %}
                     — {{ thread.channel.platform }} / {{ thread.channel.handle }}
                 {% else %}
-                    — Geen channel
+                    — No channel
                 {% endif %}
-                — Laatste bericht: {{ thread.last_message_at|default:"-" }}
+                — Latest message: {{ thread.last_message_at|default:"-" }}
             </li>
         {% empty %}
-            <li>Geen conversation threads.</li>
+            <li>No conversation threads.</li>
         {% endfor %}
     </ul>
 </div>

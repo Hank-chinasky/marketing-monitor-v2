@@ -455,18 +455,18 @@
         <div class="creator-queue__hero-top">
             <div>
                 <div class="creator-queue__eyebrow">Creators</div>
-                <h1 class="creator-queue__title">Operationele creators queue</h1>
+                <h1 class="creator-queue__title">Creator operations queue</h1>
                 <p class="creator-queue__intro">
-                    Rustige werkvolgorde voor operators: aandacht eerst, daarna pas de rest.
-                    Geen directory-first overzicht, maar een priority-first queue met owner,
-                    status, laatste update en volgende stap.
+                    A focused workflow for operators: urgent work first, everything else second.
+                    This priority-first queue shows ownership, status, the latest update
+                    and the next operational step.
                 </p>
             </div>
 
             <div class="creator-queue__hero-actions">
                 {% if request.user.is_staff or request.user.is_superuser %}
                     <a class="creator-queue__button creator-queue__button--primary" href="{% url 'creator-create' %}">
-                        Nieuwe creator
+                        New creator
                     </a>
                 {% endif %}
                 <a class="creator-queue__button creator-queue__button--secondary" href="{% url 'creator-list' %}">
@@ -477,23 +477,23 @@
 
         <div class="creator-queue__summary-grid">
             <div class="creator-queue__summary-card">
-                <div class="creator-queue__summary-label">Totaal in scope</div>
+                <div class="creator-queue__summary-label">Total in scope</div>
                 <div class="creator-queue__summary-value">{{ summary.total_creators }}</div>
             </div>
 
             <div class="creator-queue__summary-card">
-                <div class="creator-queue__summary-label">Zichtbaar nu</div>
+                <div class="creator-queue__summary-label">Visible now</div>
                 <div class="creator-queue__summary-value">{{ visible_count }}</div>
                 <div class="creator-queue__summary-note">{{ current_preset_label }}</div>
             </div>
 
             <div class="creator-queue__summary-card">
-                <div class="creator-queue__summary-label">Aandacht nodig</div>
+                <div class="creator-queue__summary-label">Needs attention</div>
                 <div class="creator-queue__summary-value">{{ summary.attention_count }}</div>
             </div>
 
             <div class="creator-queue__summary-card">
-                <div class="creator-queue__summary-label">Zonder owner</div>
+                <div class="creator-queue__summary-label">Without owner</div>
                 <div class="creator-queue__summary-value">{{ summary.unassigned_count }}</div>
             </div>
 
@@ -503,7 +503,7 @@
             </div>
 
             <div class="creator-queue__summary-card">
-                <div class="creator-queue__summary-label">Niet actief</div>
+                <div class="creator-queue__summary-label">Inactive</div>
                 <div class="creator-queue__summary-value">{{ summary.paused_count }}</div>
             </div>
         </div>
@@ -514,7 +514,7 @@
             <div>
                 <h2 class="creator-queue__section-title">Quick filters</h2>
                 <p class="creator-queue__section-copy">
-                    Snelle selectie op de bestaande queue-logica, zonder de werkvolgorde te wijzigen.
+                    Quickly select a queue view without changing the priority order.
                 </p>
             </div>
         </div>
@@ -524,21 +524,21 @@
                 href="{% url 'creator-list' %}?preset=attention"
                 class="creator-queue__pill creator-queue__pill--attention {% if active_preset == 'attention' %}is-active{% endif %}"
             >
-                Aandacht eerst ({{ preset_counts.attention }})
+                Attention first ({{ preset_counts.attention }})
             </a>
 
             <a
                 href="{% url 'creator-list' %}?preset=all"
                 class="creator-queue__pill creator-queue__pill--all {% if active_preset == 'all' %}is-active{% endif %}"
             >
-                Alle creators ({{ preset_counts.all }})
+                All creators ({{ preset_counts.all }})
             </a>
 
             <a
                 href="{% url 'creator-list' %}?preset=unassigned"
                 class="creator-queue__pill creator-queue__pill--warning {% if active_preset == 'unassigned' %}is-active{% endif %}"
             >
-                Zonder owner ({{ preset_counts.unassigned }})
+                Without owner ({{ preset_counts.unassigned }})
             </a>
 
             <a
@@ -552,7 +552,7 @@
                 href="{% url 'creator-list' %}?preset=paused"
                 class="creator-queue__pill creator-queue__pill--warning {% if active_preset == 'paused' %}is-active{% endif %}"
             >
-                Niet actief ({{ preset_counts.paused }})
+                Inactive ({{ preset_counts.paused }})
             </a>
         </div>
     </section>
@@ -562,7 +562,7 @@
             <div>
                 <h2 class="creator-queue__section-title">Filters</h2>
                 <p class="creator-queue__section-copy">
-                    Verfijn de huidige selectie zonder de priority-first queue te veranderen.
+                    Refine the current selection without changing the priority-first queue.
                 </p>
             </div>
         </div>
@@ -571,20 +571,20 @@
             <input type="hidden" name="preset" value="{{ active_preset }}">
 
             <div class="creator-queue__field">
-                <label for="id_q">Zoeken</label>
+                <label for="id_q">Search</label>
                 <input
                     id="id_q"
                     type="text"
                     name="q"
                     value="{{ search_query }}"
-                    placeholder="Naam, legal name, notities"
+                    placeholder="Name, legal name, notes"
                 >
             </div>
 
             <div class="creator-queue__field">
                 <label for="id_status">Status</label>
                 <select id="id_status" name="status">
-                    <option value="">Alle statussen</option>
+                    <option value="">All statuses</option>
                     {% for value, label in status_options %}
                         <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
                             {{ label }}
@@ -596,7 +596,7 @@
             <div class="creator-queue__field">
                 <label for="id_consent_status">Consent status</label>
                 <select id="id_consent_status" name="consent_status">
-                    <option value="">Alle consent statussen</option>
+                    <option value="">All consent statuses</option>
                     {% for value, label in consent_status_options %}
                         <option value="{{ value }}" {% if current_consent_status == value %}selected{% endif %}>
                             {{ label }}
@@ -621,14 +621,14 @@
         <section class="creator-queue__section">
             <div class="creator-queue__section-head">
                 <div>
-                    <h2 class="creator-queue__section-title">Priority-first werkvolgorde</h2>
+                    <h2 class="creator-queue__section-title">Priority-first workflow</h2>
                     <p class="creator-queue__section-copy">
-                        De bestaande queue-logica blijft leidend; deze weergave maakt die alleen rustiger en scanbaarder.
+                        The operational queue logic remains intact in a focused, scannable view.
                     </p>
                 </div>
 
                 <div class="creator-queue__section-meta">
-                    Preset: <strong>{{ current_preset_label }}</strong> · {{ visible_count }} zichtbaar
+                    Preset: <strong>{{ current_preset_label }}</strong> · {{ visible_count }} visible
                 </div>
             </div>
 
@@ -637,12 +637,12 @@
                     <thead>
                         <tr>
                             <th>Creator</th>
-                            <th>Prioriteit & signalen</th>
+                            <th>Priority & signals</th>
                             <th>Owner / assignment</th>
                             <th>Content</th>
-                            <th>Laatste update</th>
-                            <th>Volgende stap</th>
-                            <th>Acties</th>
+                            <th>Latest update</th>
+                            <th>Next step</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -673,7 +673,7 @@
                                         {% endif %}
 
                                         <span class="creator-queue__badge creator-queue__badge--blue">
-                                            {{ row.active_channel_count }} actieve channels
+                                            {{ row.active_channel_count }} active channels
                                         </span>
                                     </div>
                                 </td>
@@ -681,9 +681,9 @@
                                 <td>
                                     <div class="creator-queue__priority">
                                         {% if row.needs_attention %}
-                                            <span class="creator-queue__priority-label is-attention">Aandacht nu</span>
+                                            <span class="creator-queue__priority-label is-attention">Attention now</span>
                                         {% else %}
-                                            <span class="creator-queue__priority-label is-calm">Rustig</span>
+                                            <span class="creator-queue__priority-label is-calm">On track</span>
                                         {% endif %}
 
                                         {% if row.issue_badges %}
@@ -697,7 +697,7 @@
                                                 {% endfor %}
                                             </div>
                                         {% else %}
-                                            <div class="creator-queue__subtle">Geen open kanaalsignalen.</div>
+                                            <div class="creator-queue__subtle">No open channel signals.</div>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -713,7 +713,7 @@
                                     <div class="creator-queue__meta-stack">
                                         <div><strong>{{ row.content_status_label }}</strong></div>
                                         <div class="creator-queue__subtle">
-                                            {{ row.active_channel_count }} actieve channels in scope
+                                            {{ row.active_channel_count }} active channels in scope
                                         </div>
                                     </div>
                                 </td>
@@ -727,7 +727,7 @@
                                             </div>
                                         {% endif %}
                                     {% else %}
-                                        <div class="creator-queue__subtle">Nog geen update vastgelegd.</div>
+                                        <div class="creator-queue__subtle">No update recorded yet.</div>
                                     {% endif %}
                                 </td>
 
@@ -745,7 +745,7 @@
 
                                         {% if request.user.is_staff or request.user.is_superuser %}
                                             <a class="creator-queue__action-link" href="{% url 'creator-update' row.creator.pk %}">
-                                                Bewerken
+                                                Edit
                                             </a>
                                         {% endif %}
                                     </div>
@@ -758,10 +758,10 @@
         </section>
     {% else %}
         <section class="creator-queue__empty">
-            <h2>Geen creators zichtbaar</h2>
+            <h2>No creators visible</h2>
             <p>
-                Er zijn geen creators zichtbaar binnen deze filters of scope. Reset de filters
-                of controleer of er actieve assignments of creators binnen bereik zijn.
+                No creators are visible within these filters or this scope. Reset the filters
+                or check whether active assignments or creators are within reach.
             </p>
         </section>
     {% endif %}

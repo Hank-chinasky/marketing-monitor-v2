@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{% if form.instance.pk %}Creator bewerken{% else %}Nieuwe creator{% endif %}</h1>
+<h1>{% if form.instance.pk %}Edit creator{% else %}New creator{% endif %}</h1>
 <p class="muted">
-    Leg hier de basis vast: status, consent, primary operator en content intake.
+    Record the operational foundation: status, consent, primary operator and content intake.
 </p>
 
 <div class="panel">
@@ -13,11 +13,11 @@
         {{ form.as_p }}
 
         <div class="form-actions">
-            <button class="primary-button" type="submit">Opslaan</button>
+            <button class="primary-button" type="submit">Save</button>
             {% if form.instance.pk %}
-                <a class="secondary-button" href="{% url 'creator-detail' form.instance.pk %}">Terug naar creator</a>
+                <a class="secondary-button" href="{% url 'creator-detail' form.instance.pk %}">Back to creator</a>
             {% else %}
-                <a class="secondary-button" href="{% url 'creator-list' %}">Terug naar creators</a>
+                <a class="secondary-button" href="{% url 'creator-list' %}">Back to creators</a>
             {% endif %}
         </div>
     </form>

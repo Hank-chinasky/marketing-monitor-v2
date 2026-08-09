@@ -4,21 +4,21 @@
 <h1>Operators</h1>
 <p class="muted">
     {% if can_manage_operators %}
-        Beheer hier operators, accountstatus, assignments en wachtwoordreset.
+        Manage operators, account status, assignments and password resets.
     {% else %}
-        Scan hier operators, assignments en primary creators. Beheeracties zijn admin-only.
+        Review operators, assignments and primary creators. Management actions are admin-only.
     {% endif %}
 </p>
 
 {% if can_manage_operators %}
     <div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <a class="primary-button" href="{% url 'operator-create' %}">Nieuwe operator</a>
+        <a class="primary-button" href="{% url 'operator-create' %}">New operator</a>
     </div>
 {% endif %}
 
 {% if status_changed %}
     <div class="success-panel">
-        Accountstatus bijgewerkt{% if changed_operator %}: {{ changed_operator }}{% endif %}.
+        Account status updated{% if changed_operator %}: {{ changed_operator }}{% endif %}.
     </div>
 {% endif %}
 
@@ -28,15 +28,15 @@
         <div class="card-number">{{ summary.operator_count }}</div>
     </div>
     <div class="card">
-        <div>Actieve operators</div>
+        <div>Active operators</div>
         <div class="card-number">{{ summary.active_operator_count }}</div>
     </div>
     <div class="card">
-        <div>Actieve assignments</div>
+        <div>Active assignments</div>
         <div class="card-number">{{ summary.active_assignment_count }}</div>
     </div>
     <div class="card">
-        <div>Met assignments</div>
+        <div>With assignments</div>
         <div class="card-number">{{ summary.operators_with_assignments }}</div>
     </div>
 </div>
@@ -44,13 +44,13 @@
 <div class="panel" style="margin-bottom: 1rem;">
     <form method="get" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end;">
         <div style="min-width: 280px;">
-            <label for="id_q"><strong>Zoeken</strong></label>
+            <label for="id_q"><strong>Search</strong></label>
             <input
                 id="id_q"
                 type="text"
                 name="q"
                 value="{{ search_query }}"
-                placeholder="Naam, username of e-mail"
+                placeholder="Name, username or email"
                 style="width: 100%;"
             >
         </div>
@@ -70,10 +70,10 @@
                     <th style="padding: 0.8rem 0.5rem;">Username</th>
                     <th style="padding: 0.8rem 0.5rem;">E-mail</th>
                     <th style="padding: 0.8rem 0.5rem;">Status</th>
-                    <th style="padding: 0.8rem 0.5rem;">Actieve assignments</th>
+                    <th style="padding: 0.8rem 0.5rem;">Active assignments</th>
                     <th style="padding: 0.8rem 0.5rem;">Primary creators</th>
                     {% if can_manage_operators %}
-                        <th style="padding: 0.8rem 0.5rem;">Acties</th>
+                        <th style="padding: 0.8rem 0.5rem;">Actions</th>
                     {% endif %}
                 </tr>
             </thead>
@@ -101,9 +101,9 @@
                         </td>
                         <td style="padding: 0.9rem 0.5rem;">
                             {% if row.user.is_active %}
-                                <span class="badge badge-green">actief</span>
+                                <span class="badge badge-green">active</span>
                             {% else %}
-                                <span class="badge badge-red">geblokkeerd</span>
+                                <span class="badge badge-red">blocked</span>
                             {% endif %}
                         </td>
                         <td style="padding: 0.9rem 0.5rem;">
@@ -118,7 +118,7 @@
                                     </div>
                                 {% endfor %}
                                 {% if row.primary_creator_count > 5 %}
-                                    <div class="muted">+ {{ row.primary_creator_count|add:"-5" }} meer</div>
+                                    <div class="muted">+ {{ row.primary_creator_count|add:"-5" }} more</div>
                                 {% endif %}
                             {% else %}
                                 <span class="muted">-</span>
@@ -127,8 +127,8 @@
                         {% if can_manage_operators %}
                             <td style="padding: 0.9rem 0.5rem;">
                                 <div style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-start;">
-                                    <a class="quick-link" href="{% url 'operator-update' row.operator.pk %}">Bewerk</a>
-                                    <a class="quick-link" href="{% url 'operator-reset-password' row.operator.pk %}">Reset wachtwoord</a>
+                                    <a class="quick-link" href="{% url 'operator-update' row.operator.pk %}">Edit</a>
+                                    <a class="quick-link" href="{% url 'operator-reset-password' row.operator.pk %}">Reset password</a>
                                     <form method="post" action="{% url 'operator-toggle-active' row.operator.pk %}" style="margin: 0;">
                                         {% csrf_token %}
                                         <input type="hidden" name="next" value="{{ current_full_path }}">
@@ -137,7 +137,7 @@
                                             class="secondary-button"
                                             style="padding: 0.45rem 0.75rem;"
                                         >
-                                            {% if row.user.is_active %}Blokkeer{% else %}Deblokkeer{% endif %}
+                                            {% if row.user.is_active %}Block{% else %}Unblock{% endif %}
                                         </button>
                                     </form>
                                 </div>
@@ -147,7 +147,7 @@
                 {% empty %}
                     <tr>
                         <td colspan="{% if can_manage_operators %}7{% else %}6{% endif %}" style="padding: 1rem 0.5rem;" class="muted">
-                            Geen operators.
+                            No operators.
                         </td>
                     </tr>
                 {% endfor %}

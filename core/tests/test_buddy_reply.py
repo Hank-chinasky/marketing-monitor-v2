@@ -82,7 +82,7 @@ class BuddyReplyServiceTests(SimpleTestCase):
         self.assertTrue(result["requires_human_review"])
         self.assertEqual(
             result["missing_context_note"],
-            "Geen actieve thread geselecteerd.",
+            "No active thread selected.",
         )
 
     def test_provider_unavailable_does_not_fake_ai_reply(self):
@@ -94,7 +94,7 @@ class BuddyReplyServiceTests(SimpleTestCase):
         )
 
         self.assertEqual(result["status"], "provider_unavailable")
-        self.assertEqual(result["status_label"], "Nog geen Buddy-antwoord")
+        self.assertEqual(result["status_label"], "No Buddy reply yet")
         self.assertEqual(result["language"], "nl")
         self.assertEqual(
             result["latest_inbound_text"],
@@ -148,7 +148,7 @@ class BuddyReplyServiceTests(SimpleTestCase):
         self.assertEqual(result["source"], "no_inbound_message")
         self.assertEqual(
             result["missing_context_note"],
-            "Geen inkomend klantbericht beschikbaar.",
+            "No inbound customer message is available.",
         )
 
     def test_latest_inbound_message_controls_visible_context(self):
@@ -237,7 +237,7 @@ class BuddyReplyServiceTests(SimpleTestCase):
         self.assertEqual(result["status"], "provider_refusal")
         self.assertEqual(
             result["status_label"],
-            "Buddy geeft geen concept",
+            "Buddy did not provide a draft",
         )
         self.assertEqual(result["reply_text"], "")
         self.assertEqual(result["language"], "nl")
@@ -264,7 +264,7 @@ class BuddyReplyServiceTests(SimpleTestCase):
         self.assertEqual(result["status"], "provider_error")
         self.assertEqual(result["reply_text"], "")
         self.assertIn(
-            "geen geldig concept",
+            "could not produce a valid draft",
             result["provider_error"],
         )
         self.assertTrue(

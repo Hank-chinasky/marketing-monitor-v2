@@ -138,20 +138,20 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Read-only demoweergave")
+        self.assertContains(response, "Read-only demo view")
         self.assertContains(response, "Chats demo")
         self.assertNotContains(response, ">Creators<")
         self.assertNotContains(response, ">Channels<")
         self.assertNotContains(response, ">Assignments<")
         self.assertNotContains(response, ">Operators<")
         self.assertNotContains(response, ">Feeder<")
-        self.assertContains(response, "Operatoractie")
-        self.assertContains(response, "Later triggeren")
-        self.assertContains(response, "Opslaan follow-up status")
-        self.assertContains(response, "Opslaan en volgende openen")
+        self.assertContains(response, "Operator action")
+        self.assertContains(response, "Trigger later")
+        self.assertContains(response, "Save follow-up status")
+        self.assertContains(response, "Save and open next")
         self.assertContains(
             response,
-            "bediening zichtbaar, wijzigen geblokkeerd",
+            "controls visible, changes blocked",
         )
         self.assertContains(
             response,
@@ -160,12 +160,12 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         self.assertContains(response, "disabled")
         self.assertNotContains(
             response,
-            "Sessie afsluiten & handoff opslaan",
+            "Close session & save handoff",
         )
-        self.assertNotContains(response, "Approval aanmaken")
-        self.assertNotContains(response, "Nieuwe conversation thread")
-        self.assertNotContains(response, "Markeer als gebruikt")
-        self.assertNotContains(response, "Thread wijzigen")
+        self.assertNotContains(response, "Create approval")
+        self.assertNotContains(response, "New conversation thread")
+        self.assertNotContains(response, "Mark as used")
+        self.assertNotContains(response, "Edit thread")
 
     def test_demo_viewer_cannot_post_follow_up_or_handoff(self):
         self.login_demo()
@@ -263,11 +263,11 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         )
 
         self.assertEqual(demo_response.status_code, 200)
-        self.assertContains(demo_response, "Read-only demoweergave")
-        self.assertNotContains(demo_response, "Thread wijzigen")
+        self.assertContains(demo_response, "Read-only demo view")
+        self.assertNotContains(demo_response, "Edit thread")
         self.assertNotContains(
             demo_response,
-            "Markeer draft als goedgekeurd",
+            "Approve draft",
         )
         self.assertEqual(live_response.status_code, 404)
 
@@ -341,9 +341,9 @@ class DemoReadOnlyAccessV1Tests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Save follow-up status")
         self.assertContains(
             response,
-            "Sessie afsluiten & handoff opslaan",
+            "Close session & save handoff",
         )
         self.assertFalse(response.context["demo_read_only"])

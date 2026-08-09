@@ -139,10 +139,10 @@ class Command(BaseCommand):
             recovery_owner=CreatorChannel.RecoveryOwner.AGENCY,
             credential_status=CreatorChannel.CredentialStatus.KNOWN,
             access_notes=(
-                "Fictief demo-account. Geen echte login of bronkoppeling."
+                "Fictional demo account. No real login or source connection."
             ),
             access_profile_notes=(
-                "Demo-only accountcontext; geen credentials opgeslagen."
+                "Demo-only account context; no credentials stored."
             ),
             two_factor_enabled=True,
         )
@@ -161,39 +161,39 @@ class Command(BaseCommand):
             source_system=ConversationThread.SourceSystem.CHATTIES,
             source_thread_id="DEMO-01-WARME-FOLLOW-UP",
             source_site_id="demo-legacy-a",
-            source_site_label="Fictieve legacychat A",
+            source_site_label="Fictional legacy chat A",
             source_participant_a_id="demo-profile-luna",
             source_participant_b_id="demo-customer-kai",
             status=ConversationThread.Status.WAITING_ON_OPERATOR,
             last_message_at=now - timedelta(minutes=5),
             last_operator_handoff_at=now - timedelta(hours=2),
             thread_summary=(
-                "Kai reageert goed op lichte humor en persoonlijke details. "
-                "De conversatie loopt al meerdere dagen en voelt wederzijds."
+                "Kai responds well to light humor and personal details. "
+                "The conversation has continued for several days and feels mutual."
             ),
             open_loop=(
-                "Reageer op zijn vraag over vanavond en pak de eerdere "
-                "grap over zijn late koffiemoment terug."
+                "Reply to his question about tonight and refer back to the earlier "
+                "joke about his late-night coffee."
             ),
             guardrails=(
-                "Geen beschikbaarheid beloven die niet bevestigd is. "
-                "Niet direct verkopen; eerst de persoonlijke lijn voortzetten."
+                "Do not promise availability that has not been confirmed. "
+                "Do not sell immediately; continue the personal line first."
             ),
             risk_flags="",
             last_handoff_note=(
-                "Warme lijn. Hij kwam zelf terug op de eerdere grap. "
-                "Niet opnieuw voorstellen en de conversatie niet resetten."
+                "Warm line. He returned to the earlier joke himself. "
+                "Do not introduce yourself again or reset the conversation."
             ),
             last_approved_reply_style=(
-                "Warm, speels en persoonlijk; korte natuurlijke zinnen "
-                "zonder overdreven enthousiasme."
+                "Warm, playful and personal; short natural sentences "
+                "without exaggerated enthusiasm."
             ),
         )
 
         ThreadFollowUpStatus.objects.create(
             thread=warm_thread,
             status=ThreadFollowUpStatus.Status.WARM,
-            note="Warme persoonlijke lijn gecontroleerd voortzetten.",
+            note="Continue the warm personal line carefully.",
             created_by=operator.user,
             updated_by=operator.user,
         )
@@ -204,25 +204,25 @@ class Command(BaseCommand):
                 (
                     ConversationMessage.Direction.OUTBOUND,
                     "Luna",
-                    "Jij en die koffie om middernacht blijven een vreemde combinatie.",
+                    "You and that midnight coffee remain a strange combination.",
                     now - timedelta(hours=20),
                 ),
                 (
                     ConversationMessage.Direction.INBOUND,
                     "Kai",
-                    "Maar je moest er wel om lachen, geef maar toe.",
+                    "But it did make you laugh, admit it.",
                     now - timedelta(hours=19, minutes=52),
                 ),
                 (
                     ConversationMessage.Direction.OUTBOUND,
                     "Luna",
-                    "Een klein beetje. Dat betekent nog niet dat het een goed idee was.",
+                    "A little. That still does not mean it was a good idea.",
                     now - timedelta(hours=19, minutes=48),
                 ),
                 (
                     ConversationMessage.Direction.INBOUND,
                     "Kai",
-                    "Ik moest vandaag weer aan je denken. Ben je vanavond nog even online?",
+                    "I thought about you again today. Will you be online tonight?",
                     now - timedelta(minutes=5),
                 ),
             ],
@@ -234,40 +234,40 @@ class Command(BaseCommand):
             source_system=ConversationThread.SourceSystem.MARA_CHAT,
             source_thread_id="DEMO-02-REVIEW-NODIG",
             source_site_id="demo-source-b",
-            source_site_label="Fictieve chatsource B",
+            source_site_label="Fictional chat source B",
             source_participant_a_id="demo-profile-luna",
             source_participant_b_id="demo-customer-milo",
             status=ConversationThread.Status.HANDOFF_REQUIRED,
             last_message_at=now - timedelta(minutes=20),
             last_operator_handoff_at=now - timedelta(hours=1),
             thread_summary=(
-                "Milo vraagt om een concrete toezegging, maar de broncontext "
-                "en eerdere afspraak spreken elkaar tegen."
+                "Milo asks for a concrete commitment, but the source context "
+                "conflicts with the earlier agreement."
             ),
             open_loop=(
-                "Controleer eerst de eerdere afspraak en bevestig wat werkelijk "
-                "kan worden toegezegd."
+                "Check the earlier agreement first and confirm what can actually "
+                "be promised."
             ),
             guardrails=(
-                "Geen datum, prijs of beschikbaarheid bevestigen zonder "
-                "handmatige broncontrole."
+                "Do not confirm a date, price or availability without "
+                "manual source verification."
             ),
             risk_flags=(
-                "Tegenstrijdige broncontext: eerdere afspraak is niet bevestigd."
+                "Conflicting source context: the earlier agreement is not confirmed."
             ),
             last_handoff_note=(
-                "Niet antwoorden voordat een operator de eerdere afspraak "
-                "in de bronomgeving heeft gecontroleerd."
+                "Do not reply until an operator has checked the earlier agreement "
+                "in the source environment."
             ),
             last_approved_reply_style=(
-                "Rustig, duidelijk en niet-defensief; geen ongeverifieerde beloftes."
+                "Calm, clear and non-defensive; no unverified promises."
             ),
         )
 
         ThreadFollowUpStatus.objects.create(
             thread=review_thread,
             status=ThreadFollowUpStatus.Status.REVIEW_NODIG,
-            note="Eerdere afspraak en broncontext eerst controleren.",
+            note="Check the earlier agreement and source context first.",
             created_by=operator.user,
             updated_by=operator.user,
         )
@@ -278,19 +278,19 @@ class Command(BaseCommand):
                 (
                     ConversationMessage.Direction.INBOUND,
                     "Milo",
-                    "Je zei toch dat dit morgen geregeld zou zijn?",
+                    "You said this would be arranged tomorrow, right?",
                     now - timedelta(minutes=28),
                 ),
                 (
                     ConversationMessage.Direction.INTERNAL_NOTE,
                     "Demo-import",
-                    "De genoemde afspraak is niet teruggevonden in de gecontroleerde context.",
+                    "The stated agreement was not found in the verified context.",
                     now - timedelta(minutes=24),
                 ),
                 (
                     ConversationMessage.Direction.INBOUND,
                     "Milo",
-                    "Kun je het nu gewoon bevestigen?",
+                    "Can you just confirm it now?",
                     now - timedelta(minutes=20),
                 ),
             ],
@@ -302,7 +302,7 @@ class Command(BaseCommand):
             source_system=ConversationThread.SourceSystem.CHATTIES,
             source_thread_id="DEMO-03-CONTEXT-ONTBREEKT",
             source_site_id="demo-unmapped-source",
-            source_site_label="Onvolledige fictieve import",
+            source_site_label="Incomplete fictional import",
             source_participant_a_id="",
             source_participant_b_id="demo-customer-noah",
             status=ConversationThread.Status.WAITING_ON_OPERATOR,
@@ -321,7 +321,7 @@ class Command(BaseCommand):
                 (
                     ConversationMessage.Direction.INBOUND,
                     "Noah",
-                    "Hoi, ken je me nog?",
+                    "Hi, do you remember me?",
                     now - timedelta(minutes=40),
                 ),
             ],

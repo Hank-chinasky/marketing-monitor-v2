@@ -256,7 +256,7 @@ class BuddyDraftApproveActionTests(TestCase):
         drafted_response = self.client.get(
             reverse("conversation-thread-detail", kwargs={"pk": self.operator_thread.pk})
         )
-        self.assertContains(drafted_response, "Markeer draft als goedgekeurd")
+        self.assertContains(drafted_response, "Mark draft as approved")
         self.assertContains(drafted_response, self.approve_url(self.operator_draft))
 
         latest_policy_response = self.client.get(

@@ -109,11 +109,11 @@ class InstagramWorkspaceSessionDisciplineTests(TestCase):
         self.assertIn("session_what_done", form.errors)
         self.assertIn("session_next_action", form.errors)
         self.assertIn("session_policy_context_reviewed", form.errors)
-        self.assertEqual(form.errors["session_what_done"], ["Dit veld is verplicht."])
-        self.assertEqual(form.errors["session_next_action"], ["Dit veld is verplicht."])
+        self.assertEqual(form.errors["session_what_done"], ["This field is required."])
+        self.assertEqual(form.errors["session_next_action"], ["This field is required."])
         self.assertEqual(
             form.errors["session_policy_context_reviewed"],
-            ["Dit veld is verplicht."],
+            ["This field is required."],
         )
 
         self.channel.refresh_from_db()
@@ -138,7 +138,7 @@ class InstagramWorkspaceSessionDisciplineTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Workspace session opgeslagen.")
+        self.assertContains(response, "Workspace session saved.")
         self.assertContains(response, "Instagram profiel gecontroleerd en bio-link bijgewerkt.")
         self.assertContains(response, "Stories publiceren na approval.")
         self.assertContains(response, "Stories approval ontbreekt nog.")
@@ -168,11 +168,11 @@ class InstagramWorkspaceSessionDisciplineTests(TestCase):
         )
 
         self.channel.refresh_from_db()
-        self.assertIn("Wat gedaan:\nLinktree en profieltekst aangepast.", self.channel.last_operator_update)
+        self.assertIn("Work completed:\nLinktree en profieltekst aangepast.", self.channel.last_operator_update)
         self.assertIn("Next action:\nNieuwe caption klaarzetten.", self.channel.last_operator_update)
         self.assertIn("Blockers / open issues:\n-", self.channel.last_operator_update)
         self.assertIn(
-            "Policy/disclosure context reviewed: Ja",
+            "Policy/disclosure context reviewed: Yes",
             self.channel.last_operator_update,
         )
 
@@ -191,11 +191,11 @@ class InstagramWorkspaceSessionDisciplineTests(TestCase):
         response = self.client.get(self.workspace_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Laatste sessiecontext")
+        self.assertContains(response, "Latest session context")
         self.assertContains(response, "Kanaal geopend en creatorcontext doorgenomen.")
         self.assertContains(response, "Caption finaliseren.")
         self.assertContains(response, "Nog geen finale media.")
-        self.assertContains(response, "Ja")
+        self.assertContains(response, "Yes")
 
     def test_workspace_shows_policy_and_risk_signals(self):
         self.creator.primary_link = ""

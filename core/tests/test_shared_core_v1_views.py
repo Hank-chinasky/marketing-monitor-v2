@@ -193,19 +193,19 @@ class SharedCoreV1ViewsTests(TestCase):
         feeder = self.client.get(reverse("feeder-hub"))
 
         self.assertContains(chats, "Policy · Context · Scope · Access/Risk · Completeness")
-        self.assertContains(chats, 'aria-label="Werkvlak kolom"')
+        self.assertContains(chats, 'aria-label="Workspace column"')
         self.assertContains(chats, "Handoff · Run log · Open issues · Quick actions")
         self.assertNotContains(chats, "Buddy-slot")
 
         self.assertContains(feeder, "Policy · Context · Scope · Access/Risk · Completeness")
-        self.assertContains(feeder, "Werkvlak: creatorselectie, feedfocus en opvolging")
+        self.assertContains(feeder, "Workspace: creator selection, feed focus and follow-up")
         self.assertContains(feeder, "Handoff · Run log · Signals · Quick actions · Buddy-slot")
 
     def test_chats_still_shows_access_and_completeness_modules(self):
         self.client.force_login(self.user)
         chats = self.client.get(reverse("chat-hub"))
 
-        self.assertContains(chats, "Mag ik hier werken?")
+        self.assertContains(chats, "May I work here?")
         self.assertContains(chats, "Assignment status")
         self.assertContains(chats, "Completeness alerts")
 
@@ -229,15 +229,15 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "CreatorWorkboard")
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "/adultadsuite/")
-        self.assertContains(response, "Gesprek")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Conversation")
+        self.assertContains(response, "Messages")
         self.assertContains(response, "Follow-up status")
-        self.assertContains(response, "Lees de berichten, kies status")
-        self.assertContains(response, "Statuskeuze")
-        self.assertContains(response, "Optionele operatornotitie")
-        self.assertContains(response, "Opslaan follow-up status")
-        self.assertContains(response, "Nog geen follow-up status vastgelegd")
-        self.assertContains(response, "De operator kiest handmatig")
+        self.assertContains(response, "Read the messages, select a status")
+        self.assertContains(response, "Status selection")
+        self.assertContains(response, "Optional operator note")
+        self.assertContains(response, "Save follow-up status")
+        self.assertContains(response, "No follow-up status has been recorded")
+        self.assertContains(response, "The operator chooses manually")
         self.assertNotContains(response, "CreatorWorkboard Focusstand")
         self.assertContains(response, "Buddy Context Surface")
         self.assertNotContains(response, "CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite")
@@ -256,30 +256,30 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "/adultadsuite/")
         self.assertContains(response, "/chats/")
-        self.assertContains(response, "Gesprek")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Conversation")
+        self.assertContains(response, "Messages")
         self.assertContains(response, "Follow-up status")
-        self.assertContains(response, "Lees de berichten, kies status")
-        self.assertContains(response, "Statuskeuze")
-        self.assertContains(response, "Optionele korte operatornotitie")
-        self.assertContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Read the messages, select a status")
+        self.assertContains(response, "Status selection")
+        self.assertContains(response, "Optional operator note")
+        self.assertContains(response, "Save follow-up status")
         self.assertContains(response, "Warm")
         self.assertContains(response, "Open loop")
 
         self.assertContains(response, "Buddy Context Surface")
         self.assertContains(response, "Buddy status")
-        self.assertContains(response, "Waarom nu")
-        self.assertContains(response, "Laatste context")
-        self.assertContains(response, "Niet doen")
-        self.assertContains(response, "Volgende stap")
-        self.assertContains(response, "Betrouwbaarheid")
-        self.assertContains(response, "Buddy adviseert")
-        self.assertContains(response, "De operator beslist")
-        self.assertContains(response, "Geen automatische actie.")
+        self.assertContains(response, "Why now")
+        self.assertContains(response, "Latest context")
+        self.assertContains(response, "Do not")
+        self.assertContains(response, "Next step")
+        self.assertContains(response, "Reliability")
+        self.assertContains(response, "Buddy advises")
+        self.assertContains(response, "The operator decides")
+        self.assertContains(response, "No automatic action.")
 
         html = response.content.decode()
         self.assertLess(
-            html.index("Berichten"),
+            html.index("Messages"),
             html.index("Buddy Context Surface"),
         )
 
@@ -318,7 +318,7 @@ class SharedCoreV1ViewsTests(TestCase):
         focus_html = focus_response.content.decode()
 
         self.assertIn('data-chat-mode="full"', normal_html)
-        self.assertIn("Focusstand openen", normal_html)
+        self.assertIn("Open focus mode", normal_html)
         self.assertNotIn('data-focus-layout="v1"', normal_html)
         self.assertIn(
             f'?thread={self.thread.pk}&amp;focus=1',
@@ -327,14 +327,14 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertIn('data-chat-mode="focus"', focus_html)
         self.assertIn('data-focus-layout="v1"', focus_html)
-        self.assertIn("Focusstand actief", focus_html)
-        self.assertIn("Focusstand verlaten", focus_html)
-        self.assertNotIn("Focusstand openen", focus_html)
+        self.assertIn("Focus mode active", focus_html)
+        self.assertIn("Exit focus mode", focus_html)
+        self.assertNotIn("Open focus mode", focus_html)
         self.assertIn(".chat-pressure-queue,", focus_html)
         self.assertIn(".chat-secondary-details,", focus_html)
         self.assertIn(".chat-focus-secondary,", focus_html)
         self.assertIn(
-            '.shared-core-pane[aria-label="Handoff kolom"]',
+            '.shared-core-pane[aria-label="Handoff column"]',
             focus_html,
         )
         self.assertIn(
@@ -410,7 +410,7 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertContains(
             chatties_response,
-            "Actieve bron: Chatties",
+            "Active source: Chatties",
         )
         self.assertContains(
             chatties_response,
@@ -451,7 +451,7 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertContains(
             eurotikken_response,
-            "Actieve bron: Eurotikken",
+            "Active source: Eurotikken",
         )
         self.assertContains(
             eurotikken_response,
@@ -520,7 +520,7 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertContains(
             mismatch_response,
-            "Het gevraagde gesprek valt buiten het actieve bronfilter Chatties.",
+            "The requested conversation is outside the active source filter Chatties.",
         )
         self.assertNotContains(
             mismatch_response,
@@ -569,11 +569,11 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertContains(
             legacy_eurotikken_response,
-            "Actieve bron: Eurotikken",
+            "Active source: Eurotikken",
         )
         self.assertContains(
             legacy_eurotikken_response,
-            "Bron: Eurotikken",
+            "Source: Eurotikken",
         )
         self.assertNotContains(
             legacy_eurotikken_response,
@@ -603,11 +603,11 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertContains(
             empty_response,
-            "Binnen Eurotikken zijn geen gesprekken beschikbaar in deze werkvoorraad.",
+            "No conversations are available within Eurotikken in this work queue.",
         )
         self.assertContains(
             empty_response,
-            "Er wordt niet automatisch naar een andere bron overgeschakeld.",
+            "The system will not switch automatically to another source.",
         )
 
     def test_chats_source_filter_persists_through_focus_links_and_forms(self):
@@ -719,7 +719,7 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertContains(
             response,
-            "Geen actieve thread geselecteerd voor handoff-afsluiting.",
+            "No active thread selected for handoff closeout.",
         )
         self.assertTrue(
             response.context[
@@ -737,22 +737,22 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "AdultAdSuite")
         self.assertContains(response, "Buddy Context Surface")
         self.assertContains(response, "Buddy status:")
-        self.assertContains(response, "Kies gesprek")
-        self.assertContains(response, "Waarom nu")
-        self.assertContains(response, "Laatste context")
+        self.assertContains(response, "Select conversation")
+        self.assertContains(response, "Why now")
+        self.assertContains(response, "Latest context")
         self.assertContains(response, "Open loop")
-        self.assertContains(response, "Niet doen")
-        self.assertContains(response, "Volgende stap")
-        self.assertContains(response, "Betrouwbaarheid")
-        self.assertContains(response, "Kies een gesprek om Buddy-context te zien.")
-        self.assertContains(response, "Nog geen actieve thread geselecteerd.")
-        self.assertContains(response, "Buddy adviseert")
-        self.assertContains(response, "De operator beslist")
-        self.assertContains(response, "Geen automatische actie.")
+        self.assertContains(response, "Do not")
+        self.assertContains(response, "Next step")
+        self.assertContains(response, "Reliability")
+        self.assertContains(response, "Select a conversation to view Buddy context.")
+        self.assertContains(response, "No active thread selected yet.")
+        self.assertContains(response, "Buddy advises")
+        self.assertContains(response, "The operator decides")
+        self.assertContains(response, "No automatic action.")
         self.assertContains(
             response,
-            "Nog geen gesprek geselecteerd. "
-            "Kies een gesprek om follow-up status vast te leggen.",
+            "No conversation selected. "
+            "Select one to record follow-up status.",
         )
 
         html = response.content.decode()
@@ -774,8 +774,8 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Follow-up status")
         self.assertContains(
             response,
-            "Nog geen gesprek geselecteerd. "
-            "Kies een gesprek om follow-up status vast te leggen.",
+            "No conversation selected. "
+            "Select one to record follow-up status.",
         )
         self.assertIsNone(response.context["selected_thread"])
 
@@ -805,8 +805,8 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(follow_up_status.updated_by, self.user)
 
         saved_response = self.client.get(response["Location"])
-        self.assertContains(saved_response, "Follow-up status opgeslagen")
-        self.assertContains(saved_response, "Laatst opgeslagen")
+        self.assertContains(saved_response, "Follow-up status saved")
+        self.assertContains(saved_response, "Last saved")
         self.assertContains(saved_response, "Warm")
         self.assertContains(saved_response, "Vandaag warm opvolgen met rustige opening.")
 
@@ -838,15 +838,15 @@ class SharedCoreV1ViewsTests(TestCase):
 
         saved_response = self.client.get(response["Location"])
         self.assertContains(saved_response, "Buddy Context Surface")
-        self.assertContains(saved_response, "Follow-up status opgeslagen")
+        self.assertContains(saved_response, "Follow-up status saved")
         self.assertContains(saved_response, "Open loop")
         self.assertContains(saved_response, "Klant vroeg om later terug te komen.")
-        self.assertContains(saved_response, "Buddy adviseert")
-        self.assertContains(saved_response, "De operator beslist")
-        self.assertContains(saved_response, "Geen automatische actie.")
+        self.assertContains(saved_response, "Buddy advises")
+        self.assertContains(saved_response, "The operator decides")
+        self.assertContains(saved_response, "No automatic action.")
         self.assertNotContains(
             saved_response,
-            "Geen automatische ranking, trigger of verzending",
+            "No automatic ranking, trigger or sending",
         )
     def test_chats_shows_customer_stage_read_only_context(self):
         self.client.force_login(self.user)
@@ -882,7 +882,7 @@ class SharedCoreV1ViewsTests(TestCase):
         css = html[html.index(css_marker):]
 
         self.assertIn(
-            '.shared-core-pane[aria-label="Werkvlak kolom"]',
+            '.shared-core-pane[aria-label="Workspace column"]',
             css,
         )
         self.assertIn(
@@ -928,18 +928,18 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Gesprek:")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Conversation:")
+        self.assertContains(response, "Messages")
         self.assertContains(response, "Follow-up status")
-        self.assertContains(response, "Opslaan follow-up status")
+        self.assertContains(response, "Save follow-up status")
 
         html = response.content.decode()
-        before_messages = html.split("Berichten", 1)[0]
-        self.assertLess(html.index("Berichten"), html.index("Follow-up status"))
-        self.assertLess(html.index("Berichten"), html.index("Templates v1"))
-        self.assertLess(html.index("Berichten"), html.index("Run log samenvatting"))
-        self.assertLess(html.index("Berichten"), html.index("Approvals v1"))
-        self.assertLess(html.index("Opslaan follow-up status"), html.index("Templates v1"))
+        before_messages = html.split("Messages", 1)[0]
+        self.assertLess(html.index("Messages"), html.index("Follow-up status"))
+        self.assertLess(html.index("Messages"), html.index("Templates v1"))
+        self.assertLess(html.index("Messages"), html.index("Run log summary"))
+        self.assertLess(html.index("Messages"), html.index("Approvals v1"))
+        self.assertLess(html.index("Save follow-up status"), html.index("Templates v1"))
         self.assertNotIn("CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite", html)
         self.assertNotIn("Werkvlak: threadfocus en actuele aandacht", before_messages)
         self.assertNotIn("CreatorWorkboard Focusstand", before_messages)
@@ -957,20 +957,20 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Gesprek:")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Conversation:")
+        self.assertContains(response, "Messages")
         self.assertContains(response, "Follow-up status")
         self.assertContains(response, "Buddy Context Surface")
 
         html = response.content.decode()
-        before_messages = html.split("Berichten", 1)[0]
+        before_messages = html.split("Messages", 1)[0]
         self.assertEqual(html.count('id="chat-buddy-context"'), 1)
         self.assertIn('data-chat-layout="messages-buddy"', html)
-        self.assertLess(html.index("Berichten"), html.index("Follow-up status"))
+        self.assertLess(html.index("Messages"), html.index("Follow-up status"))
         self.assertLess(html.index("Follow-up status"), html.index("Buddy Context Surface"))
-        self.assertLess(html.index("Berichten"), html.index("Templates v1"))
-        self.assertLess(html.index("Berichten"), html.index("Run log samenvatting"))
-        self.assertLess(html.index("Berichten"), html.index("Approvals v1"))
+        self.assertLess(html.index("Messages"), html.index("Templates v1"))
+        self.assertLess(html.index("Messages"), html.index("Run log summary"))
+        self.assertLess(html.index("Messages"), html.index("Approvals v1"))
         self.assertNotIn("Buddy-slot", html)
         self.assertNotIn("CreatorWorkboardFlow is de werkvloer binnen AdultAdSuite", html)
         self.assertNotIn("Werkvlak: threadfocus en actuele aandacht", before_messages)
@@ -1006,14 +1006,14 @@ class SharedCoreV1ViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Profiel & gebruiker")
-        self.assertContains(response, "Profiel:")
-        self.assertContains(response, "Profielgebruikersnaam:")
+        self.assertContains(response, "Profile & customer")
+        self.assertContains(response, "Profile:")
+        self.assertContains(response, "Profile username:")
         self.assertContains(response, "Sonja")
-        self.assertContains(response, "Gebruiker:")
-        self.assertContains(response, "Gebruikersnaam:")
+        self.assertContains(response, "Customer:")
+        self.assertContains(response, "Username:")
         self.assertContains(response, "jupke")
-        self.assertContains(response, "Bron:")
+        self.assertContains(response, "Source:")
         self.assertContains(response, "Eurotikken")
         self.assertContains(response, "datesamen.nl")
         self.assertNotContains(
@@ -1048,9 +1048,9 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Berichten")
-        self.assertContains(response, "Read-only berichtenstroom uit de geselecteerde thread.")
-        self.assertContains(response, "Klant")
+        self.assertContains(response, "Messages")
+        self.assertContains(response, "Read-only message stream from the selected thread.")
+        self.assertContains(response, "Customer")
         self.assertContains(response, "Customer")
         self.assertContains(response, "Eerste bericht van klant.")
         self.assertContains(response, "Operator")
@@ -1093,8 +1093,8 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "AdultAdSuite")
-        self.assertContains(response, "Berichten")
-        self.assertContains(response, "Klant")
+        self.assertContains(response, "Messages")
+        self.assertContains(response, "Customer")
         self.assertContains(response, "Focus klantbericht.")
         self.assertContains(response, "Operator")
         self.assertContains(response, "Focus operatorbericht.")
@@ -1147,15 +1147,15 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertContains(
             default_response,
-            "Laatste 5",
+            "Latest 5",
         )
         self.assertContains(
             default_response,
-            "van 12 berichten.",
+            "of 12 messages.",
         )
         self.assertContains(
             default_response,
-            "Toon eerdere",
+            "Show earlier",
         )
         self.assertContains(
             default_response,
@@ -1205,15 +1205,15 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertContains(
             expanded_response,
-            "Volledige geschiedenis:",
+            "Full history:",
         )
         self.assertContains(
             expanded_response,
-            "12 berichten.",
+            "12 messages.",
         )
         self.assertContains(
             expanded_response,
-            "Toon alleen laatste 5",
+            "Show latest 5 only",
         )
         self.assertContains(
             expanded_response,
@@ -1229,8 +1229,8 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Berichten")
-        self.assertContains(response, "Nog geen berichten opgeslagen voor dit gesprek.")
+        self.assertContains(response, "Messages")
+        self.assertContains(response, "No messages have been stored for this conversation yet.")
         self.assertEqual(list(response.context["conversation_messages"]), [])
 
     def test_chats_message_panel_fallback_without_thread_is_empty(self):
@@ -1240,30 +1240,30 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["conversation_messages"], [])
-        self.assertContains(response, "Berichten")
-        self.assertContains(response, "Kies een gesprek om berichten te bekijken.")
-        self.assertContains(response, "Selecteer een thread om het werkvlak te starten.")
+        self.assertContains(response, "Messages")
+        self.assertContains(response, "Select a conversation to view messages.")
+        self.assertContains(response, "Select a thread to start the work area.")
 
     def test_feeder_keeps_operator_first_five_center_blocks(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("feeder-hub"))
 
-        self.assertContains(response, "Wat live moet")
-        self.assertContains(response, "Wat aandacht nodig heeft")
-        self.assertContains(response, "Content/context vóór actie")
-        self.assertContains(response, "Door naar Chats")
-        self.assertContains(response, "Ritme / opvolging")
+        self.assertContains(response, "What should go live")
+        self.assertContains(response, "What needs attention")
+        self.assertContains(response, "Content and context before action")
+        self.assertContains(response, "Continue to Chats")
+        self.assertContains(response, "Cadence / follow-up")
 
     def test_feeder_pre_action_context_block_renders_scanable_items(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("feeder-hub"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Content/context vóór actie")
+        self.assertContains(response, "Content and context before action")
         self.assertContains(response, "Content status")
         self.assertContains(response, "Content source")
-        self.assertContains(response, "Laatste materiaal")
-        self.assertContains(response, "Kanaalfocus")
+        self.assertContains(response, "Latest material")
+        self.assertContains(response, "Channel focus")
         self.assertContains(response, "https://example.com/source")
         self.assertContains(response, "Feeder item")
         self.assertContains(response, "recent-handoff-channel")
@@ -1275,8 +1275,8 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Feeder scan")
         self.assertContains(response, "Live focus")
-        self.assertContains(response, "Laatste feeder-handoff")
-        self.assertContains(response, "Volgende operatoractie")
+        self.assertContains(response, "Latest feeder handoff")
+        self.assertContains(response, "Next operator action")
         self.assertContains(response, "Chats-handoff scan")
         self.assertIn("feeder_focus_items", response.context)
         self.assertIn("latest_feeder_handoff_scan", response.context)
@@ -1307,9 +1307,9 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.context["next_operator_action_scan"],
-            "Los eerst op: Content source URL ontbreekt.",
+            "Resolve first: Content source URL is missing.",
         )
-        self.assertContains(response, "Los eerst op: Content source URL ontbreekt.")
+        self.assertContains(response, "Resolve first: Content source URL is missing.")
 
     def test_feeder_pre_action_context_handles_missing_material_and_channels(self):
         CreatorMaterial.objects.filter(creator=self.creator).delete()
@@ -1319,9 +1319,9 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("feeder-hub"), {"creator": self.creator.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Content/context vóór actie")
-        self.assertContains(response, "Geen actief materiaal beschikbaar.")
-        self.assertContains(response, "Geen kanaal in scope.")
+        self.assertContains(response, "Content and context before action")
+        self.assertContains(response, "No active material available.")
+        self.assertContains(response, "No channel in scope.")
 
     def test_feeder_chats_quick_action_prioritizes_handoff_required(self):
         self.client.force_login(self.user)
@@ -1349,9 +1349,9 @@ class SharedCoreV1ViewsTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("feeder-hub"))
 
-        self.assertContains(response, "Laatste stand:")
-        self.assertContains(response, "Volgende stap:")
-        self.assertContains(response, "Vervolgwerk zit in:")
+        self.assertContains(response, "Latest status:")
+        self.assertContains(response, "Next step:")
+        self.assertContains(response, "Follow-up work is in:")
 
     def test_feeder_buddy_slot_is_visible_and_renders_without_crash(self):
         self.client.force_login(self.user)
@@ -1359,15 +1359,15 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Buddy-slot")
-        self.assertContains(response, "Korte creator-samenvatting")
-        self.assertContains(response, "Ontbrekende velden/contextgaten")
-        self.assertContains(response, "Voorgestelde volgende stap")
-        self.assertContains(response, "Compacte sessiebrief")
-        self.assertContains(response, "Wat live moet")
-        self.assertContains(response, "Wat aandacht nodig heeft")
-        self.assertContains(response, "Content/context vóór actie")
-        self.assertContains(response, "Door naar Chats")
-        self.assertContains(response, "Ritme / opvolging")
+        self.assertContains(response, "Short creator summary")
+        self.assertContains(response, "Missing fields/context gaps")
+        self.assertContains(response, "Suggested next step")
+        self.assertContains(response, "Compact session brief")
+        self.assertContains(response, "What should go live")
+        self.assertContains(response, "What needs attention")
+        self.assertContains(response, "Content and context before action")
+        self.assertContains(response, "Continue to Chats")
+        self.assertContains(response, "Cadence / follow-up")
 
     def test_feeder_buddy_slot_shows_context_prefill_for_selected_creator(self):
         self.client.force_login(self.user)
@@ -1410,11 +1410,11 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("feeder-hub"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Content source URL ontbreekt.")
-        self.assertContains(response, "Content ready status ontbreekt.")
-        self.assertContains(response, "Volgende stap ontbreekt in channel sessiecontext.")
-        self.assertContains(response, "Gecondenseerde laatste handoff:")
-        self.assertContains(response, "Niet beschikbaar.")
+        self.assertContains(response, "Content source URL is missing.")
+        self.assertContains(response, "Content ready status is missing.")
+        self.assertContains(response, "Next step is missing from the channel session context.")
+        self.assertContains(response, "Condensed latest handoff:")
+        self.assertContains(response, "Not available.")
 
     def test_feeder_buddy_slot_shows_condensed_handoff_when_available(self):
         self.newer_channel.session_blockers = (
@@ -1429,7 +1429,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Shared Core Creator · Ready to post")
         self.assertContains(response, "Plan conceptpost en bevestig timing.")
-        self.assertContains(response, "Gecondenseerde laatste handoff")
+        self.assertContains(response, "Condensed latest handoff")
         self.assertContains(
             response,
             "Creator wacht op korte planning en bevestiging van publicatiemoment.",
@@ -1444,9 +1444,9 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("feeder-hub"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Gecondenseerde laatste handoff")
+        self.assertContains(response, "Condensed latest handoff")
         self.assertContains(response, "Werk caption uit en plan uploadmoment.")
-        self.assertNotContains(response, "Niet beschikbaar.")
+        self.assertNotContains(response, "Not available.")
 
     def test_feeder_buddy_slot_get_is_read_only_without_side_effects_or_chats_strings(self):
         before_status = self.creator.content_ready_status
@@ -1504,8 +1504,8 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertContains(response, "Template geopend:")
         self.assertContains(response, "Handoff follow-up update")
-        self.assertContains(response, "Korte update via Instagram (shared-core-channel).")
-        self.assertContains(response, "Volgende stap: Reply with updated delivery date..")
+        self.assertContains(response, "Quick update via Instagram (shared-core-channel).")
+        self.assertContains(response, "Next step: Reply with updated delivery date..")
 
     def test_template_usage_is_visible_in_chat_run_log_context(self):
         self.client.force_login(self.user)
@@ -1550,8 +1550,8 @@ class SharedCoreV1ViewsTests(TestCase):
             },
         )
 
-        self.assertNotContains(response, "Laatste handoff: -")
-        self.assertNotContains(response, "Volgende stap: n/a")
+        self.assertNotContains(response, "Latest handoff: -")
+        self.assertNotContains(response, "Next step: n/a")
 
 
     def test_chat_buddy_surface_replaces_legacy_buddy_slot(self):
@@ -1562,7 +1562,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, "Buddy Context Surface")
         self.assertNotContains(response, "Buddy-slot")
         self.assertNotContains(response, "Korte threadsamenvatting")
-        self.assertNotContains(response, "Compacte sessiebrief")
+        self.assertNotContains(response, "Compact session brief")
 
         buddy_assist = response.context["buddy_assist"]
         self.assertIn("thread_summary", buddy_assist)
@@ -1598,8 +1598,8 @@ class SharedCoreV1ViewsTests(TestCase):
         )
         self.assertTrue(reply_draft["requires_human_review"])
 
-        self.assertContains(response, "Antwoord opstellen")
-        self.assertContains(response, "Nog geen Buddy-antwoord")
+        self.assertContains(response, "Compose reply")
+        self.assertContains(response, "No Buddy reply yet")
         self.assertContains(
             response,
             "Hello, can you help me with the delivery date?",
@@ -1607,9 +1607,9 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertContains(response, 'name="buddy_reply_draft"')
 
         self.assertNotContains(response, "Buddy-slot")
-        self.assertNotContains(response, "Intern reply draft voorstel")
+        self.assertNotContains(response, "Internal reply draft proposal")
         self.assertNotContains(response, "Thanks for your message")
-        self.assertNotContains(response, "Bericht versturen")
+        self.assertNotContains(response, "Send message")
         self.assertNotContains(response, 'name="reply_text"')
         self.assertNotContains(response, 'name="message_body"')
 
@@ -1641,12 +1641,12 @@ class SharedCoreV1ViewsTests(TestCase):
             "Hoi, kun je mij morgen helpen?",
         )
 
-        self.assertContains(response, "Antwoord opstellen")
-        self.assertContains(response, "Bestaand Buddy-concept")
+        self.assertContains(response, "Compose reply")
+        self.assertContains(response, "Existing Buddy draft")
         self.assertContains(response, "Hoi, kun je mij morgen helpen?")
         self.assertContains(response, "Dankjewel! We komen morgen met update.")
-        self.assertContains(response, "Veilige tekst kopiëren")
-        self.assertContains(response, "Verzendpreview maken")
+        self.assertContains(response, "Copy safe text")
+        self.assertContains(response, "Create send preview")
 
         html = response.content.decode()
 
@@ -1659,7 +1659,7 @@ class SharedCoreV1ViewsTests(TestCase):
             1,
         )
         self.assertNotIn("Buddy-slot", html)
-        self.assertNotIn("Bericht versturen", html)
+        self.assertNotIn("Send message", html)
         self.assertNotIn('name="reply_text"', html)
     def test_chat_hub_shows_manual_thread_intake_entrypoint_for_scoped_operator(self):
         self.client.force_login(self.user)
@@ -1667,10 +1667,10 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["can_create_conversation_thread"])
-        self.assertContains(response, "Nieuwe conversation thread")
+        self.assertContains(response, "New conversation thread")
         self.assertContains(
             response,
-            "Maak handmatig een thread aan voor een livechat, DM of bestaande klant.",
+            "Create a thread manually for a live chat, DM or existing customer.",
         )
         self.assertContains(response, reverse("conversation-thread-create"))
 
@@ -1686,7 +1686,7 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["can_create_conversation_thread"])
-        self.assertNotContains(response, "Nieuwe conversation thread")
+        self.assertNotContains(response, "New conversation thread")
         self.assertNotContains(response, "livechat, DM of bestaande klant")
 
 
@@ -1726,13 +1726,13 @@ class SharedCoreV1ViewsTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
-        self.assertContains(response, "Guardrails ontbreken; policy-context is onvolledig.")
-        self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
-        self.assertContains(response, "Laatste handoff-status ontbreekt.")
-        self.assertContains(response, "Los eerst op: Volgende stap ontbreekt (open loop leeg).")
+        self.assertContains(response, "Guardrails are missing; policy context is incomplete.")
+        self.assertContains(response, "Next step is missing (open loop is empty).")
+        self.assertContains(response, "Latest handoff status is missing.")
+        self.assertContains(response, "Resolve first: Next step is missing (open loop is empty).")
         self.assertEqual(
             response.context["next_step_scan"],
-            "Los eerst op: Volgende stap ontbreekt (open loop leeg).",
+            "Resolve first: Next step is missing (open loop is empty).",
         )
 
     def test_assignment_scope_status_is_rendered_in_chats_and_feeder(self):
@@ -1741,10 +1741,10 @@ class SharedCoreV1ViewsTests(TestCase):
         chats_response = self.client.get(reverse("chat-hub"))
         feeder_response = self.client.get(reverse("feeder-hub"))
 
-        self.assertContains(chats_response, "actieve assignment")
+        self.assertContains(chats_response, "active assignment")
         self.assertContains(chats_response, self.assignment.get_scope_display())
 
-        self.assertContains(feeder_response, "actieve assignment")
+        self.assertContains(feeder_response, "active assignment")
         self.assertContains(feeder_response, self.assignment.get_scope_display())
 
     def test_chats_access_state_blocked_without_operator_assignment(self):
@@ -1753,7 +1753,7 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "blocked")
-        self.assertContains(response, "Geen actieve operator-assignment voor deze creator.")
+        self.assertContains(response, "No active operator assignment for this creator.")
 
     def test_feeder_access_state_blocked_without_operator_assignment(self):
         self.client.force_login(self.admin_user)
@@ -1761,7 +1761,7 @@ class SharedCoreV1ViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "blocked")
-        self.assertContains(response, "Geen actieve operator-assignment voor deze creator.")
+        self.assertContains(response, "No active operator assignment for this creator.")
 
     def test_chats_access_state_blocked_when_assignment_scope_disallows_chat(self):
         self.assignment.scope = OperatorAssignment.Scope.POSTING_ONLY
@@ -1771,7 +1771,7 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"))
 
         self.assertContains(response, "blocked")
-        self.assertContains(response, "Assignment-scope laat geen chat-operatoractie toe.")
+        self.assertContains(response, "The assignment scope does not allow chat operator actions.")
 
     def test_chat_access_is_review_needed_when_open_loop_missing(self):
         self.thread.open_loop = ""
@@ -1781,7 +1781,7 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertContains(response, "review_needed")
-        self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
+        self.assertContains(response, "Next step is missing (open loop is empty).")
 
     def test_chat_access_is_review_needed_when_handoff_missing(self):
         self.thread.last_handoff_note = ""
@@ -1791,7 +1791,7 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertContains(response, "review_needed")
-        self.assertContains(response, "Laatste handoff-status ontbreekt.")
+        self.assertContains(response, "Latest handoff status is missing.")
 
     def test_chat_completeness_alerts_visible_when_context_missing(self):
         self.thread.guardrails = ""
@@ -1802,9 +1802,9 @@ class SharedCoreV1ViewsTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
-        self.assertContains(response, "Guardrails ontbreken; policy-context is onvolledig.")
-        self.assertContains(response, "Volgende stap ontbreekt (open loop leeg).")
-        self.assertContains(response, "Laatste handoff-status ontbreekt.")
+        self.assertContains(response, "Guardrails are missing; policy context is incomplete.")
+        self.assertContains(response, "Next step is missing (open loop is empty).")
+        self.assertContains(response, "Latest handoff status is missing.")
 
     def test_feeder_completeness_alerts_visible_when_context_missing(self):
         self.creator.content_source_url = ""
@@ -1819,9 +1819,9 @@ class SharedCoreV1ViewsTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("feeder-hub"))
 
-        self.assertContains(response, "Content source URL ontbreekt.")
-        self.assertContains(response, "Content ready status ontbreekt.")
-        self.assertContains(response, "Volgende stap ontbreekt in channel sessiecontext.")
+        self.assertContains(response, "Content source URL is missing.")
+        self.assertContains(response, "Content ready status is missing.")
+        self.assertContains(response, "Next step is missing from the channel session context.")
 
     def test_feeder_completeness_treats_placeholder_next_steps_as_missing(self):
         self.channel.session_next_action = "-"
@@ -1832,7 +1832,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("feeder-hub"))
 
-        self.assertContains(response, "Volgende stap ontbreekt in channel sessiecontext.")
+        self.assertContains(response, "Next step is missing from the channel session context.")
 
     def test_feeder_handoff_runlog_and_channel_quick_action_use_same_relevant_channel(self):
         self.client.force_login(self.user)
@@ -1849,11 +1849,11 @@ class SharedCoreV1ViewsTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat-hub"))
 
-        self.assertContains(response, "Sessie starten")
-        self.assertContains(response, "Sessie afsluiten")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Start session")
+        self.assertContains(response, "Close session")
+        self.assertContains(response, "Messages")
         self.assertNotContains(response, "Top chat focus")
-        self.assertContains(response, "Volgende stap (scanbaar)")
+        self.assertContains(response, "Next step (scannable)")
 
     def test_next_step_prefills_from_current_open_loop(self):
         self.client.force_login(self.user)
@@ -1875,7 +1875,7 @@ class SharedCoreV1ViewsTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Laatste stand en volgende stap zijn verplicht om af te sluiten.")
+        self.assertContains(response, "Latest status and next step are required to close the handoff.")
         self.assertContains(response, 'name="next_step" value="Volgende stap blijft staan"')
         self.assertContains(response, 'name="blocker" value="Nog blocker"')
         self.assertContains(response, 'option value="review_nodig" selected')
@@ -1901,7 +1901,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.thread.refresh_from_db()
         self.assertEqual(self.thread.last_handoff_note, old_note)
-        self.assertContains(response, "Geen actieve thread geselecteerd voor handoff-afsluiting.")
+        self.assertContains(response, "No active thread selected for handoff closeout.")
 
     def test_post_with_invalid_thread_id_writes_nothing(self):
         self.client.force_login(self.user)
@@ -1918,7 +1918,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.thread.refresh_from_db()
         self.assertEqual(self.thread.last_handoff_note, old_note)
-        self.assertContains(response, "Geen actieve thread geselecteerd voor handoff-afsluiting.")
+        self.assertContains(response, "No active thread selected for handoff closeout.")
 
     def test_post_with_out_of_scope_thread_writes_nothing(self):
         self.client.force_login(self.user)
@@ -1937,7 +1937,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.other_thread.refresh_from_db()
         self.assertEqual(self.thread.last_handoff_note, old_note)
         self.assertNotIn("Test out of scope", self.other_thread.last_handoff_note)
-        self.assertContains(response, "Geen actieve thread geselecteerd voor handoff-afsluiting.")
+        self.assertContains(response, "No active thread selected for handoff closeout.")
 
     def test_operator_can_submit_handoff_and_update_thread_fields(self):
         self.client.force_login(self.user)
@@ -1959,12 +1959,12 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertIn("saved=1", response.redirect_chain[0][0])
         self.thread.refresh_from_db()
         self.assertIn("Gesprek afgerond", self.thread.last_handoff_note)
-        self.assertIn("Afsluitsignaal: opvolging_nodig", self.thread.last_handoff_note)
+        self.assertIn("Closeout signal: opvolging_nodig", self.thread.last_handoff_note)
         self.assertEqual(self.thread.open_loop, "Morgen opvolgen of klant heeft gereageerd.")
         self.assertIsNotNone(self.thread.last_operator_handoff_at)
-        self.assertContains(response, "Handoff opgeslagen")
+        self.assertContains(response, "Handoff saved")
         self.assertContains(response, "Morgen opvolgen of klant heeft gereageerd.")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Messages")
         self.assertNotContains(response, "Top chat focus")
 
     def test_chat_hub_scan_context_is_present_in_template_and_context(self):
@@ -1972,13 +1972,13 @@ class SharedCoreV1ViewsTests(TestCase):
         response = self.client.get(reverse("chat-hub"), {"thread": self.thread.pk})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Messages")
         self.assertNotContains(response, "Top chat focus")
-        self.assertContains(response, "Gesprek:")
+        self.assertContains(response, "Conversation:")
         self.assertContains(response, "shared-core-thread")
         self.assertContains(response, "Waiting on operator")
-        self.assertNotContains(response, "Laatste statusmoment")
-        self.assertContains(response, "Laatste handoff")
+        self.assertNotContains(response, "Latest status update")
+        self.assertContains(response, "Latest handoff")
         self.assertIn("chat_focus_items", response.context)
         self.assertIn("latest_handoff_scan", response.context)
         self.assertIn("next_step_scan", response.context)
@@ -2001,13 +2001,13 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.context["chat_focus_items"], [])
         self.assertEqual(
             response.context["latest_handoff_scan"]["summary"],
-            "Geen actieve handoff beschikbaar zonder thread.",
+            "No active handoff available without a thread.",
         )
         self.assertEqual(
             response.context["next_step_scan"],
-            "Nog geen volgende stap beschikbaar zonder thread.",
+            "No next step available without a thread yet.",
         )
-        self.assertContains(response, "Selecteer een thread om het werkvlak te starten.")
+        self.assertContains(response, "Select a thread to start the work area.")
 
     def test_chat_right_column_handoff_and_issues_are_directly_scannable(self):
         self.thread.risk_flags = "High-risk sentiment requires review."
@@ -2037,7 +2037,7 @@ class SharedCoreV1ViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.thread.refresh_from_db()
         self.assertEqual(self.thread.last_handoff_note, old_note)
-        self.assertContains(response, "Handoff afsluiten is geblokkeerd")
+        self.assertContains(response, "Handoff closeout is blocked")
         self.assertContains(response, "Dit mag niet opgeslagen worden.")
         self.assertContains(response, 'name="next_step" value="Geen"')
         self.assertContains(response, 'name="blocker" value="Nog iets"')
@@ -2213,20 +2213,20 @@ class EurotikkenOperatorContextViewTests(TestCase):
         self.assertContains(response, "Sinds kort weer vrijgezel")
         self.assertContains(response, "Weduwnaar")
         self.assertContains(response, "Samen Genieten")
-        self.assertContains(response, "Gecontroleerd")
+        self.assertContains(response, "Verified")
         self.assertContains(
             response,
-            "Beoordeeld, niet bron-gecontroleerd",
+            "Reviewed, not source-verified",
         )
 
         self.assertEqual(
             response.context["buddy_assist"][
                 "reliability_label"
             ],
-            "Middel",
+            "Medium",
         )
         self.assertIn(
-            "niet aan de bron gecontroleerd",
+            "not verified against the source",
             response.context["buddy_assist"][
                 "reliability_reason"
             ],
@@ -2263,20 +2263,20 @@ class EurotikkenOperatorContextViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            "Nog niet beoordeeld",
+            "Not reviewed yet",
         )
         self.assertNotContains(
             response,
-            "Beoordeeld, niet bron-gecontroleerd",
+            "Reviewed, not source-verified",
         )
         self.assertEqual(
             response.context["buddy_assist"][
                 "reliability_label"
             ],
-            "Laag",
+            "Low",
         )
         self.assertIn(
-            "nog niet gereviewd",
+            "has not been reviewed yet",
             response.context["buddy_assist"][
                 "reliability_reason"
             ],
@@ -2297,7 +2297,7 @@ class EurotikkenOperatorContextViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            "Bekijk profielcontent",
+            "View profile content",
         )
         self.assertContains(response, "(2)")
 
@@ -2373,12 +2373,12 @@ class EurotikkenOperatorContextViewTests(TestCase):
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Profielcontent")
+        self.assertContains(response, "Profile content")
         self.assertContains(response, "Sonja")
         self.assertContains(response, "DateSamen")
         self.assertContains(response, "2 items")
         self.assertContains(response, "Read-only")
-        self.assertContains(response, "Primair")
+        self.assertContains(response, "Primary")
 
         self.assertEqual(
             html.count(
@@ -2407,8 +2407,8 @@ class EurotikkenOperatorContextViewTests(TestCase):
         self.assertContains(
             response,
             (
-                "Alleen bekijken. Uploaden, wijzigen "
-                "en verwijderen zijn niet beschikbaar."
+                "View only. Uploading, editing "
+                "and deleting are not available."
             ),
         )
         self.assertNotIn('type="file"', html)
@@ -2526,11 +2526,11 @@ class EurotikkenOperatorContextViewTests(TestCase):
             'document.addEventListener("DOMContentLoaded"',
             html,
         )
-        self.assertContains(response, "Klantfoto")
-        self.assertContains(response, "Foto tonen")
+        self.assertContains(response, "Customer photo")
+        self.assertContains(response, "Show photo")
         self.assertContains(
             response,
-            "Beoordeeld, niet bron-gecontroleerd",
+            "Reviewed, not source-verified",
         )
         self.assertIn('aria-expanded="false"', html)
         self.assertIn(
@@ -2541,7 +2541,7 @@ class EurotikkenOperatorContextViewTests(TestCase):
             'image.removeAttribute("src")',
             html,
         )
-        self.assertIn("Foto verbergen", html)
+        self.assertIn("Hide photo", html)
         self.assertRegex(
             html,
             (
@@ -2574,7 +2574,7 @@ class EurotikkenOperatorContextViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            "Bronprofielcontext ontbreekt.",
+            "Source profile context is missing.",
         )
         self.assertFalse(
             response.context["operator_context"]["available"]

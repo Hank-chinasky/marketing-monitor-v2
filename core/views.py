@@ -153,11 +153,11 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
     context_object_name = "creators"
 
     PRESET_LABELS = {
-        "attention": "Aandacht eerst",
-        "all": "Alle creators",
-        "unassigned": "Zonder owner",
+        "attention": "Attention first",
+        "all": "All creators",
+        "unassigned": "Without owner",
         "consent": "Consent issues",
-        "paused": "Niet actief",
+        "paused": "Inactive",
     }
 
     def get_base_queryset(self):
@@ -200,13 +200,13 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
     @staticmethod
     def get_channel_issue_badges(channels):
         if not channels:
-            return ["geen channel"]
+            return ["no channel"]
 
         badges = []
         if any(channel.credential_status == "needs_reset" for channel in channels):
             badges.append("needs reset")
         if any(not channel.two_factor_enabled for channel in channels):
-            badges.append("geen 2FA")
+            badges.append("no 2FA")
         if any(
             channel.vpn_required
             and not (channel.approved_ip_label or channel.approved_egress_ip)
@@ -214,9 +214,9 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
         ):
             badges.append("VPN gap")
         if any(not (channel.login_identifier or "").strip() for channel in channels):
-            badges.append("geen identifier")
+            badges.append("missing identifier")
         if any(not (channel.last_operator_update or "").strip() for channel in channels):
-            badges.append("geen update")
+            badges.append("missing update")
         return badges
 
     @staticmethod
@@ -239,7 +239,7 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
     @staticmethod
     def get_assignment_labels(creator, assignments):
         if not assignments:
-            return "Geen owner", "Geen actieve assignment"
+            return "No owner", "No active assignment"
 
         if len(assignments) == 1:
             assignment = assignments[0]
@@ -253,35 +253,35 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
         else:
             owner_label = str(assignments[0].operator)
 
-        return owner_label, f"{len(assignments)} actieve assignments"
+        return owner_label, f"{len(assignments)} active assignments"
 
     @staticmethod
     def get_next_step(creator, assignments, active_channels, issue_badges, last_update_at):
         if creator.consent_status != Creator.ConsentStatus.ACTIVE:
-            return "Bevestig of herstel de consentstatus."
+            return "Confirm or restore the consent status."
         if creator.status != Creator.Status.ACTIVE:
-            return "Beoordeel de creatorstatus en hervatting."
+            return "Review the creator status and resumption."
         if not assignments:
-            return "Wijs een actieve owner en assignment toe."
+            return "Assign an active owner and assignment."
         if not active_channels:
-            return "Koppel of activeer het eerste channel."
+            return "Connect or activate the first channel."
         if "needs reset" in issue_badges:
-            return "Herstel de channeltoegang."
-        if "geen 2FA" in issue_badges:
-            return "Rond de 2FA-inrichting af."
+            return "Restore channel access."
+        if "no 2FA" in issue_badges:
+            return "Complete the 2FA setup."
         if "VPN gap" in issue_badges:
-            return "Leg de goedgekeurde VPN/IP-context vast."
-        if "geen identifier" in issue_badges:
-            return "Leg de channelidentifier vast."
+            return "Record the approved VPN/IP context."
+        if "missing identifier" in issue_badges:
+            return "Record the channel identifier."
         if creator.content_ready_status in {
             "",
             Creator.ContentReadyStatus.WAITING_FOR_CREATOR,
             Creator.ContentReadyStatus.BLOCKED,
         }:
-            return "Werk de contentstatus en volgende levering bij."
-        if not last_update_at or "geen update" in issue_badges:
-            return "Leg de volgende operatorupdate vast."
-        return "Geen directe actie nodig."
+            return "Update the content status and next delivery."
+        if not last_update_at or "missing update" in issue_badges:
+            return "Record the next operator update."
+        return "No immediate action required."
 
     def build_creator_row(self, creator):
         assignments = list(creator.active_assignments_in_scope)
@@ -329,7 +329,7 @@ class CreatorListView(LoginRequiredMixin, ScopedCreatorQuerysetMixin, ListView):
             "content_status_label": (
                 creator.get_content_ready_status_display()
                 if creator.content_ready_status
-                else "Niet vastgelegd"
+                else "Not recorded"
             ),
             "last_update_at": last_update_at,
             "last_update_excerpt": last_update_excerpt,
@@ -631,13 +631,13 @@ class ChannelListView(LoginRequiredMixin, ScopedChannelQuerysetMixin, ListView):
     context_object_name = "channels"
 
     PRESET_LABELS = {
-        "all": "Alle channels",
-        "issues": "Alle issues",
+        "all": "All channels",
+        "issues": "All issues",
         "needs_reset": "Needs reset",
-        "no_2fa": "Geen 2FA",
+        "no_2fa": "No 2FA",
         "vpn_gap": "VPN gaps",
-        "no_identifier": "Geen identifier",
-        "no_update": "Geen update",
+        "no_identifier": "Missing identifier",
+        "no_update": "Missing update",
     }
 
     def get_base_queryset(self):
@@ -926,13 +926,13 @@ class OperatorCreateView(LoginRequiredMixin, AdminOnlyMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Nieuwe operator"
+        context["page_title"] = "New operator"
         context["page_description"] = (
-            "Dit scherm maakt tegelijk een Django user en het gekoppelde Operator record aan."
+            "This screen creates both a Django user and the linked Operator record."
         )
-        context["submit_label"] = "Operator aanmaken"
+        context["submit_label"] = "Create operator"
         context["back_url"] = reverse("operator-list")
-        context["back_label"] = "Terug naar operators"
+        context["back_label"] = "Back to operators"
         context["saved"] = False
         context["created"] = False
         context["operator"] = None
@@ -965,13 +965,13 @@ class OperatorUpdateView(LoginRequiredMixin, AdminOnlyMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Operator bewerken"
+        context["page_title"] = "Edit operator"
         context["page_description"] = (
-            "Beheer hier accountgegevens en blokkeer of deblokkeer de operator via accountstatus."
+            "Manage account details and block or unblock the operator through account status."
         )
-        context["submit_label"] = "Opslaan"
+        context["submit_label"] = "Save"
         context["back_url"] = reverse("operator-list")
-        context["back_label"] = "Terug naar operators"
+        context["back_label"] = "Back to operators"
         context["saved"] = self.request.GET.get("saved") == "1"
         context["created"] = self.request.GET.get("created") == "1"
         context["operator"] = self.operator
@@ -1004,13 +1004,13 @@ class OperatorPasswordResetView(LoginRequiredMixin, AdminOnlyMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Operator wachtwoord resetten"
+        context["page_title"] = "Reset operator password"
         context["page_description"] = (
-            "Stel hier direct een nieuw wachtwoord in voor deze operator."
+            "Set a new password for this operator."
         )
-        context["submit_label"] = "Wachtwoord opslaan"
+        context["submit_label"] = "Save password"
         context["back_url"] = reverse("operator-list")
-        context["back_label"] = "Terug naar operators"
+        context["back_label"] = "Back to operators"
         context["saved"] = self.request.GET.get("saved") == "1"
         context["created"] = False
         context["operator"] = self.operator

@@ -240,7 +240,7 @@ class ChannelQueueNavigationTests(BaseDataMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Terug naar queue")
+        self.assertContains(response, "Back to queue")
         self.assertContains(response, escape(queue_url))
 
     def test_channel_update_from_queue_redirects_back_to_same_queue_with_updated_flag(self):

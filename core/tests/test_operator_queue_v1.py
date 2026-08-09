@@ -157,8 +157,8 @@ class OperatorPressureQueueV1Tests(TestCase):
         item = queue["active_items"][0]
 
         self.assertEqual(item["group"], GROUP_REVIEW)
-        self.assertIn("risicosignaal", item["why_now"])
-        self.assertEqual(item["reliability"], "Laag")
+        self.assertIn("risk signal", item["why_now"])
+        self.assertEqual(item["reliability"], "Low")
 
     def test_waiting_customer_and_later_trigger_are_parked(self):
         waiting = self.make_thread(
@@ -278,11 +278,11 @@ class OperatorPressureQueueV1Tests(TestCase):
         response = self.client.get(reverse("chat-hub"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Gezamenlijke operatorqueue")
-        self.assertContains(response, "Open eerstvolgende gesprek")
+        self.assertContains(response, "Shared operator queue")
+        self.assertContains(response, "Open next conversation")
         self.assertContains(response, "Legacychat A")
         self.assertContains(response, "Chatsource B")
-        self.assertContains(response, "Warm omzetmoment")
+        self.assertContains(response, "Warm revenue moment")
         self.assertEqual(
             response.context["operator_queue"]["next_item"]["thread"],
             warm,
