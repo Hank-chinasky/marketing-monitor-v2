@@ -321,7 +321,7 @@ class ScopeViewTests(BaseScopeTestCase):
         self.assertEqual(response.context["summary"]["assignment_count"], 2)
         self.assertTrue(response.context["can_create_conversation_thread"])
         self.assertContains(response, "Conversation intake")
-        self.assertContains(response, "Nieuwe conversation thread")
+        self.assertContains(response, "New conversation thread")
 
     def test_dashboard_for_operator_shows_only_scoped_counts(self):
         self.client.force_login(self.operator_user)
@@ -334,7 +334,7 @@ class ScopeViewTests(BaseScopeTestCase):
         self.assertEqual([channel.pk for channel in response.context["quick_channels"]], [self.channel_a.pk])
         self.assertTrue(response.context["can_create_conversation_thread"])
         self.assertContains(response, "Conversation intake")
-        self.assertContains(response, "Nieuwe conversation thread")
+        self.assertContains(response, "New conversation thread")
         self.assertContains(response, reverse("conversation-thread-create"))
 
     def test_dashboard_for_plain_user_shows_no_operational_data(self):
@@ -348,7 +348,7 @@ class ScopeViewTests(BaseScopeTestCase):
         self.assertEqual(response.context["quick_channels"], [])
         self.assertFalse(response.context["can_create_conversation_thread"])
         self.assertNotContains(response, "Conversation intake")
-        self.assertNotContains(response, "Nieuwe conversation thread")
+        self.assertNotContains(response, "New conversation thread")
 
 
 class DummyDeleteView(AdminDeleteOnlyMixin, View):

@@ -58,9 +58,9 @@ class CreatorDetailView(BaseCreatorDetailView):
 
             upload_count = len(uploaded_files)
             if upload_count == 1:
-                messages.success(request, "1 bestand geüpload.")
+                messages.success(request, "1 file uploaded.")
             else:
-                messages.success(request, f"{upload_count} bestanden geüpload.")
+                messages.success(request, f"{upload_count} files uploaded.")
             return redirect(f"{reverse('creator-detail', kwargs={'pk': self.object.pk})}#creator-materials")
 
         return self.render_to_response(self.get_context_data(material_form=material_form))
@@ -136,5 +136,5 @@ class CreatorMaterialDeleteView(View):
         material.active = False
         material.save(update_fields=["active"])
 
-        messages.success(request, "Materiaal verwijderd.")
+        messages.success(request, "Material deleted.")
         return redirect(f"{reverse('creator-detail', kwargs={'pk': creator.pk})}#creator-materials")

@@ -1,14 +1,14 @@
 {% extends "shared_core/three_pane_base.html" %}
 
 {% block workspace_title %}Feeder Workspace v1{% endblock %}
-{% block workspace_subtitle %}Content- en opvolgwerk in één ritme: policy/context links, feeder-werkvlak midden, handoff/run-log rechts.{% endblock %}
+{% block workspace_subtitle %}Content and follow-up in one workflow: policy and context on the left, feeder work area in the center, handoff and run log on the right.{% endblock %}
 {% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
-{% block center_pane_title %}Werkvlak: creatorselectie, feedfocus en opvolging{% endblock %}
+{% block center_pane_title %}Workspace: creator selection, feed focus and follow-up{% endblock %}
 {% block right_pane_title %}Handoff · Run log · Signals · Quick actions · Buddy-slot{% endblock %}
 
 {% block left_pane %}
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Mag ik hier werken?</h3>
+        <h3 style="margin-top:0;">May I work here?</h3>
         <p>
             <span class="badge {{ access_state.badge }}">{{ access_state.label }}</span>
             {{ access_state.reason }}
@@ -22,13 +22,13 @@
     </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Policy vóór actie</h3>
+        <h3 style="margin-top:0;">Policy before action</h3>
         {% if selected_creator and selected_creator.consent_status == selected_creator.ConsentStatus.ACTIVE %}
-            <p>Consent is actief. Werk alleen binnen afgesproken scope en disclosure-afspraken.</p>
+            <p>Consent is active. Work only within the agreed scope and disclosure rules.</p>
         {% elif selected_creator %}
-            <p class="muted">Consent is niet actief. Escaleren voor je publicatie/actie uitvoert.</p>
+            <p class="muted">Consent is not active. Escalate before publishing or taking action.</p>
         {% else %}
-            <p class="muted">Selecteer eerst een creator.</p>
+            <p class="muted">Select a creator first.</p>
         {% endif %}
     </div>
 
@@ -48,7 +48,7 @@
                 </li>
             </ul>
         {% else %}
-            <div class="muted">Geen creatorcontext geladen.</div>
+            <div class="muted">No creator context loaded.</div>
         {% endif %}
     </div>
 
@@ -61,7 +61,7 @@
                 <li><strong>Content ready:</strong> {{ selected_creator.get_content_ready_status_display|default:"-" }}</li>
             </ul>
         {% else %}
-            <div class="muted">Scopegegevens verschijnen na selectie.</div>
+            <div class="muted">Scope details appear after selection.</div>
         {% endif %}
     </div>
 
@@ -71,7 +71,7 @@
             {% for alert in completeness_alerts %}
                 <li><span class="badge badge-yellow">alert</span> {{ alert }}</li>
             {% empty %}
-                <li><span class="badge badge-green">ok</span> Context is compleet voor feeder-actie.</li>
+                <li><span class="badge badge-green">ok</span> Context is complete for feeder action.</li>
             {% endfor %}
         </ul>
     </div>
@@ -79,10 +79,10 @@
 
 {% block center_pane %}
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Creatorselectie in werkvlak</h3>
+        <h3 style="margin-top:0;">Creator selection</h3>
         {% if creators %}
             <form method="get" style="display:flex; gap:0.65rem; align-items:center; flex-wrap:wrap;">
-                <label for="creator-select" style="margin:0;">Actieve creator</label>
+                <label for="creator-select" style="margin:0;">Active creator</label>
                 <select id="creator-select" name="creator" style="max-width:420px;">
                     {% for creator in creators %}
                         <option value="{{ creator.pk }}" {% if selected_creator and selected_creator.pk == creator.pk %}selected{% endif %}>
@@ -93,7 +93,7 @@
                 <button type="submit" class="secondary-button">Open creator</button>
             </form>
         {% else %}
-            <div class="muted">Geen creators binnen scope.</div>
+            <div class="muted">No creators within scope.</div>
         {% endif %}
     </div>
 
@@ -102,8 +102,8 @@
         <form method="get" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:0.5rem; align-items:end;">
             <input type="hidden" name="creator" value="{% if selected_creator %}{{ selected_creator.pk }}{% endif %}">
             <p style="margin:0;">
-                <label for="id_template_q">Zoek titel</label>
-                <input id="id_template_q" type="text" name="template_q" value="{{ template_query }}" placeholder="bijv. feeder">
+                <label for="id_template_q">Search title</label>
+                <input id="id_template_q" type="text" name="template_q" value="{{ template_query }}" placeholder="e.g. feeder">
             </p>
             <p style="margin:0;">
                 <label for="id_template_type">Type</label>
@@ -113,7 +113,7 @@
                 <label for="id_template_tag">Tag</label>
                 <input id="id_template_tag" type="text" name="template_tag" value="{{ template_tag }}" placeholder="content">
             </p>
-            <button type="submit" class="secondary-button">Zoek</button>
+            <button type="submit" class="secondary-button">Search</button>
         </form>
 
         <div style="margin-top:0.75rem;">
@@ -126,18 +126,18 @@
                     <a class="quick-link" href="?creator={% if selected_creator %}{{ selected_creator.pk }}{% endif %}&template={{ template_item.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}">Open</a>
                 </div>
             {% empty %}
-                <div class="muted">Geen templates binnen filter.</div>
+                <div class="muted">No templates within this filter.</div>
             {% endfor %}
         </div>
 
         {% if selected_template %}
             <div style="margin-top:0.75rem; border-top:1px solid #e5e7eb; padding-top:0.75rem;">
-                <p style="margin:0 0 0.5rem;"><strong>Template geopend:</strong> {{ selected_template.title }}</p>
-                <p class="muted" style="margin:0 0 0.5rem;">Brontemplate</p>
+                <p style="margin:0 0 0.5rem;"><strong>Template opened:</strong> {{ selected_template.title }}</p>
+                <p class="muted" style="margin:0 0 0.5rem;">Source template</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ selected_template.body }}</pre>
-                <p class="muted" style="margin:0 0 0.5rem;">Duplicaat / ingevuld</p>
+                <p class="muted" style="margin:0 0 0.5rem;">Duplicate / completed</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ filled_template_body }}</pre>
-                <a class="quick-link" href="?creator={% if selected_creator %}{{ selected_creator.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Markeer als gebruikt</a>
+                <a class="quick-link" href="?creator={% if selected_creator %}{{ selected_creator.pk }}{% endif %}&template={{ selected_template.id }}&template_q={{ template_query }}&template_type={{ template_type }}&template_tag={{ template_tag }}&template_action=use">Mark as used</a>
             </div>
         {% endif %}
     </div>
@@ -145,30 +145,30 @@
     {% if selected_creator %}
         <div class="panel" style="margin-bottom:0.75rem;">
             <h3 style="margin-top:0;">Feeder scan</h3>
-            <p class="muted" style="margin-top:0;">Compacte operator-scan op basis van de huidige feeder-context.</p>
+            <p class="muted" style="margin-top:0;">Compact operator scan based on the current Feeder context.</p>
             <ul class="clean">
                 {% for item in feeder_focus_items %}
                     <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
                 {% empty %}
-                    <li class="muted">Geen feeder scan-context beschikbaar.</li>
+                    <li class="muted">No feeder scan context available.</li>
                 {% endfor %}
             </ul>
             <ul class="clean">
-                <li><strong>Laatste feeder-handoff:</strong> {{ latest_feeder_handoff_scan.channel }} · {{ latest_feeder_handoff_scan.status }}</li>
+                <li><strong>Latest feeder handoff:</strong> {{ latest_feeder_handoff_scan.channel }} · {{ latest_feeder_handoff_scan.status }}</li>
                 <li><strong>Handoff blocker:</strong> {{ latest_feeder_handoff_scan.blocker }}</li>
-                <li><strong>Volgende operatoractie:</strong> {{ next_operator_action_scan }}</li>
+                <li><strong>Next operator action:</strong> {{ next_operator_action_scan }}</li>
                 <li><strong>Chats-handoff scan:</strong> {{ chats_handoff_scan.count }} item(s) · {{ chats_handoff_scan.target }}</li>
             </ul>
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Wat live moet</h3>
-            <p class="muted" style="margin-top:0;">Dit blok toont wat nu direct publiceer- of feederwaardig is.</p>
+            <h3 style="margin-top:0;">What should go live</h3>
+            <p class="muted" style="margin-top:0;">This section shows what is ready for immediate publishing or Feeder action.</p>
             <ul class="clean">
                 {% for item in live_now_items %}
                     <li>{{ item }}</li>
                 {% empty %}
-                    <li class="muted">Nog geen live-items.</li>
+                    <li class="muted">No live items yet.</li>
                 {% endfor %}
             </ul>
             <div style="margin-top:0.5rem;">
@@ -178,33 +178,33 @@
                         <span class="muted">{{ material.uploaded_at }} · {{ material.media_kind }}</span>
                     </div>
                 {% empty %}
-                    <div class="muted">Nog geen materiaal zichtbaar in deze selectie.</div>
+                    <div class="muted">No material is visible in this selection yet.</div>
                 {% endfor %}
             </div>
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Wat aandacht nodig heeft</h3>
-            <p class="muted" style="margin-top:0;">Hier staan blokkades en punten die eerst opgelost moeten worden.</p>
+            <h3 style="margin-top:0;">What needs attention</h3>
+            <p class="muted" style="margin-top:0;">These blockers and issues must be resolved first.</p>
             <ul class="clean">
                 {% for item in attention_items %}
                     <li>{{ item }}</li>
                 {% empty %}
-                    <li class="muted">Geen extra aandachtspunten.</li>
+                    <li class="muted">No additional attention points.</li>
                 {% endfor %}
             </ul>
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Content/context vóór actie</h3>
-            <p class="muted" style="margin-top:0;">Dit is de minimale context die je vóór feeder-actie eerst moet scannen.</p>
+            <h3 style="margin-top:0;">Content and context before action</h3>
+            <p class="muted" style="margin-top:0;">This is the minimum context to review before a feeder action.</p>
             <ul class="clean">
                 <li>
                     <strong>Content status:</strong>
                     {% if selected_creator.content_ready_status %}
                         {{ selected_creator.get_content_ready_status_display }}
                     {% else %}
-                        onbekend
+                        unknown
                     {% endif %}
                 </li>
                 <li>
@@ -214,19 +214,19 @@
                             {{ selected_creator.content_source_url }}
                         </a>
                     {% else %}
-                        Content source ontbreekt.
+                        Content source is missing.
                     {% endif %}
                 </li>
                 <li>
-                    <strong>Laatste materiaal:</strong>
+                    <strong>Latest material:</strong>
                     {% for material in materials|slice:":1" %}
                         {{ material.label|default:material.filename }} · {{ material.uploaded_at }}
                     {% empty %}
-                        Geen actief materiaal beschikbaar.
+                        No active material available.
                     {% endfor %}
                 </li>
                 <li>
-                    <strong>Kanaalfocus:</strong>
+                    <strong>Channel focus:</strong>
                     {% if relevant_handoff_channel %}
                         {{ relevant_handoff_channel.get_platform_display }} / {{ relevant_handoff_channel.handle }}
                     {% elif channels %}
@@ -234,15 +234,15 @@
                             {{ channel.get_platform_display }} / {{ channel.handle }}
                         {% endfor %}
                     {% else %}
-                        Geen kanaal in scope.
+                        No channel in scope.
                     {% endif %}
                 </li>
             </ul>
         </div>
 
         <div class="panel" style="margin-bottom:0.75rem;">
-            <h3 style="margin-top:0;">Door naar Chats</h3>
-            <p class="muted" style="margin-top:0;">Laat hier zien welke items nu logisch moeten doorstromen naar Chats.</p>
+            <h3 style="margin-top:0;">Continue to Chats</h3>
+            <p class="muted" style="margin-top:0;">Shows which items should logically flow into Chats now.</p>
             <ul class="clean">
                 {% for item in chats_handoff_items %}
                     <li>
@@ -250,7 +250,7 @@
                         · {{ item.status }} · {{ item.last_message_at }}
                     </li>
                 {% empty %}
-                    <li class="muted">Geen chats-handoff items.</li>
+                    <li class="muted">No chat handoff items.</li>
                 {% endfor %}
             </ul>
             {% if follow_up_summary %}
@@ -262,13 +262,13 @@
         </div>
 
         <div class="panel">
-            <h3 style="margin-top:0;">Ritme / opvolging</h3>
-            <p class="muted" style="margin-top:0;">Maak hier scanbaar wat de laatste stand is en waar het vervolgwerk nu zit.</p>
+            <h3 style="margin-top:0;">Cadence / follow-up</h3>
+            <p class="muted" style="margin-top:0;">Keep the latest status and pending follow-up work scannable here.</p>
             <ul class="clean">
-                <li><strong>Laatste stand:</strong> {{ follow_up_summary.latest_status|default:"-" }}</li>
-                <li><strong>Volgende stap:</strong> {{ follow_up_summary.next_step|default:"-" }}</li>
-                <li><strong>Vervolgwerk zit in:</strong> {{ follow_up_summary.work_target|default:"-" }}</li>
-                <li><strong>Taken/signalen:</strong> {{ open_signals|length }}</li>
+                <li><strong>Latest status:</strong> {{ follow_up_summary.latest_status|default:"-" }}</li>
+                <li><strong>Next step:</strong> {{ follow_up_summary.next_step|default:"-" }}</li>
+                <li><strong>Follow-up work is in:</strong> {{ follow_up_summary.work_target|default:"-" }}</li>
+                <li><strong>Tasks/signals:</strong> {{ open_signals|length }}</li>
             </ul>
             {% for thread in creator_threads|slice:":5" %}
                 <div class="shared-core-item">
@@ -276,47 +276,47 @@
                     <span class="muted">{{ thread.get_status_display }} · {{ thread.last_message_at|default:"-" }}</span>
                 </div>
             {% empty %}
-                <div class="muted">Geen actieve thread-ritme-items.</div>
+                <div class="muted">No active thread workflow items.</div>
             {% endfor %}
         </div>
     {% else %}
         <div class="panel">
-            <span class="badge badge-yellow">alert</span> Selecteer een creator om het feeder-werkvlak te starten.
+            <span class="badge badge-yellow">alert</span> Select a creator to start the feeder work area.
         </div>
     {% endif %}
 {% endblock %}
 
 {% block right_pane %}
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Laatste handoff</h3>
+        <h3 style="margin-top:0;">Latest handoff</h3>
         {% if relevant_handoff_channel %}
-            <p><strong>Kanaal:</strong> {{ relevant_handoff_channel.get_platform_display }} / {{ relevant_handoff_channel.handle }}</p>
-            <p><strong>Laatste stand:</strong> {{ relevant_handoff_channel.session_updated_at|default:"-" }}</p>
-            <p><strong>Volgende stap:</strong> {{ relevant_handoff_channel.session_next_action|default:"-" }}</p>
+            <p><strong>Channel:</strong> {{ relevant_handoff_channel.get_platform_display }} / {{ relevant_handoff_channel.handle }}</p>
+            <p><strong>Latest status:</strong> {{ relevant_handoff_channel.session_updated_at|default:"-" }}</p>
+            <p><strong>Next step:</strong> {{ relevant_handoff_channel.session_next_action|default:"-" }}</p>
             <p><strong>Blockers:</strong> {{ relevant_handoff_channel.session_blockers|default:"-" }}</p>
         {% else %}
-            <p class="muted">Nog geen channel handoff-context binnen scope.</p>
+            <p class="muted">No channel handoff context within scope yet.</p>
         {% endif %}
     </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Run log samenvatting</h3>
+        <h3 style="margin-top:0;">Run log summary</h3>
         <ul class="clean">
             {% for item in run_log %}
                 <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
             {% empty %}
-                <li class="muted">Nog geen run-log items.</li>
+                <li class="muted">No run-log items yet.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Open issues/signalen</h3>
+        <h3 style="margin-top:0;">Open issues/signals</h3>
         <ul class="clean">
             {% for signal in open_signals %}
                 <li>{{ signal }}</li>
             {% empty %}
-                <li class="muted">Geen open signalen gedetecteerd.</li>
+                <li class="muted">No open signals detected.</li>
             {% endfor %}
         </ul>
     </div>
@@ -327,7 +327,7 @@
             {% for action in quick_actions %}
                 <a class="quick-link" href="{{ action.url }}">{{ action.label }}</a>
             {% empty %}
-                <span class="muted">Geen quick actions beschikbaar.</span>
+                <span class="muted">No quick actions available.</span>
             {% endfor %}
         </div>
     </div>
@@ -348,10 +348,10 @@
                     </select>
                 </p>
                 <p>
-                    <label for="id_feeder_approval_summary">Korte samenvatting</label>
-                    <input id="id_feeder_approval_summary" type="text" name="summary" placeholder="Waarom is goedkeuring nodig?">
+                    <label for="id_feeder_approval_summary">Short summary</label>
+                    <input id="id_feeder_approval_summary" type="text" name="summary" placeholder="Why is approval required?">
                 </p>
-                <button type="submit" class="secondary-button">Approval aanmaken</button>
+                <button type="submit" class="secondary-button">Create approval</button>
             </form>
 
             <ul class="clean">
@@ -372,16 +372,16 @@
                         {% if approval.summary %}
                             <div class="muted">{{ approval.summary }}</div>
                         {% endif %}
-                        <div class="muted">Aangemaakt door {{ approval.requested_by }} · {{ approval.created_at }}</div>
+                        <div class="muted">Created by {{ approval.requested_by }} · {{ approval.created_at }}</div>
                         {% if approval.status == "pending" %}
                             <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
                                 <form method="post" action="{% url 'approval-approve' approval.pk %}">
                                     {% csrf_token %}
-                                    <button type="submit" class="primary-button">Goedkeuren</button>
+                                    <button type="submit" class="primary-button">Approve</button>
                                 </form>
                                 <form method="post" action="{% url 'approval-reject' approval.pk %}">
                                     {% csrf_token %}
-                                    <button type="submit" class="secondary-button">Afwijzen</button>
+                                    <button type="submit" class="secondary-button">Reject</button>
                                 </form>
                             </div>
                         {% elif approval.decided_by %}
@@ -389,42 +389,42 @@
                         {% endif %}
                     </li>
                 {% empty %}
-                    <li class="muted">Nog geen creator-level approvals in Feeder.</li>
+                    <li class="muted">No creator-level approvals in Feeder yet.</li>
                 {% endfor %}
             </ul>
         {% else %}
-            <p class="muted">Selecteer eerst een creator om approvals te zien of aan te maken.</p>
+            <p class="muted">Select a creator to view or create approvals.</p>
         {% endif %}
     </div>
 
     <div class="panel">
         <h3 style="margin-top:0;">Buddy-slot</h3>
-        <p class="muted">Buddy heeft een vaste plek maar is nog niet workflow-dragend in Feeder v1.</p>
+        <p class="muted">Buddy has a dedicated place but does not yet drive the Feeder v1 workflow.</p>
         <p><strong>Context prefill:</strong></p>
         <ul class="clean">
             {% for item in buddy_assist.context_prefill %}
                 <li><strong>{{ item.label }}:</strong> {{ item.value|linebreaksbr }}</li>
             {% empty %}
-                <li class="muted">Geen context prefill beschikbaar.</li>
+                <li class="muted">No context prefill available.</li>
             {% endfor %}
         </ul>
-        <p><strong>Korte creator-samenvatting:</strong> {{ buddy_assist.creator_summary }}</p>
-        <p><strong>Ontbrekende velden/contextgaten:</strong></p>
+        <p><strong>Short creator summary:</strong> {{ buddy_assist.creator_summary }}</p>
+        <p><strong>Missing fields/context gaps:</strong></p>
         <ul class="clean">
             {% for alert in buddy_assist.missing_context %}
                 <li>{{ alert }}</li>
             {% empty %}
-                <li class="muted">Geen kritieke contextgaten gedetecteerd.</li>
+                <li class="muted">No critical context gaps detected.</li>
             {% endfor %}
         </ul>
-        <p><strong>Voorgestelde volgende stap:</strong> {{ buddy_assist.next_step }}</p>
-        <p><strong>Compacte sessiebrief:</strong> {{ buddy_assist.session_brief }}</p>
+        <p><strong>Suggested next step:</strong> {{ buddy_assist.next_step }}</p>
+        <p><strong>Compact session brief:</strong> {{ buddy_assist.session_brief }}</p>
         <p>
-            <strong>Gecondenseerde laatste handoff:</strong>
+            <strong>Condensed latest handoff:</strong>
             {% if buddy_assist.has_handoff %}
                 {{ buddy_assist.condensed_handoff }}
             {% else %}
-                Niet beschikbaar.
+                Not available.
             {% endif %}
         </p>
     </div>

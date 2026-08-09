@@ -203,7 +203,7 @@ class ConversationThreadViewTests(TestCase):
         response = self.client.get(reverse("conversation-thread-list"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Geen conversation threads.")
+        self.assertContains(response, "No conversation threads.")
         self.assertNotContains(response, "mara-in-scope")
 
     def test_operator_sees_detail_within_scope(self):
@@ -286,7 +286,7 @@ class ConversationThreadViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Geen channel gekoppeld.")
+        self.assertContains(response, "No channel connected.")
 
     def test_detail_works_without_draft(self):
         self.client.force_login(self.operator_user)
@@ -295,8 +295,8 @@ class ConversationThreadViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Er is nog geen BuddyDraft beschikbaar.")
-        self.assertContains(response, "Draft-generatie volgt in een later ticket.")
+        self.assertContains(response, "No BuddyDraft is available yet.")
+        self.assertContains(response, "Draft generation will follow in a later ticket.")
 
     def test_admin_can_create_thread(self):
         self.client.force_login(self.admin)

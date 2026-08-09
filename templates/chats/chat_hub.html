@@ -3,13 +3,13 @@
 {% block workspace_title %}<span class="chat-workfloor-sr-only">CreatorWorkboard</span>{% endblock %}
 {% block workspace_subtitle %}{% endblock %}
 {% block left_pane_title %}Policy · Context · Scope · Access/Risk · Completeness{% endblock %}
-{% block center_pane_title %}<span class="chat-workfloor-sr-only">Werkvlak</span>{% endblock %}
+{% block center_pane_title %}<span class="chat-workfloor-sr-only">Workspace</span>{% endblock %}
 {% block right_pane_title %}Handoff · Run log · Open issues · Quick actions{% endblock %}
 
 {% block left_pane %}
     <div class="chat-sticky-context">
     <div class="panel chat-focus-secondary" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Mag ik hier werken?</h3>
+        <h3 style="margin-top:0;">May I work here?</h3>
         <p>
             <span class="badge {{ access_state.badge }}">{{ access_state.label }}</span>
             {{ access_state.reason }}
@@ -21,11 +21,11 @@
         style="margin-bottom:0.75rem;"
         data-operator-context="v1"
     >
-        <h3 style="margin-top:0;">Profiel & gebruiker</h3>
+        <h3 style="margin-top:0;">Profile & customer</h3>
 
         {% if selected_thread %}
             <p style="margin-bottom:0.65rem;">
-                <strong>Profiel:</strong>
+                <strong>Profile:</strong>
                 {% if selected_thread.source_profile_label %}
                     {{ selected_thread.source_profile_label }}
                 {% else %}
@@ -34,23 +34,23 @@
                 <br>
 
                 <span class="muted">
-                    Profielgebruikersnaam:
+                    Profile username:
                     {{ selected_thread.source_profile_username|default:"-" }}
                 </span>
                 <br>
 
-                <strong>Gebruiker:</strong>
+                <strong>Customer:</strong>
                 {{ selected_thread.source_customer_label|default:"-" }}
                 <br>
 
                 <span class="muted">
-                    Gebruikersnaam:
+                    Username:
                     {{ selected_thread.source_customer_username|default:"-" }}
                 </span>
                 <br>
 
                 <span class="muted">
-                    Bron: {{ selected_thread.canonical_source_label }}
+                    Source: {{ selected_thread.canonical_source_label }}
                     {% if selected_thread.source_site_label %}
                         · {{ selected_thread.source_site_label }}
                     {% endif %}
@@ -59,7 +59,7 @@
 
             {% if operator_context.available %}
                 <div style="margin-bottom:0.8rem;">
-                    <strong>PROFIEL</strong>
+                    <strong>PROFILE</strong>
 
                     {% with media=operator_context.profile_media.0 %}
                         {% if media %}
@@ -75,7 +75,7 @@
                                 <img
                                     id="profile-context-photo"
                                     src="{{ media.display_url }}"
-                                    alt="Profielfoto van {{ operator_context.profile.display_name|default:'het actieve profiel' }}"
+                                    alt="Profile photo for {{ operator_context.profile.display_name|default:'the active profile' }}"
                                     referrerpolicy="no-referrer"
                                     loading="lazy"
                                     decoding="async"
@@ -101,7 +101,7 @@
                                             line-height:1.25;
                                         "
                                     >
-                                        Bekijk profielcontent
+                                        View profile content
                                         ({{ operator_context.profile_media|length }})
                                     </a>
 
@@ -109,7 +109,7 @@
                                         class="muted"
                                         style="margin-top:0.3rem;"
                                     >
-                                        Read-only broncontent
+                                        Read-only source content
                                     </div>
                                 </div>
                             </div>
@@ -118,11 +118,11 @@
 
                     <p style="margin:0.35rem 0 0;">
                         <strong>
-                            {{ operator_context.profile.display_name|default:"Onbekend" }}
+                            {{ operator_context.profile.display_name|default:"Unknown" }}
                         </strong>
                         <br>
 
-                        {{ operator_context.profile.age|default:"Onbekend" }} jaar
+                        {{ operator_context.profile.age|default:"Unknown" }} years
                         {% if operator_context.profile.city %}
                             · {{ operator_context.profile.city }}
                         {% endif %}
@@ -141,14 +141,14 @@
 
                     {% if operator_context.profile.goal %}
                         <p style="margin:0.35rem 0 0;">
-                            <strong>Doel:</strong>
+                            <strong>Goal:</strong>
                             {{ operator_context.profile.goal }}
                         </p>
                     {% endif %}
 
                     {% if operator_context.profile.occupation %}
                         <p style="margin:0.35rem 0 0;">
-                            <strong>Werk:</strong>
+                            <strong>Work:</strong>
                             {{ operator_context.profile.occupation }}
                         </p>
                     {% endif %}
@@ -162,22 +162,22 @@
                     {% if operator_context.profile.source_checked and operator_context.profile.source_reviewed %}
                         <p style="margin:0.45rem 0 0;">
                             <span class="badge badge-green">
-                                Gecontroleerd
+                                Verified
                             </span>
                         </p>
                     {% endif %}
                 </div>
 
                 <div>
-                    <strong>KLANT</strong>
+                    <strong>CUSTOMER</strong>
 
                     <p style="margin:0.35rem 0 0;">
                         <strong>
-                            {{ operator_context.customer.display_name|default:"Onbekend" }}
+                            {{ operator_context.customer.display_name|default:"Unknown" }}
                         </strong>
                         <br>
 
-                        {{ operator_context.customer.age|default:"Onbekend" }} jaar
+                        {{ operator_context.customer.age|default:"Unknown" }} years
                         {% if operator_context.customer.region %}
                             · {{ operator_context.customer.region }}
                         {% endif %}
@@ -193,7 +193,7 @@
 
                     {% if operator_context.customer.goal %}
                         <p style="margin:0.35rem 0 0;">
-                            <strong>Doel:</strong>
+                            <strong>Goal:</strong>
                             {{ operator_context.customer.goal }}
                         </p>
                     {% endif %}
@@ -201,19 +201,19 @@
                     {% if operator_context.customer_review_missing %}
                         <p style="margin:0.45rem 0 0;">
                             <span class="badge badge-red">
-                                Nog niet beoordeeld
+                                Not reviewed yet
                             </span>
                         </p>
                     {% elif operator_context.customer_reliability_warning %}
                         <p style="margin:0.45rem 0 0;">
                             <span class="badge badge-yellow">
-                                Beoordeeld, niet bron-gecontroleerd
+                                Reviewed, not source-verified
                             </span>
                         </p>
                     {% elif operator_context.customer.source_checked %}
                         <p style="margin:0.45rem 0 0;">
                             <span class="badge badge-green">
-                                Gecontroleerd
+                                Verified
                             </span>
                         </p>
                     {% endif %}
@@ -222,7 +222,7 @@
                         {% if media %}
                             <div style="margin-top:0.75rem;">
                                 <strong>
-                                    Klantfoto
+                                    Customer photo
                                     ({{ operator_context.customer_media|length }})
                                 </strong>
 
@@ -236,8 +236,8 @@
                                         border-radius:8px;
                                     "
                                 >
-                                    Foto is afgedekt en wordt pas na een
-                                    expliciete klik geladen.
+                                    The photo is concealed and loads only after
+                                    an explicit click.
                                 </div>
 
                                 <button
@@ -249,13 +249,13 @@
                                     aria-expanded="false"
                                     style="margin-top:0.55rem;"
                                 >
-                                    Foto tonen
+                                    Show photo
                                 </button>
 
                                 <img
                                     id="customer-context-photo"
                                     hidden
-                                    alt="Klantfoto van {{ operator_context.customer.display_name|default:'de gebruiker' }}"
+                                    alt="Customer photo of {{ operator_context.customer.display_name|default:'the customer' }}"
                                     referrerpolicy="no-referrer"
                                     loading="lazy"
                                     decoding="async"
@@ -272,18 +272,18 @@
                 </div>
             {% else %}
                 <p class="muted" style="margin-bottom:0;">
-                    Nog geen gecontroleerde bronprofielcontext beschikbaar.
+                    No verified source profile context is available yet.
                 </p>
             {% endif %}
         {% else %}
             <p class="muted" style="margin-bottom:0;">
-                Selecteer een gesprek voor profiel- en gebruikerscontext.
+                Select a conversation for profile and user context.
             </p>
         {% endif %}
     </div>
 
     <details class="panel chat-secondary-details">
-        <summary>Context & veiligheid</summary>
+        <summary>Context & safety</summary>
     <div class="panel" style="margin-bottom:0.75rem;">
         <h3 style="margin-top:0;">Assignment status</h3>
         <p><strong>Status:</strong> {{ assignment_context.status_label }}</p>
@@ -291,11 +291,11 @@
     </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Policy vóór actie</h3>
+        <h3 style="margin-top:0;">Policy before action</h3>
         {% if selected_thread and selected_thread.guardrails %}
             <div>{{ selected_thread.guardrails|linebreaksbr }}</div>
         {% else %}
-            <div class="muted">Guardrails ontbreken. Niet starten zonder handmatige policy-check.</div>
+            <div class="muted">Guardrails are missing. Do not start without a manual policy check.</div>
         {% endif %}
     </div>
 
@@ -315,7 +315,7 @@
                 </li>
             </ul>
         {% else %}
-            <div class="muted">Geen actieve thread/context.</div>
+            <div class="muted">No active thread or context.</div>
         {% endif %}
     </div>
 
@@ -328,11 +328,11 @@
                 <li><strong>Risk flags:</strong> {{ selected_thread.risk_flags|default:"-" }}</li>
                 {% if selected_thread.channel %}
                     <li><strong>Credential status:</strong> {{ selected_thread.channel.get_credential_status_display|default:"-" }}</li>
-                    <li><strong>2FA:</strong> {{ selected_thread.channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
+                    <li><strong>2FA:</strong> {{ selected_thread.channel.two_factor_enabled|yesno:"Yes,No" }}</li>
                 {% endif %}
             </ul>
         {% else %}
-            <div class="muted">Scope/risk verschijnt na threadselectie.</div>
+            <div class="muted">Scope and risk details appear after selecting a thread.</div>
         {% endif %}
     </div>
 
@@ -342,7 +342,7 @@
             {% for alert in completeness_alerts %}
                 <li><span class="badge badge-yellow">alert</span> {{ alert }}</li>
             {% empty %}
-                <li><span class="badge badge-green">ok</span> Context is compleet voor actie.</li>
+                <li><span class="badge badge-green">ok</span> Context is complete for action.</li>
             {% endfor %}
         </ul>
     </div>
@@ -368,15 +368,15 @@
             gap: 0.75rem;
             align-items: start;
         }
-        .shared-core-pane[aria-label="Policy en context kolom"] {
+        .shared-core-pane[aria-label="Policy and context column"] {
             grid-area: context;
             align-self: stretch;
             overflow: visible;
         }
-        .shared-core-pane[aria-label="Werkvlak kolom"] {
+        .shared-core-pane[aria-label="Workspace column"] {
             grid-area: work;
         }
-        .shared-core-pane[aria-label="Handoff kolom"] {
+        .shared-core-pane[aria-label="Handoff column"] {
             grid-area: operations;
             overflow: visible;
         }
@@ -658,7 +658,7 @@
 
         @media (min-width: 1101px) {
             /* Sticky Buddy context v1 */
-            .shared-core-pane[aria-label="Werkvlak kolom"] {
+            .shared-core-pane[aria-label="Workspace column"] {
                 overflow: visible;
             }
 
@@ -755,7 +755,7 @@
             .chat-pressure-queue,
             .chat-secondary-details,
             .chat-focus-secondary,
-            .shared-core-pane[aria-label="Handoff kolom"] {
+            .shared-core-pane[aria-label="Handoff column"] {
                 display: none !important;
             }
 
@@ -792,28 +792,28 @@
     >
         <div class="chat-workfloor-top">
             <div class="chat-workfloor-actions">
-                <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}" title="Open AdultAdSuite dagstart" aria-label="Open AdultAdSuite dagstart">AdultAdSuite</a>
+                <a class="quick-link" href="{% url 'adultadsuite-cockpit' %}" title="Open AdultAdSuite daily kickoff" aria-label="Open AdultAdSuite daily kickoff">AdultAdSuite</a>
                 <span class="badge badge-blue">
-                    Operatorwerkvloer
+                    Operator workspace
                 </span>
 
                 {% if selected_thread %}
                     {% if focus_mode %}
                         <span class="badge badge-green">
-                            Focusstand actief
+                            Focus mode active
                         </span>
                         <a
                             class="secondary-button"
                             href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}"
                         >
-                            Focusstand verlaten
+                            Exit focus mode
                         </a>
                     {% else %}
                         <a
                             class="primary-button"
                             href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}&amp;focus=1"
                         >
-                            Focusstand openen
+                            Open focus mode
                         </a>
                     {% endif %}
                 {% endif %}
@@ -823,7 +823,7 @@
                 <form method="get" class="chat-thread-form" style="margin:0;">
                     {% if focus_mode %}<input type="hidden" name="focus" value="1">{% endif %}
                     {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
-                    <label for="thread-select" style="margin:0;">Gesprek:</label>
+                    <label for="thread-select" style="margin:0;">Conversation:</label>
                     <select id="thread-select" name="thread" style="max-width:360px;">
                         {% for thread in threads %}
                             <option value="{{ thread.pk }}" {% if selected_thread and selected_thread.pk == thread.pk %}selected{% endif %}>
@@ -839,9 +839,9 @@
             {% else %}
                 <div class="muted">
                     {% if source_filter %}
-                        Geen gesprekken beschikbaar binnen {{ source_filter_label }}.
+                        No conversations available within {{ source_filter_label }}.
                     {% else %}
-                        Geen gesprekken beschikbaar binnen scope.
+                        No conversations available within scope.
                     {% endif %}
                 </div>
             {% endif %}
@@ -851,10 +851,10 @@
     <nav
         class="panel chat-source-filter-panel"
         data-source-filter="v1"
-        aria-label="Filter werkvoorraad op bron"
+        aria-label="Filter work queue by source"
     >
         <div class="chat-source-filter-actions">
-            <strong>Bron:</strong>
+            <strong>Source:</strong>
             {% for option in source_filter_options %}
                 <a
                     class="{% if option.active %}primary-button{% else %}secondary-button{% endif %}"
@@ -867,7 +867,7 @@
             {% endfor %}
         </div>
         <span class="muted">
-            Actieve bron: {{ source_filter_label }}
+            Active source: {{ source_filter_label }}
         </span>
     </nav>
 
@@ -877,10 +877,10 @@
             data-source-filter-empty="v1"
             style="margin-bottom:0.75rem; border-color:#93c5fd; background:#eff6ff;"
         >
-            <strong>Geen gesprekken binnen {{ source_filter_label }}</strong>
+            <strong>No conversations within {{ source_filter_label }}</strong>
             <div class="muted">
-                Binnen {{ source_filter_label }} zijn geen gesprekken beschikbaar in deze werkvoorraad.
-                Er wordt niet automatisch naar een andere bron overgeschakeld.
+                No conversations are available within {{ source_filter_label }} in this work queue.
+                The system will not switch automatically to another source.
             </div>
         </div>
     {% elif source_filter_thread_mismatch %}
@@ -889,10 +889,10 @@
             data-source-filter-mismatch="v1"
             style="margin-bottom:0.75rem; border-color:#f59e0b; background:#fffbeb;"
         >
-            <strong>Gesprek niet geopend</strong>
+            <strong>Conversation not opened</strong>
             <div class="muted">
-                Het gevraagde gesprek valt buiten het actieve bronfilter {{ source_filter_label }}.
-                Kies een gesprek uit de gefilterde werkvoorraad.
+                The requested conversation is outside the active source filter {{ source_filter_label }}.
+                Select a conversation from the filtered work queue.
             </div>
         </div>
     {% endif %}
@@ -905,15 +905,15 @@
         <div class="chat-queue-header">
             <div>
                 <h3 id="operator-queue-title" style="margin:0;">
-                    Werkvoorraad
+                    Work queue
                     <span class="chat-workfloor-sr-only">
-                        Gezamenlijke operatorqueue
+                        Shared operator queue
                     </span>
                 </h3>
                 <div class="muted" style="margin-top:0.25rem;">
-                    {{ operator_queue.counts.total }} gesprekken uit
-                    {{ operator_queue.counts.sources }} bron{{ operator_queue.counts.sources|pluralize:"nen" }}.
-                    Prioriteit blijft uitlegbaar en wordt niet automatisch uitgevoerd.
+                    {{ operator_queue.counts.total }} conversation{{ operator_queue.counts.total|pluralize }} across
+                    {{ operator_queue.counts.sources }} source{{ operator_queue.counts.sources|pluralize }}.
+                    Priority remains explainable and is never executed automatically.
                 </div>
             </div>
 
@@ -922,9 +922,9 @@
                     class="primary-button"
                     href="{% url 'chat-hub' %}?thread={{ operator_queue.next_item.thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}"
                 >
-                    Start eerstvolgende
+                    Start next
                     <span class="chat-workfloor-sr-only">
-                        Open eerstvolgende gesprek
+                        Open next conversation
                     </span>
                 </a>
             {% endif %}
@@ -932,7 +932,7 @@
 
         <div class="chat-queue-summary">
             <span class="badge badge-red">
-                {{ operator_queue.counts.now }} nu
+                {{ operator_queue.counts.now }} now
             </span>
             <span class="badge badge-yellow">
                 {{ operator_queue.counts.review }} review
@@ -941,22 +941,22 @@
                 {{ operator_queue.counts.later }} later
             </span>
             <span class="badge badge-green">
-                {{ operator_queue.counts.waiting }} wacht op klant
+                {{ operator_queue.counts.waiting }} waiting for customer
             </span>
         </div>
 
         {% if queue_saved %}
             <div class="success-panel" style="margin-top:0.75rem;">
                 {% if queue_saved == "follow_up" %}
-                    Follow-upstatus opgeslagen.
+                    Follow-up status saved.
                 {% else %}
-                    Handoff opgeslagen.
+                    Handoff saved.
                 {% endif %}
 
                 {% if queue_advanced %}
-                    Het volgende actieve gesprek is geopend.
+                    The next active conversation was opened.
                 {% elif queue_cycle_complete %}
-                    Er is geen ander actief gesprek om nu te openen.
+                    There is no other active conversation to open now.
                 {% endif %}
             </div>
         {% endif %}
@@ -967,7 +967,7 @@
                 {% if not selected_thread %}open{% endif %}
             >
                 <summary>
-                    Bekijk gesprekken die aandacht vragen
+                    View conversations that need attention
                     ({{ operator_queue.active_items|length }})
                 </summary>
 
@@ -986,7 +986,7 @@
                                     {{ item.source_account }}
                                 </div>
                                 <div class="muted">
-                                    Wacht: {{ item.waiting_label }}
+                                    Waiting: {{ item.waiting_label }}
                                 </div>
                             </div>
 
@@ -997,7 +997,7 @@
                                 </div>
                                 <div class="muted" style="margin-top:0.3rem;">
                                     {{ item.revenue_signal }} ·
-                                    Betrouwbaarheid:
+                                    Reliability:
                                     {{ item.reliability }}
                                 </div>
                             </div>
@@ -1016,14 +1016,14 @@
             </details>
         {% else %}
             <p class="muted" style="margin-bottom:0;">
-                Geen actieve gesprekken die nu operatoraandacht vragen.
+                No active conversations currently require operator attention.
             </p>
         {% endif %}
 
         {% if operator_queue.parked_items %}
             <details style="margin-top:0.75rem;">
                 <summary>
-                    Geparkeerd en wachtend ({{ operator_queue.parked_items|length }})
+                    Parked and waiting ({{ operator_queue.parked_items|length }})
                 </summary>
                 <div class="chat-queue-list">
                     {% for item in operator_queue.parked_items %}
@@ -1058,10 +1058,10 @@
             style="margin-bottom:0.75rem; border-color:#2563eb; background:#eff6ff;"
             role="status"
         >
-            <strong>Read-only demoweergave</strong>
+            <strong>Read-only demo view</strong>
             <div class="muted">
-                Je ziet dezelfde operatorwerkvloer als een echte gebruiker.
-                Velden en knoppen zijn zichtbaar, maar wijzigen blijft geblokkeerd.
+                You see the same operator workspace as a real user.
+                Fields and buttons are visible, but changes remain blocked.
             </div>
         </div>
     {% endif %}
@@ -1074,8 +1074,8 @@
             <div class="chat-message-stream">
             {% if selected_thread %}
                 <div class="panel chat-message-panel">
-                    <h3 style="margin-top:0;">Berichten</h3>
-                    <p class="muted" style="margin-top:0;">Read-only berichtenstroom uit de geselecteerde thread.</p>
+                    <h3 style="margin-top:0;">Messages</h3>
+                    <p class="muted" style="margin-top:0;">Read-only message stream from the selected thread.</p>
 
                     {% if conversation_message_count %}
                         <div
@@ -1084,11 +1084,11 @@
                         >
                             <span class="muted">
                                 {% if conversation_history_expanded %}
-                                    Volledige geschiedenis:
-                                    {{ conversation_message_count }} berichten.
+                                    Full history:
+                                    {{ conversation_message_count }} messages.
                                 {% else %}
-                                    Laatste {{ conversation_messages|length }}
-                                    van {{ conversation_message_count }} berichten.
+                                    Latest {{ conversation_messages|length }}
+                                    of {{ conversation_message_count }} messages.
                                 {% endif %}
                             </span>
 
@@ -1098,7 +1098,7 @@
                                         class="secondary-button"
                                         href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}"
                                     >
-                                        Toon alleen laatste 5
+                                        Show latest 5 only
                                     </a>
                                 {% endif %}
                             {% elif conversation_hidden_message_count %}
@@ -1106,9 +1106,9 @@
                                     class="secondary-button"
                                     href="{% url 'chat-hub' %}?thread={{ selected_thread.pk }}{% if source_filter %}&amp;source={{ source_filter }}{% endif %}{% if focus_mode %}&amp;focus=1{% endif %}&amp;history=all"
                                 >
-                                    Toon eerdere
+                                    Show earlier
                                     {{ conversation_hidden_message_count }}
-                                    berichten
+                                    messages
                                 </a>
                             {% endif %}
                         </div>
@@ -1119,11 +1119,11 @@
                             <li style="margin-bottom:0.75rem; padding-bottom:0.75rem; border-bottom:1px solid #e5e7eb;">
                                 <div>
                                     {% if message.direction == "inbound" %}
-                                        <span class="badge">Klant</span>
+                                        <span class="badge">Customer</span>
                                     {% elif message.direction == "outbound" %}
                                         <span class="badge">Operator</span>
                                     {% else %}
-                                        <span class="badge">Systeem</span>
+                                        <span class="badge">System</span>
                                     {% endif %}
                                     <strong>{{ message.sender_label|default:"-" }}</strong>
                                     <span class="muted">· {{ message.occurred_at }}</span>
@@ -1131,17 +1131,17 @@
                                 <div style="margin-top:0.35rem;">{{ message.body|linebreaksbr }}</div>
                             </li>
                         {% empty %}
-                            <li class="muted">Nog geen berichten opgeslagen voor dit gesprek.</li>
+                            <li class="muted">No messages have been stored for this conversation yet.</li>
                         {% endfor %}
                     </ul>
                 </div>
             {% else %}
                 <div class="panel chat-message-panel">
-                    <h3 style="margin-top:0;">Berichten</h3>
-                    <p class="muted">Kies een gesprek om berichten te bekijken.</p>
+                    <h3 style="margin-top:0;">Messages</h3>
+                    <p class="muted">Select a conversation to view messages.</p>
                 </div>
                 <div class="panel chat-message-empty-alert">
-                    <span class="badge badge-yellow">alert</span> Selecteer een thread om het werkvlak te starten.
+                    <span class="badge badge-yellow">alert</span> Select a thread to start the work area.
                 </div>
             {% endif %}
             </div>
@@ -1165,14 +1165,14 @@
 
             <div class="chat-buddy-grid">
                 <div class="chat-buddy-item">
-                    <strong>Waarom nu</strong>
+                    <strong>Why now</strong>
                     <p style="margin-bottom:0;">
                         {{ buddy_assist.why_now }}
                     </p>
                 </div>
 
                 <details class="chat-buddy-item chat-buddy-more">
-                    <summary>Laatste context</summary>
+                    <summary>Latest context</summary>
                     <p style="margin-bottom:0;">
                         {{ buddy_assist.thread_summary }}
                     </p>
@@ -1184,7 +1184,7 @@
                 </details>
 
                 <div class="chat-buddy-item">
-                    <strong>Actieve profieltoon</strong>
+                    <strong>Active profile tone</strong>
                     <p style="margin-bottom:0;">
                         {{ buddy_assist.profile_tone }}
                     </p>
@@ -1199,21 +1199,21 @@
                 </div>
 
                 <div class="chat-buddy-item">
-                    <strong>Niet doen</strong>
+                    <strong>Do not</strong>
                     <p style="margin-bottom:0;">
                         {{ buddy_assist.do_not_do }}
                     </p>
                 </div>
 
                 <div class="chat-buddy-item">
-                    <strong>Volgende stap</strong>
+                    <strong>Next step</strong>
                     <p style="margin-bottom:0;">
                         {{ buddy_assist.recommended_next_action }}
                     </p>
                 </div>
 
                 <details class="chat-buddy-item chat-buddy-more">
-                    <summary>Betrouwbaarheid</summary>
+                    <summary>Reliability</summary>
                     <p style="margin-bottom:0;">
                         <span class="badge {{ buddy_assist.reliability_badge }}">
                             {{ buddy_assist.reliability_label }}
@@ -1224,14 +1224,14 @@
             </div>
 
             <p class="muted" style="margin-bottom:0; margin-top:0.65rem;">
-                Buddy adviseert. De operator beslist. Geen automatische actie.
+                Buddy advises. The operator decides. No automatic action.
             </p>
         </aside>
     </div>
 
     {% if selected_thread and selected_thread.thread_summary %}
         <details class="panel chat-focus-secondary" style="margin-bottom:0.75rem;">
-            <summary>Gespreksinfo</summary>
+            <summary>Conversation details</summary>
             <p class="muted" style="margin-bottom:0; margin-top:0.5rem;">
                 {{ selected_thread.thread_summary|linebreaksbr }}
             </p>
@@ -1245,8 +1245,8 @@
             {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
             <input type="hidden" name="thread" value="{% if selected_thread %}{{ selected_thread.pk }}{% endif %}">
             <p style="margin:0;">
-                <label for="id_template_q">Zoek titel</label>
-                <input id="id_template_q" type="text" name="template_q" value="{{ template_query }}" placeholder="bijv. handoff">
+                <label for="id_template_q">Search title</label>
+                <input id="id_template_q" type="text" name="template_q" value="{{ template_query }}" placeholder="e.g. handoff">
             </p>
             <p style="margin:0;">
                 <label for="id_template_type">Type</label>
@@ -1256,7 +1256,7 @@
                 <label for="id_template_tag">Tag</label>
                 <input id="id_template_tag" type="text" name="template_tag" value="{{ template_tag }}" placeholder="operator">
             </p>
-            <button type="submit" class="secondary-button">Zoek</button>
+            <button type="submit" class="secondary-button">Search</button>
         </form>
 
         <div style="margin-top:0.75rem;">
@@ -1269,55 +1269,55 @@
                     <a class="quick-link" href="?{% if focus_mode %}focus=1&amp;{% endif %}{% if source_filter %}source={{ source_filter }}&amp;{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&amp;template={{ template_item.id }}&amp;template_q={{ template_query }}&amp;template_type={{ template_type }}&amp;template_tag={{ template_tag }}">Open</a>
                 </div>
             {% empty %}
-                <div class="muted">Geen templates binnen filter.</div>
+                <div class="muted">No templates within this filter.</div>
             {% endfor %}
         </div>
 
         {% if selected_template %}
             <div style="margin-top:0.75rem; border-top:1px solid #e5e7eb; padding-top:0.75rem;">
-                <p style="margin:0 0 0.5rem;"><strong>Template geopend:</strong> {{ selected_template.title }}</p>
-                <p class="muted" style="margin:0 0 0.5rem;">Brontemplate</p>
+                <p style="margin:0 0 0.5rem;"><strong>Template opened:</strong> {{ selected_template.title }}</p>
+                <p class="muted" style="margin:0 0 0.5rem;">Source template</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ selected_template.body }}</pre>
-                <p class="muted" style="margin:0 0 0.5rem;">Duplicaat / ingevuld</p>
+                <p class="muted" style="margin:0 0 0.5rem;">Duplicate / completed</p>
                 <pre style="margin:0 0 0.75rem; white-space:pre-wrap;">{{ filled_template_body }}</pre>
                 {% if not demo_read_only %}
-                    <a class="quick-link" href="?{% if focus_mode %}focus=1&amp;{% endif %}{% if source_filter %}source={{ source_filter }}&amp;{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&amp;template={{ selected_template.id }}&amp;template_q={{ template_query }}&amp;template_type={{ template_type }}&amp;template_tag={{ template_tag }}&amp;template_action=use">Markeer als gebruikt</a>
+                    <a class="quick-link" href="?{% if focus_mode %}focus=1&amp;{% endif %}{% if source_filter %}source={{ source_filter }}&amp;{% endif %}thread={% if selected_thread %}{{ selected_thread.pk }}{% endif %}&amp;template={{ selected_template.id }}&amp;template_q={{ template_query }}&amp;template_type={{ template_type }}&amp;template_tag={{ template_tag }}&amp;template_action=use">Mark as used</a>
                 {% endif %}
             </div>
         {% endif %}
     </details>
 
     {% if saved %}
-        <div class="success-panel">Handoff opgeslagen. Laatste stand en volgende stap zijn bijgewerkt.</div>
+        <div class="success-panel">Handoff saved. Latest status and next step were updated.</div>
     {% endif %}
 
     {% if submit_error %}
         <div class="panel" style="margin-bottom:0.75rem; border-color:#dc2626; background:#fef2f2;">
-            <strong>Afsluiten niet gelukt:</strong> {{ submit_error }}
+            <strong>Closeout failed:</strong> {{ submit_error }}
         </div>
     {% endif %}
 
     {% if selected_thread %}
         <details class="panel chat-secondary-details" style="margin-bottom:0.75rem;">
-            <summary>Sessie & overdracht</summary>
+            <summary>Session & handoff</summary>
         <div class="grid" style="margin-bottom:0.75rem;">
             <div class="panel">
-                <h3 style="margin-top:0;">Sessie starten</h3>
+                <h3 style="margin-top:0;">Start session</h3>
                 <ol style="margin:0; padding-left:1.1rem;">
-                    <li>Scan access-state en policy (linkerkolom).</li>
-                    <li>Open de threaddetail voor volledige context.</li>
-                    <li>Controleer laatste handoff en open issues (rechterkolom).</li>
+                    <li>Scan access state and policy (left column).</li>
+                    <li>Open the thread details for full context.</li>
+                    <li>Review the latest handoff and open issues in the right column.</li>
                 </ol>
             </div>
             <div class="panel">
-                <h3 style="margin-top:0;">Sessie afsluiten (30s handoff)</h3>
-                <p class="muted" style="margin-top:0;">Minimaal nodig: laatste stand + volgende stap.</p>
+                <h3 style="margin-top:0;">Close session (30-second handoff)</h3>
+                <p class="muted" style="margin-top:0;">Minimum required: latest status + next step.</p>
                 {% if access_state.status == "blocked" %}
-                    <p><span class="badge badge-red">blocked</span> Eerst access/context issues oplossen voordat je afsluit.</p>
+                    <p><span class="badge badge-red">blocked</span> Resolve access and context issues before closing.</p>
                 {% endif %}
                 {% if demo_read_only %}
                     <p class="muted">
-                        Handoffgegevens zijn zichtbaar, maar kunnen in de demo niet worden gewijzigd.
+                        Handoff details are visible but cannot be changed in the demo.
                     </p>
                 {% else %}
                     <form method="post">
@@ -1326,11 +1326,11 @@
                         {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
                         <input type="hidden" name="thread" value="{{ selected_thread.pk }}">
                         <p>
-                            <label for="id_handoff_summary">Laatste stand (verplicht)</label>
+                            <label for="id_handoff_summary">Latest status (required)</label>
                             <textarea id="id_handoff_summary" name="handoff_summary" required>{{ handoff_form.handoff_summary }}</textarea>
                         </p>
                         <p>
-                            <label for="id_next_step">Volgende stap (verplicht)</label>
+                            <label for="id_next_step">Next step (required)</label>
                             <input id="id_next_step" type="text" name="next_step" value="{{ handoff_form.next_step }}" required>
                         </p>
                         <p>
@@ -1338,11 +1338,11 @@
                             <input id="id_blocker" type="text" name="blocker" value="{{ handoff_form.blocker }}">
                         </p>
                         <p>
-                            <label for="id_close_signal">Afsluitsignaal</label>
+                            <label for="id_close_signal">Closeout signal</label>
                             <select id="id_close_signal" name="close_signal">
-                                <option value="overdracht_klaar" {% if handoff_form.close_signal == "overdracht_klaar" %}selected{% endif %}>overdracht_klaar</option>
-                                <option value="review_nodig" {% if handoff_form.close_signal == "review_nodig" %}selected{% endif %}>review_nodig</option>
-                                <option value="opvolging_nodig" {% if handoff_form.close_signal == "opvolging_nodig" %}selected{% endif %}>opvolging_nodig</option>
+                                <option value="overdracht_klaar" {% if handoff_form.close_signal == "overdracht_klaar" %}selected{% endif %}>handoff complete</option>
+                                <option value="review_nodig" {% if handoff_form.close_signal == "review_nodig" %}selected{% endif %}>review required</option>
+                                <option value="opvolging_nodig" {% if handoff_form.close_signal == "opvolging_nodig" %}selected{% endif %}>follow-up required</option>
                             </select>
                         </p>
                         <div class="form-actions">
@@ -1351,7 +1351,7 @@
                                 class="secondary-button"
                                 {% if access_state.status == "blocked" %}disabled{% endif %}
                             >
-                                Sessie afsluiten & handoff opslaan
+                                Close session & save handoff
                             </button>
                             <button
                                 type="submit"
@@ -1360,7 +1360,7 @@
                                 class="primary-button"
                                 {% if access_state.status == "blocked" %}disabled{% endif %}
                             >
-                                Afsluiten en volgende openen
+                                Close and open next
                             </button>
                         </div>
                     </form>
@@ -1369,11 +1369,11 @@
         </div>
 
         <div class="panel">
-            <h3 style="margin-top:0;">Volgende stap (scanbaar)</h3>
+            <h3 style="margin-top:0;">Next step (scannable)</h3>
             <div style="padding:0.75rem; border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc;">
                 {{ next_step_scan|linebreaksbr }}
             </div>
-            <div class="muted" style="margin-top:0.5rem;">Deze waarde wordt bijgewerkt door de handoff-afsluitmodule.</div>
+            <div class="muted" style="margin-top:0.5rem;">This value is updated by the handoff closeout module.</div>
         </div>
         </details>
     {% endif %}
@@ -1411,7 +1411,7 @@
                     image.removeAttribute("src");
                     image.hidden = true;
                     placeholder.hidden = false;
-                    revealButton.textContent = "Foto tonen";
+                    revealButton.textContent = "Show photo";
                     revealButton.setAttribute(
                         "aria-expanded",
                         "false"
@@ -1422,7 +1422,7 @@
                 image.setAttribute("src", revealUrl);
                 image.hidden = false;
                 placeholder.hidden = true;
-                revealButton.textContent = "Foto verbergen";
+                revealButton.textContent = "Hide photo";
                 revealButton.setAttribute(
                     "aria-expanded",
                     "true"
@@ -1434,24 +1434,24 @@
 
 {% block right_pane %}
     <details class="panel chat-secondary-details">
-        <summary>Operationele details</summary>
+        <summary>Operational details</summary>
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Laatste handoff</h3>
+        <h3 style="margin-top:0;">Latest handoff</h3>
         {% if selected_thread %}
             <p><strong>Scan:</strong><br>{{ latest_handoff_scan.summary|linebreaksbr }}</p>
             <p><strong>At:</strong> {{ latest_handoff_scan.at }}</p>
         {% else %}
-            <p class="muted">Geen handoff zonder actieve thread.</p>
+            <p class="muted">No handoff without an active thread.</p>
         {% endif %}
     </div>
 
     <div class="panel" style="margin-bottom:0.75rem;">
-        <h3 style="margin-top:0;">Run log samenvatting</h3>
+        <h3 style="margin-top:0;">Run log summary</h3>
         <ul class="clean">
             {% for item in run_log %}
                 <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
             {% empty %}
-                <li class="muted">Nog geen run-log items.</li>
+                <li class="muted">No run-log items yet.</li>
             {% endfor %}
         </ul>
     </div>
@@ -1462,7 +1462,7 @@
             {% for issue in open_issues %}
                 <li>{{ issue }}</li>
             {% empty %}
-                <li class="muted">Geen open issues gedetecteerd.</li>
+                <li class="muted">No open issues detected.</li>
             {% endfor %}
         </ul>
     </div>
@@ -1472,9 +1472,9 @@
         <div style="display:flex; flex-direction:column; gap:0.5rem;">
             {% if can_create_conversation_thread %}
                 <a class="quick-link" href="{% url 'conversation-thread-create' %}">
-                    Nieuwe conversation thread
+                    New conversation thread
                 </a>
-                <div class="muted">Maak handmatig een thread aan voor een livechat, DM of bestaande klant.</div>
+                <div class="muted">Create a thread manually for a live chat, DM or existing customer.</div>
             {% endif %}
 
             {% for action in quick_actions %}
@@ -1490,7 +1490,7 @@
                 {% endif %}
             {% empty %}
                 {% if not can_create_conversation_thread %}
-                    <span class="muted">Geen quick actions beschikbaar.</span>
+                    <span class="muted">No quick actions available.</span>
                 {% endif %}
             {% endfor %}
         </div>
@@ -1513,13 +1513,13 @@
                     </select>
                 </p>
                 <p>
-                    <label for="id_chat_approval_summary">Korte samenvatting</label>
-                    <input id="id_chat_approval_summary" type="text" name="summary" placeholder="Waarom is goedkeuring nodig?">
+                    <label for="id_chat_approval_summary">Short summary</label>
+                    <input id="id_chat_approval_summary" type="text" name="summary" placeholder="Why is approval required?">
                 </p>
-                <button type="submit" class="secondary-button">Approval aanmaken</button>
+                <button type="submit" class="secondary-button">Create approval</button>
             </form>
             {% else %}
-                <p class="muted">Approvals zijn in de demo alleen ter inzage.</p>
+                <p class="muted">Approvals are view-only in the demo.</p>
             {% endif %}
 
             <ul class="clean">
@@ -1540,17 +1540,17 @@
                         {% if approval.summary %}
                             <div class="muted">{{ approval.summary }}</div>
                         {% endif %}
-                        <div class="muted">Aangemaakt door {{ approval.requested_by }} · {{ approval.created_at }}</div>
+                        <div class="muted">Created by {{ approval.requested_by }} · {{ approval.created_at }}</div>
                         {% if approval.status == "pending" %}
                             {% if not demo_read_only %}
                                 <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
                                     <form method="post" action="{% url 'approval-approve' approval.pk %}">
                                         {% csrf_token %}
-                                        <button type="submit" class="primary-button">Goedkeuren</button>
+                                        <button type="submit" class="primary-button">Approve</button>
                                     </form>
                                     <form method="post" action="{% url 'approval-reject' approval.pk %}">
                                         {% csrf_token %}
-                                        <button type="submit" class="secondary-button">Afwijzen</button>
+                                        <button type="submit" class="secondary-button">Reject</button>
                                     </form>
                                 </div>
                             {% endif %}
@@ -1559,11 +1559,11 @@
                         {% endif %}
                     </li>
                 {% empty %}
-                    <li class="muted">Nog geen approvals op deze thread.</li>
+                    <li class="muted">No approvals on this thread yet.</li>
                 {% endfor %}
             </ul>
         {% else %}
-            <p class="muted">Selecteer eerst een thread om approvals te zien of aan te maken.</p>
+            <p class="muted">Select a thread to view or create approvals.</p>
         {% endif %}
     </div>
     </details>

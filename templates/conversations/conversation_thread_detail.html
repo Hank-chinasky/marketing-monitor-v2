@@ -6,14 +6,14 @@
 <div style="margin-bottom:1rem;">
     {% if demo_read_only %}
         <a class="quick-link" href="{% url 'chat-hub' %}?thread={{ thread.pk }}">
-            Terug naar Chats demo
+            Back to Chats demo
         </a>
     {% else %}
         <a class="quick-link" href="{% url 'conversation-thread-list' %}">
-            Terug naar conversations
+            Back to conversations
         </a>
         <a class="quick-link" href="{% url 'conversation-thread-update' thread.pk %}">
-            Thread wijzigen
+            Edit thread
         </a>
     {% endif %}
 </div>
@@ -23,8 +23,8 @@
         class="panel"
         style="margin-bottom:1rem; border-color:#2563eb; background:#eff6ff;"
     >
-        <strong>Read-only demoweergave</strong>
-        <div class="muted">Deze fictieve thread kan niet worden gewijzigd of goedgekeurd.</div>
+        <strong>Read-only demo view</strong>
+        <div class="muted">This fictional thread cannot be changed or approved.</div>
     </div>
 {% endif %}
 
@@ -33,7 +33,7 @@
         <h2>Thread context</h2>
         <ul class="clean">
             <li><strong>Creator:</strong> {{ thread.creator.display_name }}</li>
-            <li><strong>Channel:</strong> {% if thread.channel %}{{ thread.channel.platform }} / {{ thread.channel.handle }}{% else %}Geen channel gekoppeld.{% endif %}</li>
+            <li><strong>Channel:</strong> {% if thread.channel %}{{ thread.channel.platform }} / {{ thread.channel.handle }}{% else %}No channel connected.{% endif %}</li>
             <li><strong>Source:</strong> {{ thread.canonical_source_label }}</li>
             <li><strong>Status:</strong> {{ thread.status }}</li>
             <li><strong>Source thread ID:</strong> {{ thread.source_thread_id }}</li>
@@ -66,7 +66,7 @@
                     <li><strong>State:</strong> {{ latest_draft.state }}</li>
                     <li><strong>Generation source:</strong> {{ latest_draft.generation_source }}</li>
                     <li><strong>Created at:</strong> {{ latest_draft.created_at }}</li>
-                    <li><strong>Requires human attention:</strong> {{ latest_draft.requires_human_attention|yesno:"Ja,Nee" }}</li>
+                    <li><strong>Requires human attention:</strong> {{ latest_draft.requires_human_attention|yesno:"Yes,No" }}</li>
                     {% if latest_draft.approved_at %}
                         <li><strong>Approved at:</strong> {{ latest_draft.approved_at }}</li>
                     {% endif %}
@@ -78,7 +78,7 @@
                 {% if can_approve_latest_draft %}
                     <form method="post" action="{% url 'buddy-draft-approve' latest_draft.pk %}" style="margin-top:1rem;">
                         {% csrf_token %}
-                        <button type="submit" class="primary-button">Markeer draft als goedgekeurd</button>
+                        <button type="submit" class="primary-button">Mark draft as approved</button>
                     </form>
                 {% endif %}
             </div>
@@ -105,14 +105,14 @@
         </div>
     {% else %}
         <div style="border:1px dashed #d1d5db; border-radius:10px; padding:1rem; background:#f9fafb; margin-bottom:1rem;">
-            <p style="margin:0 0 0.5rem;"><strong>Er is nog geen BuddyDraft beschikbaar.</strong></p>
-            <p class="muted" style="margin:0;">Draft-generatie volgt in een later ticket.</p>
+            <p style="margin:0 0 0.5rem;"><strong>No BuddyDraft is available yet.</strong></p>
+            <p class="muted" style="margin:0;">Draft generation will follow in a later ticket.</p>
         </div>
     {% endif %}
 
     <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid #e5e7eb;">
-        <h3 style="margin-top:0;">Volgende fase</h3>
-        <p class="muted" style="margin:0;">Aanvullende draft-acties volgen in een volgende fase. Reject- en verzendflow worden later toegevoegd.</p>
+        <h3 style="margin-top:0;">Next phase</h3>
+        <p class="muted" style="margin:0;">Additional draft actions will follow in a later phase. Rejection and sending flows will be added later.</p>
     </div>
 </div>
 {% endblock %}

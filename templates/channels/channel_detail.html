@@ -23,28 +23,28 @@
     <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
         <a class="quick-link" href="{{ back_url }}">
             {% if next_url %}
-                Terug naar queue
+                Back to queue
             {% else %}
-                Terug naar channels
+                Back to channels
             {% endif %}
         </a>
-        <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Terug naar creator</a>
-        <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Netwerk</a>
+        <a class="quick-link" href="{% url 'creator-detail' creator.pk %}">Back to creator</a>
+        <a class="quick-link" href="{% url 'creator-network' creator.pk %}">Network</a>
     </div>
 </div>
 
 <div class="panel" style="margin-bottom: 1rem;">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
-        <h2 style="margin:0;">Laatste operator update</h2>
+        <h2 style="margin:0;">Latest operator update</h2>
         {% if request.user.is_staff or request.user.is_superuser %}
             <a class="quick-link" href="{% url 'channel-update' channel.pk %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">
-                Werk context bij
+                Update context
             </a>
         {% endif %}
     </div>
 
     <ul class="clean" style="margin-top:1rem;">
-        <li><strong>Laatste context:</strong> {{ channel.last_operator_update|default:"-"|linebreaksbr }}</li>
+        <li><strong>Latest context:</strong> {{ channel.last_operator_update|default:"-"|linebreaksbr }}</li>
         <li><strong>Updated at:</strong> {{ channel.last_operator_update_at|default:"-" }}</li>
     </ul>
 </div>
@@ -69,7 +69,7 @@
             {% elif channel.credential_status %}
                 <span class="badge badge-blue">{{ channel.credential_status }}</span>
             {% else %}
-                <span class="badge badge-yellow">onbekend</span>
+                <span class="badge badge-yellow">unknown</span>
             {% endif %}
         </div>
     </div>
@@ -80,7 +80,7 @@
             {% if channel.two_factor_enabled %}
                 <span class="badge badge-green">2FA ok</span>
             {% else %}
-                <span class="badge badge-yellow">geen 2FA</span>
+                <span class="badge badge-yellow">no 2FA</span>
             {% endif %}
         </div>
     </div>
@@ -89,9 +89,9 @@
         <div>VPN</div>
         <div style="margin-top:0.35rem;">
             {% if channel.vpn_required %}
-                <span class="badge badge-blue">verplicht</span>
+                <span class="badge badge-blue">required</span>
             {% else %}
-                <span class="badge badge-green">niet verplicht</span>
+                <span class="badge badge-green">not required</span>
             {% endif %}
         </div>
     </div>
@@ -109,25 +109,25 @@
         <h3>Alerts</h3>
         <ul class="clean">
             {% if handoff_missing %}
-                <li><span class="badge badge-yellow">update mist</span> Laatste operator context ontbreekt.</li>
+                <li><span class="badge badge-yellow">update missing</span> Latest operator context is missing.</li>
             {% endif %}
             {% if channel.credential_status == "needs_reset" %}
-                <li><span class="badge badge-red">needs reset</span> Credentials vragen aandacht.</li>
+                <li><span class="badge badge-red">needs reset</span> Credentials require attention.</li>
             {% endif %}
             {% if not channel.two_factor_enabled %}
-                <li><span class="badge badge-yellow">geen 2FA</span> 2FA is niet ingeschakeld.</li>
+                <li><span class="badge badge-yellow">no 2FA</span> 2FA is not enabled.</li>
             {% endif %}
             {% if channel.vpn_required %}
-                <li><span class="badge badge-blue">VPN verplicht</span> Gebruik alleen goedgekeurde access route.</li>
+                <li><span class="badge badge-blue">VPN required</span> Use an approved access route only.</li>
             {% endif %}
             {% if policy_gap %}
-                <li><span class="badge badge-yellow">policy gap</span> VPN verplicht maar IP-label/IP ontbreekt.</li>
+                <li><span class="badge badge-yellow">policy gap</span> VPN is required but the IP label or IP is missing.</li>
             {% endif %}
             {% if channel.status != "active" %}
-                <li><span class="badge badge-yellow">{{ channel.status }}</span> Channel is niet actief.</li>
+                <li><span class="badge badge-yellow">{{ channel.status }}</span> Channel is not active.</li>
             {% endif %}
             {% if not handoff_missing and channel.credential_status != "needs_reset" and channel.two_factor_enabled and not policy_gap and channel.status == "active" %}
-                <li>Geen directe alerts.</li>
+                <li>No immediate alerts.</li>
             {% endif %}
         </ul>
     </div>
@@ -160,7 +160,7 @@
             <li><strong>Account email:</strong> {{ channel.account_email|default:"-" }}</li>
             <li><strong>Account phone number:</strong> {{ channel.account_phone_number|default:"-" }}</li>
             <li><strong>Credential status:</strong> {{ channel.credential_status|default:"-" }}</li>
-            <li><strong>2FA enabled:</strong> {{ channel.two_factor_enabled|yesno:"Ja,Nee" }}</li>
+            <li><strong>2FA enabled:</strong> {{ channel.two_factor_enabled|yesno:"Yes,No" }}</li>
             <li><strong>Last access check:</strong> {{ channel.last_access_check_at|default:"-" }}</li>
             <li><strong>Access notes:</strong> {{ channel.access_notes|default:"-"|linebreaksbr }}</li>
         </ul>
@@ -169,7 +169,7 @@
     <div class="panel">
         <h2>Access Policy</h2>
         <ul class="clean">
-            <li><strong>VPN required:</strong> {{ channel.vpn_required|yesno:"Ja,Nee" }}</li>
+            <li><strong>VPN required:</strong> {{ channel.vpn_required|yesno:"Yes,No" }}</li>
             <li><strong>Approved region:</strong> {{ channel.approved_access_region|default:"-" }}</li>
             <li><strong>IP label:</strong> {{ channel.approved_ip_label|default:"-" }}</li>
             <li><strong>Egress IP:</strong> {{ channel.approved_egress_ip|default:"-" }}</li>
@@ -186,10 +186,10 @@
             <li>
                 <strong>{{ assignment.operator }}</strong>
                 — {{ assignment.scope }}
-                — {{ assignment.starts_at }} t/m {{ assignment.ends_at|default:"open" }}
+                — {{ assignment.starts_at }} through {{ assignment.ends_at|default:"open" }}
             </li>
         {% empty %}
-            <li>Geen zichtbare assignments.</li>
+            <li>No visible assignments.</li>
         {% endfor %}
     </ul>
 </div>

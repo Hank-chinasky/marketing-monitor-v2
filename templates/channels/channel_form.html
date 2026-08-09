@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{% if form.instance.pk %}Channel bewerken{% else %}Nieuw channel{% endif %}</h1>
+<h1>{% if form.instance.pk %}Edit channel{% else %}New channel{% endif %}</h1>
 <p class="muted">
-    Vul hier account access, 2FA-status, VPN/IP policy en operator-update in.
+    Enter account access, 2FA status, VPN/IP policy and the operator update here.
 </p>
 
 {% if saved %}
     <div class="success-panel">
-        Channel is opgeslagen.
+        Channel saved.
     </div>
 {% endif %}
 
@@ -23,8 +23,8 @@
         {% endif %}
 
         <div class="form-actions">
-            <button class="primary-button" type="submit">Opslaan</button>
-            <a class="secondary-button" href="{% url 'channel-list' %}">Terug naar channels</a>
+            <button class="primary-button" type="submit">Save</button>
+            <a class="secondary-button" href="{% url 'channel-list' %}">Back to channels</a>
         </div>
     </form>
 </div>

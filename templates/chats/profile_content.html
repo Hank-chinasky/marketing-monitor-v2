@@ -13,11 +13,11 @@
 >
     <div>
         <h1 style="margin-bottom:0.3rem;">
-            Profielcontent
+            Profile content
         </h1>
 
         <p class="muted" style="margin:0;">
-            {{ operator_context.profile.display_name|default:"Onbekend profiel" }}
+            {{ operator_context.profile.display_name|default:"Unknown profile" }}
             · {{ thread.get_source_system_display }}
             {% if thread.source_site_label %}
                 · {{ thread.source_site_label }}
@@ -26,7 +26,7 @@
     </div>
 
     <a class="quick-link" href="{{ return_url }}">
-        Terug naar gesprek
+        Back to conversation
     </a>
 </div>
 
@@ -44,7 +44,7 @@
     <div>
         <strong>{{ profile_media_count }} item{{ profile_media_count|pluralize }}</strong>
         <div class="muted" style="margin-top:0.2rem;">
-            Alleen bekijken. Uploaden, wijzigen en verwijderen zijn niet beschikbaar.
+            View only. Uploading, editing and deleting are not available.
         </div>
     </div>
 
@@ -75,7 +75,7 @@
             >
                 <img
                     src="{{ media.display_url }}"
-                    alt="Profielcontent van {{ operator_context.profile.display_name|default:'het actieve profiel' }}"
+                    alt="Profile content for {{ operator_context.profile.display_name|default:'the active profile' }}"
                     referrerpolicy="no-referrer"
                     loading="lazy"
                     decoding="async"
@@ -98,11 +98,11 @@
                         margin-top:0.65rem;
                     "
                 >
-                    <span>Afbeelding {{ forloop.counter }}</span>
+                    <span>Image {{ forloop.counter }}</span>
 
                     {% if media.is_primary %}
                         <span class="badge badge-green">
-                            Primair
+                            Primary
                         </span>
                     {% endif %}
                 </div>
@@ -112,7 +112,7 @@
 {% else %}
     <div class="panel">
         <p style="margin:0;">
-            Geen gevalideerde profielcontent beschikbaar in deze contextsnapshot.
+            No validated profile content is available in this context snapshot.
         </p>
     </div>
 {% endif %}

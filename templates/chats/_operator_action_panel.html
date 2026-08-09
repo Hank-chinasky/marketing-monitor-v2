@@ -6,12 +6,12 @@
     <div class="chat-operator-action-header">
         <div>
             <h3 id="operator-action-title" style="margin:0;">
-                Operatoractie
+                Operator action
                 <span class="muted">· Follow-up status</span>
             </h3>
             <p class="muted" style="margin:0.3rem 0 0;">
-                Lees de berichten, kies status, voeg eventueel een notitie toe
-                en sla op. Controleer Buddy vóór gebruik.
+                Read the messages, select a status, add an optional note
+                and save. Review Buddy before use.
             </p>
         </div>
 
@@ -24,20 +24,20 @@
 
     {% if demo_read_only %}
         <div class="chat-demo-control-notice">
-            <strong>Demonstratie:</strong>
-            bediening zichtbaar, wijzigen geblokkeerd.
+            <strong>Demo:</strong>
+            controls visible, changes blocked.
         </div>
     {% endif %}
 
     {% if follow_up_saved %}
         <div class="success-panel chat-action-feedback">
-            Follow-up status opgeslagen.
+            Follow-up status saved.
         </div>
     {% endif %}
 
     {% if follow_up_submit_error %}
         <div class="panel chat-action-error">
-            <strong>Follow-up status niet opgeslagen:</strong>
+            <strong>Follow-up status not saved:</strong>
             {{ follow_up_submit_error }}
         </div>
     {% endif %}
@@ -45,7 +45,7 @@
     {% if selected_thread %}
         {% if follow_up_status %}
             <div class="chat-current-follow-up">
-                <strong>Laatst opgeslagen:</strong>
+                <strong>Last saved:</strong>
                 {{ follow_up_status.get_status_display }}
 
                 {% if follow_up_status.note %}
@@ -56,7 +56,7 @@
             </div>
         {% else %}
             <div class="muted chat-current-follow-up">
-                Nog geen follow-up status vastgelegd voor dit gesprek.
+                No follow-up status has been recorded for this conversation.
             </div>
         {% endif %}
 
@@ -71,7 +71,7 @@
                 class="chat-status-fieldset"
                 data-operator-status-options="v1"
             >
-                <legend>Statuskeuze</legend>
+                <legend>Status selection</legend>
 
                 <div class="chat-status-choice-grid">
                     {% for value, label in follow_up_status_choices %}
@@ -96,14 +96,14 @@
 
             <p class="chat-action-note">
                 <label for="id_operator_follow_up_note">
-                    Optionele operatornotitie
+                    Optional operator note
                 </label>
                 <textarea
                     id="id_operator_follow_up_note"
                     name="follow_up_note"
                     maxlength="1000"
-                    aria-label="Optionele korte operatornotitie"
-                    placeholder="Wat moet de volgende operator weten?"
+                    aria-label="Optional short operator note"
+                    placeholder="What should the next operator know?"
                     {% if demo_read_only %}disabled{% endif %}
                 >{{ follow_up_form.note }}</textarea>
             </p>
@@ -114,7 +114,7 @@
                     class="secondary-button"
                     {% if demo_read_only %}disabled{% endif %}
                 >
-                    Opslaan follow-up status
+                    Save follow-up status
                 </button>
 
                 <button
@@ -124,16 +124,16 @@
                     class="primary-button"
                     {% if demo_read_only %}disabled{% endif %}
                 >
-                    Opslaan en volgende openen
+                    Save and open next
                 </button>
             </div>
         </form>
 
         <p class="muted chat-action-help">
-            De operator kiest handmatig: warm, open loop, later triggeren,
-            afgekoeld of review nodig.
+            The operator chooses manually: warm, open loop, trigger later,
+            cooled down or review required.
         </p>
     {% else %}
-        <p class="muted" style="margin-bottom:0;">Nog geen gesprek geselecteerd. Kies een gesprek om follow-up status vast te leggen.</p>
+        <p class="muted" style="margin-bottom:0;">No conversation selected. Select one to record follow-up status.</p>
     {% endif %}
 </section>

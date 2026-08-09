@@ -117,7 +117,7 @@ class CreatorMaterialTests(TestCase):
         response = self.client.get(reverse("creator-detail", kwargs={"pk": self.creator.pk}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Open bestand")
+        self.assertContains(response, "Open file")
         self.assertContains(
             response,
             reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": other.pk}),
@@ -138,7 +138,7 @@ class CreatorMaterialTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "creators/material_preview.html")
-        self.assertContains(response, "Terug naar materialen")
+        self.assertContains(response, "Back to materials")
         self.assertContains(
             response,
             reverse("creator-material-download", kwargs={"creator_pk": self.creator.pk, "material_pk": video.pk}),
@@ -160,8 +160,8 @@ class CreatorMaterialTests(TestCase):
             response,
             reverse("creator-material-delete", kwargs={"creator_pk": self.creator.pk, "material_pk": material.pk}),
         )
-        self.assertContains(response, "Verwijder")
-        self.assertContains(response, "Bekijk groter")
+        self.assertContains(response, "Delete")
+        self.assertContains(response, "View larger")
         self.assertNotContains(response, "Open bestand")
 
     def test_upload_form_accepts_multiple_files(self):

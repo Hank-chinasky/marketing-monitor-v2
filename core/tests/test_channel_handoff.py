@@ -62,10 +62,10 @@ class ChannelHandoffFormTests(SimpleTestCase):
         channel = self._build_channel()
         summary = channel.build_workspace_session_summary()
 
-        self.assertIn("Wat gedaan:\nBio bijgewerkt.", summary)
+        self.assertIn("Work completed:\nBio bijgewerkt.", summary)
         self.assertIn("Next action:\nNieuwe caption klaarzetten.", summary)
         self.assertIn("Blockers / open issues:\nStory assets ontbreken nog.", summary)
-        self.assertIn("Policy/disclosure context reviewed: Ja", summary)
+        self.assertIn("Policy/disclosure context reviewed: Yes", summary)
 
     def test_creator_channel_form_hides_legacy_handoff_fields(self):
         form = CreatorChannelForm()

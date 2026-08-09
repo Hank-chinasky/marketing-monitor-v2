@@ -49,9 +49,9 @@ TEMPLATES_V1 = [
         "tags": ["handoff", "next_step", "operator"],
         "body": (
             "Hi {creator_name},\n\n"
-            "Korte update via {platform} ({channel_handle}).\n"
-            "Laatste overdracht: {last_handoff}.\n"
-            "Volgende stap: {next_step}.\n"
+            "Quick update via {platform} ({channel_handle}).\n"
+            "Latest handoff: {last_handoff}.\n"
+            "Next step: {next_step}.\n"
             "Content ready status: {content_ready_status}."
         ),
     },
@@ -65,7 +65,7 @@ TEMPLATES_V1 = [
             "Creator: {creator_name}\n"
             "Platform: {platform}\n"
             "Handle: {channel_handle}\n"
-            "Vraag: snelle review op risico/signaal, daarna next step: {next_step}."
+            "Request: quick risk/signal review, then next step: {next_step}."
         ),
     },
     {
@@ -77,8 +77,8 @@ TEMPLATES_V1 = [
         "body": (
             "Creator {creator_name}\n"
             "Status: {content_ready_status}\n"
-            "Laatste handoff: {last_handoff}\n"
-            "Volgende stap: {next_step}"
+            "Latest handoff: {last_handoff}\n"
+            "Next step: {next_step}"
         ),
     },
 ]
@@ -94,7 +94,7 @@ TEMPLATE_ALLOWED_PLACEHOLDERS = {
 PLACEHOLDER_NOISE_VALUES = {"-", "n/a", "na", "none", "null", "onbekend", "geen", "tbd"}
 
 CHAT_SOURCE_FILTER_OPTIONS = (
-    ("", "Alle"),
+    ("", "All"),
     (
         ConversationThread.SourceSystem.CHATTIES,
         "Chatties",
@@ -149,20 +149,20 @@ def build_buddy_assist_snapshot(
 ):
     if not selected_thread:
         return {
-            "status_label": "Kies gesprek",
-            "why_now": "Kies een gesprek om Buddy-context te zien.",
-            "thread_summary": "Nog geen actieve thread geselecteerd.",
-            "profile_tone": "Geen profieltoon beschikbaar zonder thread.",
-            "profile_tone_source": "Ontbreekt",
-            "open_loop": "Geen actieve thread geselecteerd.",
-            "do_not_do": "Start geen operatoractie zonder threadcontext.",
-            "recommended_next_action": "Selecteer eerst een thread.",
-            "reliability_label": "Laag",
+            "status_label": "Select conversation",
+            "why_now": "Select a conversation to view Buddy context.",
+            "thread_summary": "No active thread selected yet.",
+            "profile_tone": "No profile tone available without a thread.",
+            "profile_tone_source": "Missing",
+            "open_loop": "No active thread selected.",
+            "do_not_do": "Do not start an operator action without thread context.",
+            "recommended_next_action": "Select a thread first.",
+            "reliability_label": "Low",
             "reliability_badge": "badge-red",
-            "reliability_reason": "Thread en broncontext ontbreken.",
-            "missing_context": ["Thread ontbreekt in selectie."],
-            "next_step": "Selecteer eerst een thread.",
-            "session_brief": "Geen sessiebrief beschikbaar zonder thread.",
+            "reliability_reason": "Thread and source context are missing.",
+            "missing_context": ["Thread is missing from the selection."],
+            "next_step": "Select a thread first.",
+            "session_brief": "No session brief available without a thread.",
             "condensed_handoff": "",
             "has_handoff": False,
             "context_prefill": [],
@@ -171,9 +171,9 @@ def build_buddy_assist_snapshot(
     missing_context = list(completeness_alerts or [])
 
     if is_placeholder_noise(selected_thread.thread_summary):
-        missing_context.append("Threadsamenvatting ontbreekt.")
+        missing_context.append("Thread summary is missing.")
     if is_placeholder_noise(selected_thread.open_loop):
-        missing_context.append("Voorgestelde volgende stap ontbreekt.")
+        missing_context.append("Proposed next step is missing.")
 
     condensed_handoff = ""
     has_handoff = not is_placeholder_noise(selected_thread.last_handoff_note)
@@ -187,38 +187,38 @@ def build_buddy_assist_snapshot(
         selected_thread.last_approved_reply_style,
         limit=180,
     )
-    profile_tone_source = "Laatste goedgekeurde replystijl"
+    profile_tone_source = "Latest approved reply style"
 
     profile_tone_available = bool(profile_tone)
     if not profile_tone_available:
-        profile_tone = "Profieltoon ontbreekt; eerst handmatig bevestigen."
-        profile_tone_source = "Ontbreekt"
-        missing_context.append("Actieve profieltoon ontbreekt.")
+        profile_tone = "Profile tone is missing; confirm it manually first."
+        profile_tone_source = "Missing"
+        missing_context.append("Active profile tone is missing.")
 
     follow_up_why = {
         ThreadFollowUpStatus.Status.WARM: (
-            "Handmatig als warm gemarkeerd; pak de opgebouwde lijn gecontroleerd op."
+            "Manually marked as warm; continue the established line carefully."
         ),
         ThreadFollowUpStatus.Status.OPEN_LOOP: (
-            "Er staat een open loop klaar die opvolging nodig heeft."
+            "An open loop is ready and requires follow-up."
         ),
         ThreadFollowUpStatus.Status.LATER_TRIGGEREN: (
-            "Later triggeren is vastgelegd; controleer timing en context vóór actie."
+            "Trigger later is recorded; check timing and context before acting."
         ),
         ThreadFollowUpStatus.Status.AFGEKOELD: (
-            "Het gesprek is afgekoeld; forceer geen generieke heractivatie."
+            "The conversation has cooled off; do not force a generic reactivation."
         ),
         ThreadFollowUpStatus.Status.REVIEW_NODIG: (
-            "Operatorreview is vastgelegd voordat een vervolgstap wordt gekozen."
+            "Operator review is required before choosing a next step."
         ),
     }
 
     thread_status_labels = {
-        ConversationThread.Status.ACTIVE: "Actief gesprek",
-        ConversationThread.Status.WAITING_ON_OPERATOR: "Actieve follow-up",
-        ConversationThread.Status.WAITING_ON_CUSTOMER: "Wacht op klant",
-        ConversationThread.Status.HANDOFF_REQUIRED: "Review nodig",
-        ConversationThread.Status.CLOSED: "Afgesloten",
+        ConversationThread.Status.ACTIVE: "Active conversation",
+        ConversationThread.Status.WAITING_ON_OPERATOR: "Active follow-up",
+        ConversationThread.Status.WAITING_ON_CUSTOMER: "Waiting on customer",
+        ConversationThread.Status.HANDOFF_REQUIRED: "Review required",
+        ConversationThread.Status.CLOSED: "Closed",
     }
 
     if follow_up_status:
@@ -231,51 +231,51 @@ def build_buddy_assist_snapshot(
 
     if selected_thread.risk_flags:
         why_now = (
-            "Risicosignaal aanwezig; controleer eerst context, bron en policy."
+            "Risk signal present; check context, source and policy first."
         )
     elif follow_up_status:
         why_now = follow_up_why.get(
             follow_up_status.status,
-            "Handmatige follow-upstatus vraagt operatoraandacht.",
+            "The manual follow-up status requires operator attention.",
         )
     elif selected_thread.status == ConversationThread.Status.WAITING_ON_OPERATOR:
         if not is_placeholder_noise(selected_thread.open_loop):
             why_now = (
-                "De klant wacht op operatoropvolging en er staat een concrete "
-                "open loop klaar."
+                "The customer is waiting for operator follow-up and a concrete "
+                "open loop is ready."
             )
         else:
             why_now = (
-                "De klant wacht op operatoropvolging; leg eerst een concrete "
-                "vervolgstap vast."
+                "The customer is waiting for operator follow-up; record a concrete "
+                "next step first."
             )
     elif selected_thread.status == ConversationThread.Status.WAITING_ON_CUSTOMER:
         why_now = (
-            "De operatorlijn staat; wacht op klant en vermijd onnodig opnieuw benaderen."
+            "The operator line is set; wait for the customer and avoid unnecessary re-engagement."
         )
     elif selected_thread.status == ConversationThread.Status.HANDOFF_REQUIRED:
         why_now = (
-            "De thread vraagt overdracht of review voordat de lijn wordt voortgezet."
+            "The thread requires a handoff or review before continuing."
         )
     elif selected_thread.status == ConversationThread.Status.CLOSED:
         why_now = (
-            "De thread is gesloten; alleen heropenen met een expliciete reden."
+            "The thread is closed; reopen it only for an explicit reason."
         )
     elif not is_placeholder_noise(selected_thread.open_loop):
-        why_now = "Er staat een concrete vervolgstap klaar voor operatorreview."
+        why_now = "A concrete next step is ready for operator review."
     else:
-        why_now = "Lees de context en bepaal handmatig of opvolging nodig is."
+        why_now = "Read the context and determine manually whether follow-up is needed."
 
     do_not_do_parts = []
 
     if selected_thread.risk_flags:
         do_not_do_parts.append(
-            "Niet handelen voordat risicosignalen handmatig zijn beoordeeld."
+            "Do not act until risk signals have been reviewed manually."
         )
 
     if not profile_tone_available:
         do_not_do_parts.append(
-            "Niet generiek openen of een profieltoon verzinnen."
+            "Do not use a generic opener or invent a profile tone."
         )
 
     if not is_placeholder_noise(selected_thread.guardrails):
@@ -285,19 +285,19 @@ def build_buddy_assist_snapshot(
 
     if not do_not_do_parts:
         do_not_do_parts.append(
-            "Niet automatisch verzenden en de bestaande gesprekstrant niet resetten."
+            "Do not send automatically or reset the established conversation style."
         )
 
     do_not_do = " ".join(do_not_do_parts)
 
     open_loop = (
         _condense_text(selected_thread.open_loop, limit=220)
-        or "Geen concrete open loop vastgelegd."
+        or "No concrete open loop recorded."
     )
 
     if selected_thread.risk_flags:
         recommended_next_action = (
-            "Beoordeel eerst het risicosignaal en bevestig de betrouwbare context."
+            "Review the risk signal first and confirm the reliable context."
         )
     elif not is_placeholder_noise(selected_thread.open_loop):
         recommended_next_action = _condense_text(
@@ -305,10 +305,10 @@ def build_buddy_assist_snapshot(
             limit=220,
         )
     elif missing_context:
-        recommended_next_action = f"Vul eerst aan: {missing_context[0]}"
+        recommended_next_action = f"Complete first: {missing_context[0]}"
     else:
         recommended_next_action = (
-            "Lees de laatste berichten en leg een concrete vervolgstap vast."
+            "Read the latest messages and record a concrete next step."
         )
 
     missing_context = list(dict.fromkeys(missing_context))
@@ -318,22 +318,22 @@ def build_buddy_assist_snapshot(
         or not selected_thread.channel
         or len(missing_context) >= 3
     ):
-        reliability_label = "Laag"
+        reliability_label = "Low"
         reliability_badge = "badge-red"
         reliability_reason = (
-            "Risico, ontbrekende bron of meerdere essentiële contextgaten."
+            "Risk, a missing source or multiple essential context gaps."
         )
     elif missing_context:
-        reliability_label = "Middel"
+        reliability_label = "Medium"
         reliability_badge = "badge-yellow"
         reliability_reason = (
-            "Bruikbare context aanwezig, maar menselijke aanvulling blijft nodig."
+            "Usable context is available, but human input is still required."
         )
     else:
-        reliability_label = "Hoog"
+        reliability_label = "High"
         reliability_badge = "badge-green"
         reliability_reason = (
-            "Kerncontext, bron en profieltoon zijn aanwezig."
+            "Core context, source and profile tone are available."
         )
 
     context_prefill = []
@@ -374,11 +374,11 @@ def build_buddy_assist_snapshot(
 
     session_brief_parts = [
         f"Status: {selected_thread.get_status_display()}",
-        f"Bron: {canonical_source_label(selected_thread.source_system)}",
+        f"Source: {canonical_source_label(selected_thread.source_system)}",
         (
-            f"Laatste operator-handoff: {selected_thread.last_operator_handoff_at}"
+            f"Latest operator handoff: {selected_thread.last_operator_handoff_at}"
             if selected_thread.last_operator_handoff_at
-            else "Laatste operator-handoff: -"
+            else "Latest operator handoff: -"
         ),
     ]
 
@@ -387,7 +387,7 @@ def build_buddy_assist_snapshot(
         "why_now": why_now,
         "thread_summary": (
             _condense_text(selected_thread.thread_summary, limit=220)
-            or "Nog geen threadsamenvatting beschikbaar."
+            or "No thread summary available yet."
         ),
         "profile_tone": profile_tone,
         "profile_tone_source": profile_tone_source,
@@ -414,10 +414,10 @@ def build_feeder_buddy_assist_snapshot(
 ):
     if not selected_creator:
         return {
-            "creator_summary": "Geen creator geselecteerd.",
-            "missing_context": ["Creator ontbreekt in selectie."],
-            "next_step": "Selecteer eerst een creator.",
-            "session_brief": "Geen sessiebrief beschikbaar zonder creator.",
+            "creator_summary": "No creator selected.",
+            "missing_context": ["Creator is missing from the selection."],
+            "next_step": "Select a creator first.",
+            "session_brief": "No session brief available without a creator.",
             "condensed_handoff": "",
             "has_handoff": False,
             "context_prefill": [],
@@ -425,20 +425,20 @@ def build_feeder_buddy_assist_snapshot(
 
     missing_context = list(completeness_alerts or [])
     if not relevant_handoff_channel:
-        missing_context.append("Kanaalhandoff ontbreekt.")
+        missing_context.append("Channel handoff is missing.")
 
     if (
         follow_up_summary
         and follow_up_summary.get("next_chats_thread_id")
         and not is_placeholder_noise(follow_up_summary.get("work_target"))
     ):
-        next_step = f"Zet door naar {follow_up_summary['work_target']}."
+        next_step = f"Continue to {follow_up_summary['work_target']}."
     elif relevant_handoff_channel and not is_placeholder_noise(
         relevant_handoff_channel.session_next_action
     ):
         next_step = _condense_text(relevant_handoff_channel.session_next_action, limit=220)
     else:
-        next_step = "Nog geen concrete volgende stap vastgelegd."
+        next_step = "No concrete next step recorded yet."
 
     handoff_text = ""
     if relevant_handoff_channel and not is_placeholder_noise(
@@ -502,16 +502,16 @@ def build_feeder_buddy_assist_snapshot(
             f"{selected_creator.get_content_ready_status_display() or '-'}"
         ),
         (
-            f"Laatste feeder handoff: {relevant_handoff_channel.session_updated_at}"
+            f"Latest Feeder handoff: {relevant_handoff_channel.session_updated_at}"
             if relevant_handoff_channel and relevant_handoff_channel.session_updated_at
-            else "Laatste feeder handoff: -"
+            else "Latest Feeder handoff: -"
         ),
     ]
 
     return {
         "creator_summary": (
             f"{selected_creator.display_name} · "
-            f"{selected_creator.get_content_ready_status_display() or 'status onbekend'}"
+            f"{selected_creator.get_content_ready_status_display() or 'status unknown'}"
         ),
         "missing_context": missing_context,
         "next_step": next_step,
@@ -590,13 +590,13 @@ def build_assignment_context(assignment):
     if not assignment:
         return {
             "has_active_assignment": False,
-            "status_label": "geen actieve assignment",
+            "status_label": "no active assignment",
             "scope_label": "-",
         }
 
     return {
         "has_active_assignment": True,
-        "status_label": "actieve assignment",
+        "status_label": "active assignment",
         "scope_label": assignment.get_scope_display(),
     }
 
@@ -613,9 +613,9 @@ def append_approval_event(run_log, approvals, event_name, approval_id):
         return
 
     label = {
-        "created": "Approval aangemaakt",
-        "approved": "Approval goedgekeurd",
-        "rejected": "Approval afgewezen",
+        "created": "Approval created",
+        "approved": "Approval approved",
+        "rejected": "Approval rejected",
     }.get((event_name or "").strip())
     if not label:
         return
@@ -633,16 +633,16 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
     def _build_completeness_alerts(self, selected_thread):
         if not selected_thread:
-            return ["Geen actieve thread geselecteerd."]
+            return ["No active thread selected."]
 
         alerts = []
         creator = selected_thread.creator
         channel = selected_thread.channel
 
         if creator.consent_status != creator.ConsentStatus.ACTIVE:
-            alerts.append("Creator consent staat niet op actief.")
+            alerts.append("Creator consent is not active.")
         if not channel:
-            alerts.append("Geen channel gekoppeld aan deze thread.")
+            alerts.append("No channel is linked to this thread.")
 
         if (
             selected_thread.source_system
@@ -651,14 +651,14 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             try:
                 selected_thread.context_snapshot
             except ObjectDoesNotExist:
-                alerts.append("Bronprofielcontext ontbreekt.")
+                alerts.append("Source profile context is missing.")
 
         if not selected_thread.guardrails:
-            alerts.append("Guardrails ontbreken; policy-context is onvolledig.")
+            alerts.append("Guardrails are missing; policy context is incomplete.")
         if not selected_thread.open_loop:
-            alerts.append("Volgende stap ontbreekt (open loop leeg).")
+            alerts.append("Next step is missing (open loop is empty).")
         if not selected_thread.last_handoff_note:
-            alerts.append("Laatste handoff-status ontbreekt.")
+            alerts.append("Latest handoff status is missing.")
 
         return alerts
 
@@ -668,7 +668,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Geen actieve thread geselecteerd; start hier geen operatoractie.",
+                "reason": "No active thread selected; do not start an operator action here.",
             }
 
         if is_demo_viewer(self.request.user):
@@ -677,8 +677,8 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 "label": "read-only demo",
                 "badge": "badge-blue",
                 "reason": (
-                    "Demoweergave: bekijken is toegestaan; "
-                    "alle wijzigingen zijn geblokkeerd."
+                    "Demo view: viewing is allowed; "
+                    "all changes are blocked."
                 ),
             }
 
@@ -687,7 +687,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Geen actieve operator-assignment voor deze creator.",
+                "reason": "No active operator assignment for this creator.",
             }
 
         if assignment.scope not in {
@@ -698,39 +698,39 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Assignment-scope laat geen chat-operatoractie toe.",
+                "reason": "The assignment scope does not allow chat operator actions.",
             }
 
         completeness_alerts = self._build_completeness_alerts(selected_thread)
         if (
-            "Geen channel gekoppeld aan deze thread." in completeness_alerts
-            or "Guardrails ontbreken; policy-context is onvolledig." in completeness_alerts
+            "No channel is linked to this thread." in completeness_alerts
+            or "Guardrails are missing; policy context is incomplete." in completeness_alerts
         ):
             return {
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Essentiële context/policy ontbreekt; eerst aanvullen of escaleren.",
+                "reason": "Essential context or policy is missing; complete or escalate first.",
             }
 
         if (
             selected_thread.creator.consent_status != selected_thread.creator.ConsentStatus.ACTIVE
             or bool(selected_thread.risk_flags)
-            or "Volgende stap ontbreekt (open loop leeg)." in completeness_alerts
-            or "Laatste handoff-status ontbreekt." in completeness_alerts
+            or "Next step is missing (open loop is empty)." in completeness_alerts
+            or "Latest handoff status is missing." in completeness_alerts
         ):
             return {
                 "status": "review_needed",
                 "label": "review_needed",
                 "badge": "badge-yellow",
-                "reason": "Context is deels aanwezig, maar review nodig vóór operatoractie.",
+                "reason": "Some context is available, but review is required before operator action.",
             }
 
         return {
             "status": "allowed",
             "label": "allowed",
             "badge": "badge-green",
-            "reason": "Thread/context/policy en operator-scope zijn voldoende voor actie.",
+            "reason": "Thread context, policy and operator scope are sufficient for action.",
         }
 
     def _get_source_filter(self, *, source="get"):
@@ -964,10 +964,10 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             return {
                 "chat_focus_items": [],
                 "latest_handoff_scan": {
-                    "summary": "Geen actieve handoff beschikbaar zonder thread.",
+                    "summary": "No active handoff available without a thread.",
                     "at": "-",
                 },
-                "next_step_scan": "Nog geen volgende stap beschikbaar zonder thread.",
+                "next_step_scan": "No next step available without a thread yet.",
             }
 
         chat_focus_items = [
@@ -980,12 +980,12 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
                 "value": selected_thread.source_thread_id or "-",
             },
             {
-                "label": "Threadsamenvatting",
+                "label": "Thread summary",
                 "value": _condense_text(selected_thread.thread_summary, limit=220)
-                or "Nog geen threadsamenvatting vastgelegd.",
+                or "No thread summary recorded yet.",
             },
             {
-                "label": "Laatste statusmoment",
+                "label": "Latest status update",
                 "value": (
                     f"{selected_thread.get_status_display()} · "
                     f"{selected_thread.last_message_at or '-'}"
@@ -995,11 +995,11 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         latest_handoff_scan = {
             "summary": _condense_text(selected_thread.last_handoff_note, limit=260)
-            or "Nog geen handoff-note beschikbaar.",
+            or "No handoff note available yet.",
             "at": selected_thread.last_operator_handoff_at or "-",
         }
         next_step_scan = _condense_text(selected_thread.open_loop, limit=260) or (
-            "Los eerst op: Volgende stap ontbreekt (open loop leeg)."
+            "Resolve first: Next step is missing (open loop is empty)."
         )
 
         return {
@@ -1096,20 +1096,20 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             )
 
         if operator_context["customer_review_missing"]:
-            buddy_assist["reliability_label"] = "Laag"
+            buddy_assist["reliability_label"] = "Low"
             buddy_assist["reliability_badge"] = "badge-red"
             buddy_assist["reliability_reason"] = (
-                "Klantcontext is nog niet gereviewd."
+                "Customer context has not been reviewed yet."
             )
         elif (
             operator_context["customer_reliability_warning"]
-            and buddy_assist["reliability_label"] != "Laag"
+            and buddy_assist["reliability_label"] != "Low"
         ):
-            buddy_assist["reliability_label"] = "Middel"
+            buddy_assist["reliability_label"] = "Medium"
             buddy_assist["reliability_badge"] = "badge-yellow"
             buddy_assist["reliability_reason"] = (
-                "Klantcontext is gereviewd, maar niet aan de "
-                "bron gecontroleerd."
+                "Customer context has been reviewed, but not verified "
+                "against the source."
             )
 
         chat_scan_context = self._build_chat_scan_context(selected_thread)
@@ -1210,20 +1210,20 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         if selected_thread:
             run_log.append(
                 {
-                    "label": "Laatste bericht",
+                    "label": "Latest message",
                     "value": selected_thread.last_message_at or "-",
                 }
             )
             run_log.append(
                 {
-                    "label": "Laatste operator handoff",
+                    "label": "Latest operator handoff",
                     "value": selected_thread.last_operator_handoff_at or "-",
                 }
             )
             if latest_draft:
                 run_log.append(
                     {
-                        "label": "Laatste BuddyDraft",
+                        "label": "Latest BuddyDraft",
                         "value": f"{latest_draft.get_state_display()} ({latest_draft.created_at})",
                     }
                 )
@@ -1233,7 +1233,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             if selected_thread.open_loop:
                 open_issues.append(f"Open loop: {selected_thread.open_loop}")
             if latest_draft and latest_draft.requires_human_attention:
-                open_issues.append("BuddyDraft vereist human attention.")
+                open_issues.append("BuddyDraft requires human attention.")
             if access_state["status"] == "review_needed":
                 open_issues.extend(
                     [
@@ -1245,7 +1245,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
             quick_actions.append(
                 {
-                    "label": "Open thread detail",
+                    "label": "Open thread details",
                     "url": f"/conversations/{selected_thread.pk}/",
                 }
             )
@@ -1256,7 +1256,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             ):
                 quick_actions.append(
                     {
-                        "label": "Draft goedkeuren",
+                        "label": "Approve draft",
                         "type": "approve",
                         "draft_id": latest_draft.pk,
                     }
@@ -1380,10 +1380,10 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
         if not selected_thread:
             if request.POST.get("form_action") == "follow_up_status":
                 context["follow_up_submit_error"] = (
-                    "Geen actieve thread geselecteerd voor follow-up status."
+                    "No active thread selected for follow-up status."
                 )
             else:
-                context["submit_error"] = "Geen actieve thread geselecteerd voor handoff-afsluiting."
+                context["submit_error"] = "No active thread selected for handoff closeout."
             return self.render_to_response(context)
 
         if request.POST.get("form_action") == "follow_up_status":
@@ -1397,7 +1397,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
             }
 
             if follow_up_value not in allowed_statuses:
-                context["follow_up_submit_error"] = "Kies een geldige follow-up status."
+                context["follow_up_submit_error"] = "Select a valid follow-up status."
                 return self.render_to_response(context)
 
             follow_up_status, created = ThreadFollowUpStatus.objects.get_or_create(
@@ -1449,7 +1449,7 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         if context["access_state"]["status"] == "blocked":
             context["submit_error"] = (
-                "Handoff afsluiten is geblokkeerd: los eerst access/context issues op."
+                "Handoff closeout is blocked: resolve access or context issues first."
             )
             return self.render_to_response(context)
 
@@ -1460,15 +1460,15 @@ class ChatHubView(LoginRequiredMixin, TemplateView):
 
         if not handoff_summary or not next_step:
             context["submit_error"] = (
-                "Laatste stand en volgende stap zijn verplicht om af te sluiten."
+                "Latest status and next step are required to close the handoff."
             )
             return self.render_to_response(context)
 
         selected_thread.last_handoff_note = (
-            f"Laatste stand: {handoff_summary}\n"
-            f"Volgende stap: {next_step}\n"
+            f"Latest status: {handoff_summary}\n"
+            f"Next step: {next_step}\n"
             f"Blocker/issue: {blocker or '-'}\n"
-            f"Afsluitsignaal: {close_signal}"
+            f"Closeout signal: {close_signal}"
         )
         selected_thread.open_loop = next_step
         selected_thread.last_operator_handoff_at = timezone.now()
@@ -1588,26 +1588,26 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
 
     def _build_completeness_alerts(self, selected_creator, channels, materials):
         if not selected_creator:
-            return ["Geen creator geselecteerd."]
+            return ["No creator selected."]
 
         alerts = []
 
         if selected_creator.consent_status != selected_creator.ConsentStatus.ACTIVE:
-            alerts.append("Creator consent staat niet op actief.")
+            alerts.append("Creator consent is not active.")
         if not selected_creator.content_source_url:
-            alerts.append("Content source URL ontbreekt.")
+            alerts.append("Content source URL is missing.")
         if not selected_creator.content_ready_status:
-            alerts.append("Content ready status ontbreekt.")
+            alerts.append("Content ready status is missing.")
         if not channels:
-            alerts.append("Geen channels gekoppeld binnen scope.")
+            alerts.append("No channels are linked within scope.")
         if not materials:
-            alerts.append("Geen actief materiaal beschikbaar in feeder.")
+            alerts.append("No active material is available in Feeder.")
 
         channel_with_next_step = any(
             not is_placeholder_noise(channel.session_next_action) for channel in channels
         )
         if not channel_with_next_step:
-            alerts.append("Volgende stap ontbreekt in channel sessiecontext.")
+            alerts.append("Next step is missing from the channel session context.")
 
         return alerts
 
@@ -1617,7 +1617,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Geen creator geselecteerd; feederactie is geblokkeerd.",
+                "reason": "No creator selected; the Feeder action is blocked.",
             }
 
         if not assignment:
@@ -1625,7 +1625,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Geen actieve operator-assignment voor deze creator.",
+                "reason": "No active operator assignment for this creator.",
             }
 
         if not channels or not selected_creator.content_source_url:
@@ -1633,7 +1633,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 "status": "blocked",
                 "label": "blocked",
                 "badge": "badge-red",
-                "reason": "Werkbare basiscontext ontbreekt (channel of content source).",
+                "reason": "Usable base context is missing (channel or content source).",
             }
 
         if assignment.scope not in {
@@ -1644,7 +1644,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 "status": "review_needed",
                 "label": "review_needed",
                 "badge": "badge-yellow",
-                "reason": "Assignment scope vraagt review voor feeder-acties.",
+                "reason": "The assignment scope requires review for Feeder actions.",
             }
 
         if (
@@ -1656,14 +1656,14 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 "status": "review_needed",
                 "label": "review_needed",
                 "badge": "badge-yellow",
-                "reason": "Consent/readiness vraagt extra review vóór live actie.",
+                "reason": "Consent or readiness requires extra review before a live action.",
             }
 
         return {
             "status": "allowed",
             "label": "allowed",
             "badge": "badge-green",
-            "reason": "Creator/context/operator-scope voldoende om binnen Feeder te werken.",
+            "reason": "Creator context and operator scope are sufficient to work in Feeder.",
         }
 
     def _select_latest_handoff_channel(self, channels):
@@ -1695,11 +1695,11 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             {"label": "Access", "value": access_state.get("label", "-")},
             {
                 "label": "Live focus",
-                "value": live_now_items[0] if live_now_items else "Geen live focus beschikbaar.",
+                "value": live_now_items[0] if live_now_items else "No live focus available.",
             },
             {
-                "label": "Aandacht",
-                "value": attention_items[0] if attention_items else "Geen extra aandachtspunten.",
+                "label": "Attention",
+                "value": attention_items[0] if attention_items else "No additional attention points.",
             },
         ]
 
@@ -1707,7 +1707,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             "channel": (
                 f"{relevant_handoff_channel.get_platform_display()} / {relevant_handoff_channel.handle}"
                 if relevant_handoff_channel
-                else "Geen channel handoff-context binnen scope."
+                else "No channel handoff context within scope."
             ),
             "status": follow_up_summary.get("latest_status", "-"),
             "blocker": (
@@ -1721,15 +1721,15 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
         next_operator_action_scan = follow_up_summary.get("next_step") or "-"
         if next_operator_action_scan == "-":
             if completeness_alerts:
-                next_operator_action_scan = f"Los eerst op: {completeness_alerts[0]}"
+                next_operator_action_scan = f"Resolve first: {completeness_alerts[0]}"
             elif run_log:
                 next_operator_action_scan = f"Scan {run_log[-1]['label']}."
             else:
-                next_operator_action_scan = "Geen volgende operatoractie beschikbaar."
+                next_operator_action_scan = "No next operator action available."
 
         chats_handoff_scan = {
             "count": len(chats_handoff_items),
-            "target": follow_up_summary.get("work_target") or "Geen doorzet naar Chats",
+            "target": follow_up_summary.get("work_target") or "No handoff to Chats",
         }
 
         return {
@@ -1828,19 +1828,19 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
             )
             if waiting_threads:
                 open_signals.append(
-                    f"{len(waiting_threads)} thread(s) wachten op operator/handoff in Chats."
+                    f"{len(waiting_threads)} thread(s) are waiting for operator action or handoff in Chats."
                 )
 
             if (
                 selected_creator.content_ready_status
                 != selected_creator.ContentReadyStatus.READY_TO_POST
             ):
-                open_signals.append("Niet alle content staat op 'ready to post'.")
+                open_signals.append("Not all content is marked 'ready to post'.")
 
             relevant_handoff_channel = self._select_latest_handoff_channel(channels)
             run_log.append(
                 {
-                    "label": "Laatste channel update",
+                    "label": "Latest channel update",
                     "value": (
                         relevant_handoff_channel.session_updated_at
                         if relevant_handoff_channel
@@ -1848,7 +1848,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                     ),
                 }
             )
-            run_log.append({"label": "Actief materiaal", "value": len(materials)})
+            run_log.append({"label": "Active material", "value": len(materials)})
             run_log.append({"label": "Open chatthreads", "value": len(waiting_threads)})
 
             if prioritized_threads:
@@ -1868,12 +1868,12 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
 
             live_now_items = [
                 f"Content readiness: {selected_creator.get_content_ready_status_display() or '-'}",
-                f"Actief materiaal: {len(materials)} item(s)",
+                f"Active material: {len(materials)} item(s)",
                 (
-                    f"Kanaalfocus: {relevant_handoff_channel.get_platform_display()} / "
+                    f"Channel focus: {relevant_handoff_channel.get_platform_display()} / "
                     f"{relevant_handoff_channel.handle}"
                     if relevant_handoff_channel
-                    else "Kanaalfocus: nog niet beschikbaar"
+                    else "Channel focus: not available yet"
                 ),
             ]
 
@@ -1881,13 +1881,13 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 selected_creator.content_ready_status
                 != selected_creator.ContentReadyStatus.READY_TO_POST
             ):
-                attention_items.append("Content staat nog niet op ready-to-post.")
+                attention_items.append("Content is not ready to post yet.")
             if selected_creator.consent_status != selected_creator.ConsentStatus.ACTIVE:
-                attention_items.append("Consent is niet actief; review of escalatie nodig.")
+                attention_items.append("Consent is not active; review or escalation is required.")
             if not selected_creator.content_source_url:
-                attention_items.append("Content source ontbreekt; context aanvullen.")
+                attention_items.append("Content source is missing; complete the context.")
             if not materials:
-                attention_items.append("Geen actief materiaal beschikbaar.")
+                attention_items.append("No active material available.")
 
             for channel in channels:
                 if not is_placeholder_noise(channel.session_blockers):
@@ -1898,7 +1898,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 if is_placeholder_noise(channel.session_next_action):
                     attention_items.append(
                         f"{channel.get_platform_display()} / {channel.handle}: "
-                        "volgende stap ontbreekt."
+                        "next step is missing."
                     )
 
             for thread in prioritized_threads:
@@ -1937,7 +1937,7 @@ class FeederHubView(LoginRequiredMixin, TemplateView):
                 "work_target": (
                     f"Chats thread {prioritized_threads[0].source_thread_id}"
                     if prioritized_threads
-                    else "Geen doorzet naar Chats"
+                    else "No handoff to Chats"
                 ),
             }
 

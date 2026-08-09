@@ -3,43 +3,43 @@
 {% block content %}
 <h1>Assignments</h1>
 <p class="muted">
-    Beheer hier welke operator op welke creator werkt, met scope, looptijd en actieve status.
+    Manage which operator works on each creator, including scope, term and active status.
 </p>
 
 {% if saved %}
     <div class="success-panel">
-        Assignment is opgeslagen.
+        Assignment saved.
     </div>
 {% endif %}
 
 {% if status_changed %}
     <div class="success-panel">
-        Assignment status is bijgewerkt.
+        Assignment status updated.
     </div>
 {% endif %}
 
 <div class="cards">
     <div class="card">
-        <div>Totaal</div>
+        <div>Total</div>
         <div class="card-number">{{ summary.assignment_count }}</div>
     </div>
     <div class="card">
-        <div>Actief</div>
+        <div>Active</div>
         <div class="card-number">{{ summary.active_count }}</div>
     </div>
     <div class="card">
-        <div>Inactief</div>
+        <div>Inactive</div>
         <div class="card-number">{{ summary.inactive_count }}</div>
     </div>
 </div>
 
 <div class="panel" style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
     <div>
-        <strong>Assignments overzicht</strong>
-        <div class="muted">Gebruik deactivate of reactivate om een assignment operationeel te schakelen zonder historie te verliezen.</div>
+        <strong>Assignments overview</strong>
+        <div class="muted">Deactivate or reactivate an assignment without losing its history.</div>
     </div>
     {% if can_manage_assignments %}
-        <a class="primary-button" href="{% url 'assignment-create' %}">Nieuwe assignment</a>
+        <a class="primary-button" href="{% url 'assignment-create' %}">New assignment</a>
     {% endif %}
 </div>
 
@@ -86,7 +86,7 @@
                         <div>{{ assignment.starts_at }}</div>
                     </div>
                     <div>
-                        <div class="muted">Einde</div>
+                        <div class="muted">End</div>
                         <div>{{ assignment.ends_at|default:"open" }}</div>
                     </div>
                     <div>
@@ -96,7 +96,7 @@
                 </div>
             </article>
         {% empty %}
-            <div>Geen assignments.</div>
+            <div>No assignments.</div>
         {% endfor %}
     </div>
 </div>

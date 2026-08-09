@@ -39,7 +39,7 @@ def canonical_source_label(
         SOURCE_LABELS.get(canonical_key)
         or str(fallback or "").strip()
         or canonical_key
-        or "Onbekende bron"
+        or "Unknown source"
     )
 
 

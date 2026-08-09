@@ -2,15 +2,15 @@
 
 {% block content %}
 <h1>Operations Dashboard</h1>
-<p class="muted">Overzicht van aandachtspunten, snelle toegang en operationele status.</p>
+<p class="muted">A central view of operational status, priorities and fast access.</p>
 
 {% if request.user.is_staff or request.user.is_superuser %}
 <div class="panel" style="margin-bottom: 1.5rem;">
-    <h2>Snelle acties</h2>
-    <a class="primary-button" href="{% url 'creator-create' %}">Nieuwe creator</a>
-    <a class="primary-button" href="{% url 'channel-create' %}">Nieuw channel</a>
-    <a class="primary-button" href="{% url 'operator-create' %}">Nieuwe operator</a>
-    <a class="primary-button" href="{% url 'assignment-create' %}">Nieuwe assignment</a>
+    <h2>Quick actions</h2>
+    <a class="primary-button" href="{% url 'creator-create' %}">New creator</a>
+    <a class="primary-button" href="{% url 'channel-create' %}">New channel</a>
+    <a class="primary-button" href="{% url 'operator-create' %}">New operator</a>
+    <a class="primary-button" href="{% url 'assignment-create' %}">New assignment</a>
 </div>
 {% endif %}
 
@@ -18,11 +18,11 @@
 <div class="panel" style="margin-bottom: 1.5rem;">
     <h2>Conversation intake</h2>
     <p class="muted">
-        Gebruik dit om een gesprek handmatig vast te leggen. De bron-ID kan een livechat-ID, DM-referentie of herkenbare interne referentie zijn.
+        Log a conversation manually. The source ID can be a live-chat ID, DM reference or recognizable internal reference.
     </p>
     <a class="primary-button" href="{% url 'conversation-thread-list' %}">Conversations</a>
     <a class="primary-button" href="{% url 'conversation-thread-create' %}">
-        Nieuwe conversation thread
+        New conversation thread
     </a>
 </div>
 {% endif %}
@@ -45,7 +45,7 @@
         <div class="card-number">{{ summary.needs_reset_count }}</div>
     </div>
     <div class="card" style="background:#fffbeb;">
-        <div>Geen 2FA</div>
+        <div>No 2FA</div>
         <div class="card-number">{{ summary.without_2fa_count }}</div>
     </div>
     <div class="card" style="background:#fffbeb;">
@@ -58,10 +58,10 @@
     </div>
 </div>
 
-<h2>Aandacht vereist</h2>
+<h2>Attention required</h2>
 <div class="grid">
     <div class="panel">
-        <h3>Credential reset nodig</h3>
+        <h3>Credential reset required</h3>
         <ul class="clean">
             {% for channel in channels_needing_reset %}
                 <li>
@@ -73,28 +73,28 @@
                     {% endif %}
                 </li>
             {% empty %}
-                <li>Geen directe reset issues.</li>
+                <li>No immediate reset issues.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="panel">
-        <h3>Channels zonder 2FA</h3>
+        <h3>Channels without 2FA</h3>
         <ul class="clean">
             {% for channel in channels_without_2fa %}
                 <li>
-                    <span class="badge badge-yellow">2FA ontbreekt</span>
+                    <span class="badge badge-yellow">2FA missing</span>
                     <a href="{% url 'creator-detail' channel.creator.pk %}">{{ channel.creator.display_name }}</a>
                     — {{ channel.platform }} / {{ channel.handle }}
                 </li>
             {% empty %}
-                <li>Geen 2FA issues.</li>
+                <li>No 2FA issues.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="panel">
-        <h3>VPN/IP policy mist info</h3>
+        <h3>VPN/IP policy information missing</h3>
         <ul class="clean">
             {% for channel in vpn_policy_gaps %}
                 <li>
@@ -103,7 +103,7 @@
                     — {{ channel.platform }} / {{ channel.handle }}
                 </li>
             {% empty %}
-                <li>Geen VPN/IP gaps.</li>
+                <li>No VPN/IP gaps.</li>
             {% endfor %}
         </ul>
     </div>
@@ -118,13 +118,13 @@
                     — {{ creator.consent_status }}
                 </li>
             {% empty %}
-                <li>Geen consent issues.</li>
+                <li>No consent issues.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="panel">
-        <h3>Niet-actieve creators</h3>
+        <h3>Inactive creators</h3>
         <ul class="clean">
             {% for creator in paused_or_offboarded %}
                 <li>
@@ -132,21 +132,21 @@
                     <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
                 </li>
             {% empty %}
-                <li>Geen paused/offboarded creators.</li>
+                <li>No paused or offboarded creators.</li>
             {% endfor %}
         </ul>
     </div>
 
     <div class="panel">
-        <h3>Zonder actieve assignment</h3>
+        <h3>Without an active assignment</h3>
         <ul class="clean">
             {% for creator in creators_without_active_assignment %}
                 <li>
-                    <span class="badge badge-red">geen assignment</span>
+                    <span class="badge badge-red">no assignment</span>
                     <a href="{% url 'creator-detail' creator.pk %}">{{ creator.display_name }}</a>
                 </li>
             {% empty %}
-                <li>Geen assignment-gaps.</li>
+                <li>No assignment gaps.</li>
             {% endfor %}
         </ul>
     </div>
@@ -165,13 +165,13 @@
                 {% endif %}
 
                 {% if not channel.two_factor_enabled %}
-                    <span class="badge badge-yellow">geen 2FA</span>
+                    <span class="badge badge-yellow">no 2FA</span>
                 {% else %}
                     <span class="badge badge-green">2FA ok</span>
                 {% endif %}
 
                 {% if channel.vpn_required %}
-                    <span class="badge badge-blue">VPN verplicht</span>
+                    <span class="badge badge-blue">VPN required</span>
                 {% endif %}
 
                 {% if channel.profile_url %}
@@ -179,7 +179,7 @@
                 {% endif %}
                 <div class="quick-link"><a href="{% url 'channel-detail' channel.pk %}">Channel detail</a></div>
                 <div class="quick-link"><a href="{% url 'creator-detail' channel.creator.pk %}">Creator detail</a></div>
-                <div class="quick-link"><a href="{% url 'creator-network' channel.creator.pk %}">Netwerk</a></div>
+                <div class="quick-link"><a href="{% url 'creator-network' channel.creator.pk %}">Network</a></div>
 
                 <div class="muted" style="margin-top:0.25rem;">
                     Region: {{ channel.approved_access_region|default:"-" }} |
@@ -188,12 +188,12 @@
                 </div>
             </li>
         {% empty %}
-            <li>Geen channels beschikbaar.</li>
+            <li>No channels available.</li>
         {% endfor %}
     </ul>
 </div>
 
-<h2>Mijn creators</h2>
+<h2>My creators</h2>
 <div class="panel">
     <ul class="clean">
         {% for creator in my_creators %}
@@ -212,10 +212,10 @@
                     <span class="badge badge-yellow">consent {{ creator.consent_status }}</span>
                 {% endif %}
 
-                <div class="quick-link"><a href="{% url 'creator-network' creator.pk %}">Netwerk</a></div>
+                <div class="quick-link"><a href="{% url 'creator-network' creator.pk %}">Network</a></div>
             </li>
         {% empty %}
-            <li>Geen creators zichtbaar.</li>
+            <li>No creators visible.</li>
         {% endfor %}
     </ul>
 </div>

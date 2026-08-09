@@ -104,8 +104,8 @@ class BuddyDraftDetailUITests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Er is nog geen BuddyDraft beschikbaar.")
-        self.assertContains(response, "Draft-generatie volgt in een later ticket.")
+        self.assertContains(response, "No BuddyDraft is available yet.")
+        self.assertContains(response, "Draft generation will follow in a later ticket.")
 
     def test_detail_renders_buddy_draft_fields(self):
         self.client.force_login(self.operator_user)
@@ -128,7 +128,7 @@ class BuddyDraftDetailUITests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Requires human attention:")
-        self.assertContains(response, "Ja")
+        self.assertContains(response, "Yes")
         self.assertContains(response, "State:")
         self.assertContains(response, "drafted")
         self.assertContains(response, "Generation source:")
@@ -141,12 +141,12 @@ class BuddyDraftDetailUITests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Volgende fase")
-        self.assertContains(response, "Aanvullende draft-acties volgen in een volgende fase.")
-        self.assertContains(response, "Reject- en verzendflow worden later toegevoegd.")
-        self.assertNotContains(response, "Genereer")
-        self.assertNotContains(response, "Verzend")
-        self.assertNotContains(response, "Markeer draft als afgekeurd")
+        self.assertContains(response, "Next phase")
+        self.assertContains(response, "Additional draft actions will follow in a later phase.")
+        self.assertContains(response, "Rejection and sending flows will be added later.")
+        self.assertNotContains(response, "Generate")
+        self.assertNotContains(response, "Send")
+        self.assertNotContains(response, "Mark draft as rejected")
 
     def test_detail_now_renders_real_approve_button_for_drafted_latest_draft(self):
         self.client.force_login(self.operator_user)
@@ -155,7 +155,7 @@ class BuddyDraftDetailUITests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Markeer draft als goedgekeurd")
+        self.assertContains(response, "Mark draft as approved")
         self.assertContains(response, reverse("buddy-draft-approve", kwargs={"pk": self.draft.pk}))
 
     def test_existing_scope_access_remains_intact(self):

@@ -5,7 +5,7 @@
 
 <div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
     {% if request.user.is_staff or request.user.is_superuser %}
-        <a class="quick-link" href="{% url 'channel-create' %}">Nieuw channel</a>
+        <a class="quick-link" href="{% url 'channel-create' %}">New channel</a>
     {% endif %}
     <a class="quick-link" href="/channels/">Reset filters</a>
 </div>
@@ -31,7 +31,7 @@
                 {% endif %}
             "
         >
-            Alle channels ({{ preset_counts.all }})
+            All channels ({{ preset_counts.all }})
         </a>
 
         <a
@@ -51,7 +51,7 @@
                 {% endif %}
             "
         >
-            Alle issues ({{ preset_counts.issues }})
+            All issues ({{ preset_counts.issues }})
         </a>
 
         <a
@@ -91,7 +91,7 @@
                 {% endif %}
             "
         >
-            Geen 2FA ({{ preset_counts.no_2fa }})
+            No 2FA ({{ preset_counts.no_2fa }})
         </a>
 
         <a
@@ -131,7 +131,7 @@
                 {% endif %}
             "
         >
-            Geen identifier ({{ preset_counts.no_identifier }})
+            Missing identifier ({{ preset_counts.no_identifier }})
         </a>
 
         <a
@@ -151,7 +151,7 @@
                 {% endif %}
             "
         >
-            Geen update ({{ preset_counts.no_update }})
+            Missing update ({{ preset_counts.no_update }})
         </a>
     </div>
 </div>
@@ -168,7 +168,7 @@
             border: 1px solid #86efac;
         "
     >
-        Channel bijgewerkt. Je zit nog steeds in dezelfde queue.
+        Channel updated. You are still in the same queue.
     </div>
 {% endif %}
 
@@ -179,13 +179,13 @@
         <input type="hidden" name="preset" value="{% if current_preset != 'all' %}{{ current_preset }}{% endif %}">
 
         <div>
-            <label for="id_q"><strong>Zoeken</strong></label>
+            <label for="id_q"><strong>Search</strong></label>
             <input
                 id="id_q"
                 type="text"
                 name="q"
                 value="{{ current_q }}"
-                placeholder="Creator, handle, login, email, telefoon"
+                placeholder="Creator, handle, login, email, phone"
                 style="width: 100%;"
             >
         </div>
@@ -193,7 +193,7 @@
         <div>
             <label for="id_status"><strong>Status</strong></label>
             <select id="id_status" name="status" style="width: 100%;">
-                <option value="">Alle statussen</option>
+                <option value="">All statuses</option>
                 {% for value, label in channel_status_choices %}
                     <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
                         {{ label }}
@@ -205,7 +205,7 @@
         <div>
             <label for="id_credential_status"><strong>Credential status</strong></label>
             <select id="id_credential_status" name="credential_status" style="width: 100%;">
-                <option value="">Alle credential statussen</option>
+                <option value="">All credential statuses</option>
                 {% for value, label in credential_status_choices %}
                     <option value="{{ value }}" {% if current_credential_status == value %}selected{% endif %}>
                         {{ label }}
@@ -217,18 +217,18 @@
         <div>
             <label for="id_two_factor_enabled"><strong>2FA</strong></label>
             <select id="id_two_factor_enabled" name="two_factor_enabled" style="width: 100%;">
-                <option value="">Alles</option>
-                <option value="yes" {% if current_two_factor_enabled == "yes" %}selected{% endif %}>Alleen aan</option>
-                <option value="no" {% if current_two_factor_enabled == "no" %}selected{% endif %}>Alleen uit</option>
+                <option value="">All</option>
+                <option value="yes" {% if current_two_factor_enabled == "yes" %}selected{% endif %}>Enabled only</option>
+                <option value="no" {% if current_two_factor_enabled == "no" %}selected{% endif %}>Disabled only</option>
             </select>
         </div>
 
         <div>
             <label for="id_vpn_required"><strong>VPN required</strong></label>
             <select id="id_vpn_required" name="vpn_required" style="width: 100%;">
-                <option value="">Alles</option>
-                <option value="yes" {% if current_vpn_required == "yes" %}selected{% endif %}>Alleen ja</option>
-                <option value="no" {% if current_vpn_required == "no" %}selected{% endif %}>Alleen nee</option>
+                <option value="">All</option>
+                <option value="yes" {% if current_vpn_required == "yes" %}selected{% endif %}>Required only</option>
+                <option value="no" {% if current_vpn_required == "no" %}selected{% endif %}>Not required only</option>
             </select>
         </div>
 
@@ -268,26 +268,26 @@
 
 <div class="panel">
     <div style="margin-bottom: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; color: #555;">
-        <div><strong>{{ issue_count }}</strong> channels met issues in deze selectie</div>
-        <div><strong>{{ visible_count }}</strong> totaal zichtbaar</div>
+        <div><strong>{{ issue_count }}</strong> channels with issues in this selection</div>
+        <div><strong>{{ visible_count }}</strong> visible in total</div>
         <div>
             <strong>Preset:</strong>
             {% if current_preset == "all" %}
-                Alle channels
+                All channels
             {% elif current_preset == "issues" %}
-                Alle issues
+                All issues
             {% elif current_preset == "needs_reset" %}
                 Needs reset
             {% elif current_preset == "no_2fa" %}
-                Geen 2FA
+                No 2FA
             {% elif current_preset == "vpn_gap" %}
                 VPN gaps
             {% elif current_preset == "no_identifier" %}
-                Geen identifier
+                Missing identifier
             {% elif current_preset == "no_update" %}
-                Geen update
+                Missing update
             {% else %}
-                Alle channels
+                All channels
             {% endif %}
         </div>
     </div>
@@ -300,15 +300,15 @@
                     <th style="padding: 0.75rem 0.5rem;">Platform</th>
                     <th style="padding: 0.75rem 0.5rem;">Handle</th>
                     <th style="padding: 0.75rem 0.5rem;">Email</th>
-                    <th style="padding: 0.75rem 0.5rem;">Telefoon</th>
+                    <th style="padding: 0.75rem 0.5rem;">Phone</th>
                     <th style="padding: 0.75rem 0.5rem;">Status</th>
                     <th style="padding: 0.75rem 0.5rem;">Credential</th>
                     <th style="padding: 0.75rem 0.5rem;">2FA</th>
                     <th style="padding: 0.75rem 0.5rem;">VPN</th>
                     <th style="padding: 0.75rem 0.5rem;">IP / Label</th>
                     <th style="padding: 0.75rem 0.5rem;">Issues</th>
-                    <th style="padding: 0.75rem 0.5rem;">Laatste update</th>
-                    <th style="padding: 0.75rem 0.5rem;">Acties</th>
+                    <th style="padding: 0.75rem 0.5rem;">Latest update</th>
+                    <th style="padding: 0.75rem 0.5rem;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -360,7 +360,7 @@
                             {% elif channel.credential_status %}
                                 <span class="badge badge-blue">{{ channel.credential_status }}</span>
                             {% else %}
-                                <span class="badge badge-yellow">onbekend</span>
+                                <span class="badge badge-yellow">unknown</span>
                             {% endif %}
                         </td>
 
@@ -374,7 +374,7 @@
 
                         <td style="padding: 0.75rem 0.5rem;">
                             {% if channel.vpn_required %}
-                                <span class="badge badge-blue">verplicht</span>
+                                <span class="badge badge-blue">required</span>
                             {% else %}
                                 <span class="badge badge-green">nee</span>
                             {% endif %}
@@ -399,7 +399,7 @@
                                 {% endif %}
 
                                 {% if not channel.two_factor_enabled %}
-                                    <span class="badge badge-yellow">geen 2FA</span>
+                                    <span class="badge badge-yellow">no 2FA</span>
                                 {% endif %}
 
                                 {% if channel.policy_gap %}
@@ -407,11 +407,11 @@
                                 {% endif %}
 
                                 {% if channel.missing_identifier %}
-                                    <span class="badge badge-yellow">geen identifier</span>
+                                    <span class="badge badge-yellow">missing identifier</span>
                                 {% endif %}
 
                                 {% if channel.missing_update %}
-                                    <span class="badge badge-yellow">geen update</span>
+                                    <span class="badge badge-yellow">missing update</span>
                                 {% endif %}
 
                                 {% if not channel.has_issue %}
@@ -449,7 +449,7 @@
                 {% empty %}
                     <tr>
                         <td colspan="13" style="padding: 1rem 0.5rem; color: #777;">
-                            Geen channels zichtbaar voor deze filters.
+                            No channels are visible for these filters.
                         </td>
                     </tr>
                 {% endfor %}

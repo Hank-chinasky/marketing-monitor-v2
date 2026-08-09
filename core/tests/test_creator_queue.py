@@ -113,7 +113,7 @@ class CreatorQueueTests(TestCase):
         self.assertEqual(response.context["visible_count"], 1)
         self.assertEqual(response.context["active_preset"], "attention")
         self.assertContains(response, "Attention Creator")
-        self.assertContains(response, "Bevestig of herstel de consentstatus.")
+        self.assertContains(response, "Confirm or restore the consent status.")
         self.assertNotContains(response, "Calm Creator")
 
     def test_all_preset_renders_every_creator_in_admin_scope(self):
@@ -126,7 +126,7 @@ class CreatorQueueTests(TestCase):
         self.assertContains(response, "Calm Creator")
         self.assertContains(response, "Attention Creator")
         self.assertContains(response, "Other Operator Creator")
-        self.assertNotContains(response, "Geen creators zichtbaar")
+        self.assertNotContains(response, "No creators visible")
 
     def test_operator_queue_only_renders_creators_in_active_assignment_scope(self):
         self.client.force_login(self.operator_user)
@@ -166,4 +166,4 @@ class CreatorQueueTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["summary"]["total_creators"], 0)
         self.assertEqual(response.context["visible_count"], 0)
-        self.assertContains(response, "Geen creators zichtbaar")
+        self.assertContains(response, "No creators visible")

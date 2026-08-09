@@ -73,7 +73,7 @@ class OperatorManagementTests(TestCase):
         self.assertNotContains(response, self.other_operator_user.username)
         self.assertNotContains(response, self.other_operator_user.email)
         self.assertEqual(list(response.context["operators"]), [self.operator])
-        self.assertNotContains(response, "Nieuwe operator")
+        self.assertNotContains(response, "New operator")
         self.assertNotContains(
             response,
             reverse("operator-update", kwargs={"pk": self.operator.pk}),
@@ -86,9 +86,9 @@ class OperatorManagementTests(TestCase):
             response,
             reverse("operator-toggle-active", kwargs={"pk": self.operator.pk}),
         )
-        self.assertNotContains(response, "Bewerk")
-        self.assertNotContains(response, "Reset wachtwoord")
-        self.assertNotContains(response, "Blokkeer")
+        self.assertNotContains(response, "Edit")
+        self.assertNotContains(response, "Reset password")
+        self.assertNotContains(response, "Block")
 
     def test_operator_list_blocks_plain_user_without_operator_profile(self):
         self.client.force_login(self.plain_user)
@@ -116,13 +116,13 @@ class OperatorManagementTests(TestCase):
             response,
             reverse("operator-toggle-active", kwargs={"pk": self.operator.pk}),
         )
-        self.assertContains(response, "Blokkeer")
+        self.assertContains(response, "Block")
 
     def test_admin_can_open_operator_update(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("operator-update", kwargs={"pk": self.operator.pk}))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Operator bewerken")
+        self.assertContains(response, "Edit operator")
         self.assertContains(response, self.operator_user.username)
 
     def test_admin_can_update_operator_profile(self):
@@ -222,14 +222,14 @@ class OperatorManagementTests(TestCase):
         response = self.client.get(reverse("operator-create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="secondary-button"')
-        self.assertContains(response, "Terug naar operators")
+        self.assertContains(response, "Back to operators")
 
     def test_creator_create_page_has_real_back_button(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse("creator-create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="secondary-button"')
-        self.assertContains(response, "Terug naar creators")
+        self.assertContains(response, "Back to creators")
 
     def test_operator_list_shows_blocked_status_after_toggle(self):
         self.client.force_login(self.admin)
@@ -240,5 +240,5 @@ class OperatorManagementTests(TestCase):
         )
 
         response = self.client.get(reverse("operator-list"))
-        self.assertContains(response, "geblokkeerd")
-        self.assertContains(response, "Deblokkeer")
+        self.assertContains(response, "blocked")
+        self.assertContains(response, "Unblock")

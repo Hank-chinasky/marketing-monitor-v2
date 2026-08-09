@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{% if object %}Conversation thread wijzigen{% else %}Nieuwe conversation thread{% endif %}</h1>
+<h1>{% if object %}Edit conversation thread{% else %}New conversation thread{% endif %}</h1>
 
 <div style="margin-bottom:1rem;">
-    <a class="quick-link" href="{% url 'conversation-thread-list' %}">Terug naar conversations</a>
+    <a class="quick-link" href="{% url 'conversation-thread-list' %}">Back to conversations</a>
     {% if object %}
-        <a class="quick-link" href="{% url 'conversation-thread-detail' object.pk %}">Terug naar thread</a>
+        <a class="quick-link" href="{% url 'conversation-thread-detail' object.pk %}">Back to thread</a>
     {% endif %}
 </div>
 
@@ -26,7 +26,7 @@
             </p>
         {% endfor %}
 
-        <button type="submit" class="primary-button">Opslaan</button>
+        <button type="submit" class="primary-button">Save</button>
     </form>
 </div>
 {% endblock %}

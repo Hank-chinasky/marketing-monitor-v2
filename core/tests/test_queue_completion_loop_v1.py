@@ -245,7 +245,7 @@ class QueueCompletionLoopV1Tests(TestCase):
         saved_response = self.client.get(response["Location"])
         self.assertContains(
             saved_response,
-            "Er is geen ander actief gesprek om nu te openen.",
+            "There is no other active conversation to open now.",
         )
 
 
@@ -387,20 +387,20 @@ class QueueCompletionLoopV1Tests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Operatorwerkvloer")
-        self.assertContains(response, "Werkvoorraad")
-        self.assertContains(response, "Berichten")
+        self.assertContains(response, "Operator workspace")
+        self.assertContains(response, "Work queue")
+        self.assertContains(response, "Messages")
         self.assertContains(response, "Buddy")
-        self.assertContains(response, "Operatoractie")
-        self.assertContains(response, "Later triggeren")
-        self.assertContains(response, "Afgekoeld")
-        self.assertContains(response, "Review nodig")
-        self.assertContains(response, "Opslaan follow-up status")
-        self.assertContains(response, "Opslaan en volgende openen")
+        self.assertContains(response, "Operator action")
+        self.assertContains(response, "Trigger later")
+        self.assertContains(response, "Cooled off")
+        self.assertContains(response, "Review required")
+        self.assertContains(response, "Save follow-up status")
+        self.assertContains(response, "Save and open next")
         self.assertContains(
             response,
-            "Bekijk gesprekken die aandacht vragen",
+            "View conversations that need attention",
         )
-        self.assertContains(response, "Focusstand openen")
-        self.assertNotContains(response, "Focusstand actief")
+        self.assertContains(response, "Open focus mode")
+        self.assertNotContains(response, "Focus mode active")
         self.assertNotContains(response, "Focusstand verlaten")

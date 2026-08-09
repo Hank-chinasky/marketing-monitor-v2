@@ -37,13 +37,13 @@ class OperatorReplyDraft:
 
 
 _REPLY_STATUS_META = {
-    "no_thread": ("Geen gesprek", "badge-yellow"),
-    "no_inbound_message": ("Geen klantbericht", "badge-yellow"),
-    "existing_draft": ("Bestaand Buddy-concept", "badge-blue"),
-    "provider_unavailable": ("Nog geen Buddy-antwoord", "badge-yellow"),
-    "provider_error": ("Providerfout", "badge-red"),
-    "provider_refusal": ("Buddy geeft geen concept", "badge-yellow"),
-    "ready": ("Concept gereed", "badge-green"),
+    "no_thread": ("No conversation", "badge-yellow"),
+    "no_inbound_message": ("No customer message", "badge-yellow"),
+    "existing_draft": ("Existing Buddy draft", "badge-blue"),
+    "provider_unavailable": ("No Buddy reply yet", "badge-yellow"),
+    "provider_error": ("Provider error", "badge-red"),
+    "provider_refusal": ("Buddy did not provide a draft", "badge-yellow"),
+    "ready": ("Draft ready", "badge-green"),
 }
 
 
@@ -201,14 +201,14 @@ def _provider_error_draft(
         language=language,
         source=source,
         provider_error=(
-            "De Buddy-provider kon geen geldig concept leveren. "
-            "Er is geen automatisch of generiek antwoord ingevuld."
+            "The Buddy provider could not produce a valid draft. "
+            "No automatic or generic reply was inserted."
         ),
         safety_note=(
-            "Geen provideruitvoer beschikbaar. "
-            "De operator moet zelf beslissen of handmatig antwoorden veilig is."
+            "No provider output is available. "
+            "The operator must decide whether a manual reply is safe."
         ),
-        tone_note="Controleer providerstatus en context voordat je verdergaat.",
+        tone_note="Check provider status and context before continuing.",
     )
 
 
@@ -226,14 +226,14 @@ def _provider_refusal_draft(
         language=language,
         source=source,
         safety_note=(
-            "Buddy heeft bewust geen antwoordconcept geleverd. "
-            "De operator moet de zichtbare context zelf beoordelen."
+            "Buddy deliberately did not provide a reply draft. "
+            "The operator must review the visible context."
         ),
         missing_context_note=(
-            "Er is geen veilig providerconcept beschikbaar."
+            "No safe provider draft is available."
         ),
         tone_note=reason or (
-            "Controleer de gesprekssituatie handmatig voordat je antwoordt."
+            "Review the conversation manually before replying."
         ),
     )
 
@@ -264,11 +264,11 @@ def build_operator_reply_draft(
             language="unknown",
             source="no_thread",
             safety_note=(
-                "Geen actieve thread geselecteerd. "
-                "Er mag geen antwoord worden gebruikt."
+                "No active thread selected. "
+                "No reply may be used."
             ),
-            missing_context_note="Geen actieve thread geselecteerd.",
-            tone_note="Selecteer eerst een gesprek.",
+            missing_context_note="No active thread selected.",
+            tone_note="Select a conversation first.",
         )
 
     latest_inbound_text = _latest_inbound_body(messages)
@@ -282,11 +282,11 @@ def build_operator_reply_draft(
             language="unknown",
             source="no_inbound_message",
             safety_note=(
-                "Er is geen inkomend klantbericht beschikbaar. "
-                "Er mag geen antwoord worden gebruikt."
+                "No inbound customer message is available. "
+                "No reply may be used."
             ),
-            missing_context_note="Geen inkomend klantbericht beschikbaar.",
-            tone_note="Wacht op klantcontext voordat je een antwoord opstelt.",
+            missing_context_note="No inbound customer message is available.",
+            tone_note="Wait for customer context before drafting a reply.",
         )
 
     existing_reply_text = _text(getattr(latest_draft, "reply_text", ""))
@@ -299,12 +299,12 @@ def build_operator_reply_draft(
             language=language,
             source="latest_buddy_draft",
             safety_note=(
-                "Concept alleen. De operator moet het bestaande Buddy-concept "
-                "controleren tegen de zichtbare berichten en context."
+                "Draft only. The operator must check the existing Buddy draft "
+                "against the visible messages and context."
             ),
             tone_note=(
-                "Controleer of het bestaande concept de laatste klantboodschap, "
-                "profieltoon en open loop correct volgt."
+                "Check whether the existing draft correctly follows the latest customer message, "
+                "profile tone and open loop."
             ),
         )
 
@@ -316,12 +316,12 @@ def build_operator_reply_draft(
             language=language,
             source="provider_unavailable",
             safety_note=(
-                "Er is geen Buddy-provider gekoppeld. "
-                "Een handmatig ingevoerd concept is geen AI-uitvoer."
+                "No Buddy provider is connected. "
+                "A manually entered draft is not AI output."
             ),
             tone_note=(
-                "De operator kan handmatig een concept typen, maar Buddy heeft "
-                "in deze staat geen antwoord gegenereerd."
+                "The operator can type a draft manually, but Buddy has not "
+                "generated a reply in this state."
             ),
         )
 
@@ -375,10 +375,10 @@ def build_operator_reply_draft(
         language=provider_language,
         source=f"provider:{provider_name}",
         safety_note=(
-            "Concept alleen. De operator controleert context, feiten, toon en "
-            "veiligheid vóór kopiëren."
+            "Draft only. The operator checks context, facts, tone and "
+            "safety before copying."
         ),
         tone_note=validated_output["why_this_reply"] or (
-            "Controleer of het concept aansluit op de zichtbare context."
+            "Check whether the draft matches the visible context."
         ),
     )

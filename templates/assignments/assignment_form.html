@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{% if form.instance.pk %}Assignment bewerken{% else %}Nieuwe assignment{% endif %}</h1>
+<h1>{% if form.instance.pk %}Edit assignment{% else %}New assignment{% endif %}</h1>
 <p class="muted">
-    Koppel hier een operator aan een creator met scope en geldigheidsperiode.
+    Link an operator to a creator with a defined scope and validity period.
 </p>
 
 {% if saved %}
     <div class="success-panel">
-        Assignment is opgeslagen.
+        Assignment saved.
     </div>
 {% endif %}
 
@@ -19,8 +19,8 @@
         {{ form.as_p }}
 
         <div class="form-actions">
-            <button class="primary-button" type="submit">Opslaan</button>
-            <a class="secondary-button" href="{% url 'assignment-list' %}">Terug naar assignments</a>
+            <button class="primary-button" type="submit">Save</button>
+            <a class="secondary-button" href="{% url 'assignment-list' %}">Back to assignments</a>
         </div>
     </form>
 </div>

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Netwerk — {{ creator.display_name }}</h1>
+<h1>Network — {{ creator.display_name }}</h1>
 
 <p>
-    <a href="{% url 'creator-detail' creator.pk %}">← Terug naar creator detail</a>
+    <a href="{% url 'creator-detail' creator.pk %}">← Back to creator detail</a>
 </p>
 
 <div style="margin-bottom: 1rem;">
@@ -21,8 +21,8 @@
         <li>Blauw = creator</li>
         <li>Groen = operator</li>
         <li>Paars = channel ok</li>
-        <li>Oranje = aandacht nodig</li>
-        <li>Rood = access issue / reset nodig</li>
+        <li>Orange = attention required</li>
+        <li>Red = access issue / reset required</li>
     </ul>
 </div>
 

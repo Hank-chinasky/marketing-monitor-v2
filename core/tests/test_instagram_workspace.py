@@ -161,7 +161,7 @@ class InstagramWorkspaceViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Workspace session opgeslagen.")
+        self.assertContains(response, "Workspace session saved.")
 
         self.instagram_channel.refresh_from_db()
         self.assertEqual(self.instagram_channel.session_what_done, "Bio en link gecontroleerd.")
@@ -193,7 +193,7 @@ class InstagramWorkspaceViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Workspace session opgeslagen.")
+        self.assertContains(response, "Workspace session saved.")
 
         self.instagram_channel.refresh_from_db()
         self.assertEqual(
@@ -206,7 +206,7 @@ class InstagramWorkspaceViewTests(TestCase):
         )
         self.assertEqual(self.instagram_channel.session_blockers, "")
         self.assertTrue(self.instagram_channel.session_policy_context_reviewed)
-        self.assertIn("Wat gedaan:", self.instagram_channel.last_operator_update)
+        self.assertIn("Work completed:", self.instagram_channel.last_operator_update)
 
     def test_full_management_operator_can_open_instagram_workspace(self):
         self.client.force_login(self.full_management_user)

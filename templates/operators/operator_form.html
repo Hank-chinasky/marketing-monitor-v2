@@ -8,13 +8,13 @@
 
 {% if created %}
     <div class="success-panel">
-        Operator is aangemaakt.
+        Operator created.
     </div>
 {% endif %}
 
 {% if saved %}
     <div class="success-panel">
-        Operatorgegevens zijn opgeslagen.
+        Operator details saved.
     </div>
 {% endif %}
 
@@ -24,9 +24,9 @@
             <strong>{{ operator }}</strong>
             <span class="muted">({{ operator.user.username }})</span>
             {% if operator.user.is_active %}
-                <span class="badge badge-green">actief</span>
+                <span class="badge badge-green">active</span>
             {% else %}
-                <span class="badge badge-red">geblokkeerd</span>
+                <span class="badge badge-red">blocked</span>
             {% endif %}
         </div>
     {% endif %}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <title>Marketing Monitor</title>
@@ -289,10 +289,10 @@
     {% if not request.is_demo_viewer %}
         {% if request.user.is_authenticated and request.user.is_staff or request.user.is_superuser %}
         <div class="secondary-nav">
-            <a href="{% url 'creator-create' %}">+ Nieuwe creator</a>
-            <a href="{% url 'channel-create' %}">+ Nieuw channel</a>
-            <a href="{% url 'operator-create' %}">+ Nieuwe operator</a>
-            <a href="{% url 'assignment-create' %}">+ Nieuwe assignment</a>
+            <a href="{% url 'creator-create' %}">+ New creator</a>
+            <a href="{% url 'channel-create' %}">+ New channel</a>
+            <a href="{% url 'operator-create' %}">+ New operator</a>
+            <a href="{% url 'assignment-create' %}">+ New assignment</a>
         </div>
         {% endif %}
     {% endif %}

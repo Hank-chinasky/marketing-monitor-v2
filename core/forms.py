@@ -42,21 +42,21 @@ class MultipleFileField(forms.FileField):
 class OperatorCreateForm(forms.Form):
     username = forms.CharField(max_length=150, label="Username")
     email = forms.EmailField(required=False, label="E-mail")
-    first_name = forms.CharField(max_length=150, required=False, label="Voornaam")
-    last_name = forms.CharField(max_length=150, required=False, label="Achternaam")
+    first_name = forms.CharField(max_length=150, required=False, label="First name")
+    last_name = forms.CharField(max_length=150, required=False, label="Last name")
     password1 = forms.CharField(
-        label="Wachtwoord",
+        label="Password",
         widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
     )
     password2 = forms.CharField(
-        label="Herhaal wachtwoord",
+        label="Repeat password",
         widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
     )
 
     def clean_username(self):
         username = (self.cleaned_data.get("username") or "").strip()
         if UserModel.objects.filter(username=username).exists():
-            raise forms.ValidationError("Deze username bestaat al.")
+            raise forms.ValidationError("This username already exists.")
         return username
 
     def clean(self):
@@ -65,7 +65,7 @@ class OperatorCreateForm(forms.Form):
         password2 = cleaned.get("password2")
 
         if password1 and password2 and password1 != password2:
-            self.add_error("password2", "De wachtwoorden komen niet overeen.")
+            self.add_error("password2", "The passwords do not match.")
 
         return cleaned
 
@@ -91,12 +91,12 @@ class OperatorCreateForm(forms.Form):
 class OperatorUpdateForm(forms.Form):
     username = forms.CharField(max_length=150, label="Username")
     email = forms.EmailField(required=False, label="E-mail")
-    first_name = forms.CharField(max_length=150, required=False, label="Voornaam")
-    last_name = forms.CharField(max_length=150, required=False, label="Achternaam")
+    first_name = forms.CharField(max_length=150, required=False, label="First name")
+    last_name = forms.CharField(max_length=150, required=False, label="Last name")
     is_active = forms.BooleanField(
         required=False,
-        label="Account actief",
-        help_text="Zet uit om deze operator te blokkeren voor inloggen.",
+        label="Account active",
+        help_text="Disable this to block the operator from signing in.",
     )
 
     def __init__(self, *args, operator, **kwargs):
@@ -114,7 +114,7 @@ class OperatorUpdateForm(forms.Form):
         username = (self.cleaned_data.get("username") or "").strip()
         qs = UserModel.objects.filter(username=username).exclude(pk=self.operator.user.pk)
         if qs.exists():
-            raise forms.ValidationError("Deze username bestaat al.")
+            raise forms.ValidationError("This username already exists.")
         return username
 
     @transaction.atomic
@@ -131,11 +131,11 @@ class OperatorUpdateForm(forms.Form):
 
 class OperatorPasswordResetForm(forms.Form):
     password1 = forms.CharField(
-        label="Nieuw wachtwoord",
+        label="New password",
         widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
     )
     password2 = forms.CharField(
-        label="Herhaal nieuw wachtwoord",
+        label="Repeat new password",
         widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
     )
 
@@ -149,7 +149,7 @@ class OperatorPasswordResetForm(forms.Form):
         password2 = cleaned.get("password2")
 
         if password1 and password2 and password1 != password2:
-            self.add_error("password2", "De wachtwoorden komen niet overeen.")
+            self.add_error("password2", "The passwords do not match.")
 
         return cleaned
 
@@ -186,7 +186,7 @@ class CreatorForm(forms.ModelForm):
         if status == "active" and consent_status != "active":
             self.add_error(
                 "consent_status",
-                "Een actieve creator vereist consent_status='active'.",
+                "An active creator requires consent_status='active'.",
             )
 
         return cleaned
@@ -194,39 +194,39 @@ class CreatorForm(forms.ModelForm):
 
 class CreatorMaterialUploadForm(forms.Form):
     file = MultipleFileField(
-        label="Bestanden",
-        help_text="Je kunt meerdere bestanden tegelijk selecteren.",
+        label="Files",
+        help_text="You can select multiple files at once.",
     )
     label = forms.CharField(
         max_length=255,
         required=False,
         label="Label",
-        help_text="Bij meerdere bestanden wordt dit als prefix gebruikt.",
+        help_text="For multiple files, this is used as a prefix.",
     )
     notes = forms.CharField(
         required=False,
-        label="Notities",
+        label="Notes",
         widget=forms.Textarea(attrs={"rows": 3}),
     )
 
     def clean_file(self):
         files = self.cleaned_data.get("file") or []
         if not files:
-            raise forms.ValidationError("Selecteer minimaal één bestand.")
+            raise forms.ValidationError("Select at least one file.")
         return files
 
 
 class ChannelHandoffForm(forms.Form):
     session_what_done = forms.CharField(
-        label="Wat is gedaan",
+        label="Work completed",
         required=True,
         widget=forms.Textarea(
             attrs={
                 "rows": 5,
-                "placeholder": "Beschrijf kort wat in deze sessie is gedaan.",
+                "placeholder": "Briefly describe what was completed in this session.",
             }
         ),
-        help_text="Verplicht. Houd het concreet en operationeel.",
+        help_text="Required. Keep it concrete and operational.",
     )
     session_next_action = forms.CharField(
         label="Next action",
@@ -235,10 +235,10 @@ class ChannelHandoffForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 "maxlength": 255,
-                "placeholder": "Beschrijf de eerstvolgende concrete stap.",
+                "placeholder": "Describe the next concrete step.",
             }
         ),
-        help_text="Verplicht. Eén duidelijke volgende stap.",
+        help_text="Required. One clear next step.",
     )
     session_blockers = forms.CharField(
         label="Blockers / open issues",
@@ -246,15 +246,15 @@ class ChannelHandoffForm(forms.Form):
         widget=forms.Textarea(
             attrs={
                 "rows": 3,
-                "placeholder": "Optioneel: noteer blockers of open issues.",
+                "placeholder": "Optional: record blockers or open issues.",
             }
         ),
-        help_text="Optioneel. Laat leeg als er geen blockers zijn.",
+        help_text="Optional. Leave blank when there are no blockers.",
     )
     session_policy_context_reviewed = forms.BooleanField(
         label="Policy/disclosure context reviewed",
         required=True,
-        help_text="Verplicht. Bevestig dat je vóór afsluiten de policy/disclosure context hebt bekeken.",
+        help_text="Required. Confirm that you reviewed the policy and disclosure context before closing.",
     )
 
     def __init__(self, *args, channel=None, **kwargs):
@@ -281,13 +281,13 @@ class ChannelHandoffForm(forms.Form):
 
 class CreatorChannelForm(forms.ModelForm):
     last_access_check_at = forms.DateField(
-        label="Laatste access check",
+        label="Latest access check",
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],
     )
     last_ip_check_at = forms.DateField(
-        label="Laatste IP check",
+        label="Latest IP check",
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],
@@ -409,25 +409,25 @@ class ConversationThreadForm(forms.ModelForm):
         channel = cleaned.get("channel")
 
         if creator and not self.scoped_creator_queryset.filter(pk=creator.pk).exists():
-            self.add_error("creator", "Creator valt buiten je scope.")
+            self.add_error("creator", "Creator is outside your scope.")
 
         if channel and not self.scoped_channel_queryset.filter(pk=channel.pk).exists():
-            self.add_error("channel", "Channel valt buiten je scope.")
+            self.add_error("channel", "Channel is outside your scope.")
 
         if creator and channel and channel.creator_id != creator.pk:
-            self.add_error("channel", "Channel hoort niet bij de geselecteerde creator.")
+            self.add_error("channel", "Channel does not belong to the selected creator.")
 
         return cleaned
 
 
 class OperatorAssignmentForm(forms.ModelForm):
     starts_at = forms.DateField(
-        label="Startdatum",
+        label="Start date",
         widget=forms.DateInput(attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],
     )
     ends_at = forms.DateField(
-        label="Einddatum",
+        label="End date",
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],

@@ -126,7 +126,7 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
             start_actions.append(
                 {
                     "kind": "link",
-                    "label": "Open Instagram profiel",
+                    "label": "Open Instagram profile",
                     "url": channel.profile_url,
                     "external": True,
                 }
@@ -163,7 +163,7 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
             execute_actions.append(
                 {
                     "kind": "copy",
-                    "label": "Kopieer primary link",
+                    "label": "Copy primary link",
                     "copy_value": creator.primary_link,
                 }
             )
@@ -173,25 +173,25 @@ class InstagramWorkspaceView(LoginRequiredMixin, DetailView):
                     "kind": "value_copy",
                     "label": "Login identifier",
                     "value": channel.login_identifier,
-                    "copy_label": "Kopieer login identifier",
+                    "copy_label": "Copy login identifier",
                 }
             )
 
         close_actions = [
             {
                 "kind": "jump",
-                "label": "Ga naar sessie-afsluiting",
+                "label": "Go to session closeout",
                 "url": "#session-closeout",
             }
         ]
 
         groups = []
         if start_actions:
-            groups.append({"title": "Starten", "actions": start_actions})
+            groups.append({"title": "Start", "actions": start_actions})
         if execute_actions:
-            groups.append({"title": "Uitvoeren", "actions": execute_actions})
+            groups.append({"title": "Execute", "actions": execute_actions})
         if close_actions:
-            groups.append({"title": "Afsluiten", "actions": close_actions})
+            groups.append({"title": "Closeout", "actions": close_actions})
         return groups
 
     def _build_latest_session_context(self, channel):

@@ -22,10 +22,10 @@ GROUP_ORDER = {
 }
 
 GROUP_LABELS = {
-    GROUP_NOW: "Nu afhandelen",
-    GROUP_REVIEW: "Review nodig",
-    GROUP_LATER: "Later opvolgen",
-    GROUP_WAITING: "Wacht op klant",
+    GROUP_NOW: "Handle now",
+    GROUP_REVIEW: "Review required",
+    GROUP_LATER: "Follow up later",
+    GROUP_WAITING: "Waiting on customer",
 }
 
 GROUP_BADGES = {
@@ -55,7 +55,7 @@ def _waiting_seconds(thread, now):
 
 def _format_waiting_time(seconds):
     if seconds < 60:
-        return "minder dan 1 minuut"
+        return "less than 1 minute"
 
     minutes = seconds // 60
     if minutes < 60:
@@ -67,25 +67,25 @@ def _format_waiting_time(seconds):
     if hours < 24:
         if remaining_minutes:
             return f"{hours}u {remaining_minutes}m"
-        return f"{hours} uur"
+        return f"{hours} hr"
 
     days = hours // 24
     remaining_hours = hours % 24
 
     if remaining_hours:
         return f"{days}d {remaining_hours}u"
-    return f"{days} dagen"
+    return f"{days} days"
 
 
 def _missing_context(thread):
     missing = []
 
     if not thread.channel:
-        missing.append("bronaccount")
+        missing.append("source account")
     if not (thread.guardrails or "").strip():
         missing.append("guardrails")
     if not (thread.open_loop or "").strip():
-        missing.append("volgende stap")
+        missing.append("next step")
     if not (thread.last_handoff_note or "").strip():
         missing.append("handoff")
 
@@ -100,21 +100,21 @@ def _build_revenue_signal(thread, follow_up):
         stage == thread.creator.CustomerStage.INSIDE_PAYWALL
         and follow_up_value == ThreadFollowUpStatus.Status.WARM
     ):
-        return "Warm omzetmoment"
+        return "Warm revenue moment"
 
     if stage == thread.creator.CustomerStage.FORMER_CUSTOMER:
-        return "Heractivatiekans"
+        return "Reactivation opportunity"
 
     if stage in {
         thread.creator.CustomerStage.LEAD,
         thread.creator.CustomerStage.OUTSIDE_PAYWALL,
     }:
-        return "Conversiekans"
+        return "Conversion opportunity"
 
     if follow_up_value == ThreadFollowUpStatus.Status.OPEN_LOOP:
-        return "Open follow-upkans"
+        return "Open follow-up opportunity"
 
-    return "Geen expliciet revenuesignaal"
+    return "No explicit revenue signal"
 
 
 def _classify_thread(thread, follow_up, waiting_seconds):
@@ -126,8 +126,8 @@ def _classify_thread(thread, follow_up, waiting_seconds):
         return {
             "group": GROUP_WAITING,
             "priority_rank": 50,
-            "priority_label": "Parkeren",
-            "why_now": "De klant is aan zet; voorkom onnodig opnieuw benaderen.",
+            "priority_label": "Park",
+            "why_now": "The customer is next; avoid unnecessary re-engagement.",
         }
 
     if follow_up_value in {
@@ -139,7 +139,7 @@ def _classify_thread(thread, follow_up, waiting_seconds):
             "priority_rank": 40,
             "priority_label": "Later",
             "why_now": (
-                "Deze thread is bewust geparkeerd voor een later opvolgmoment."
+                "This thread was deliberately parked for follow-up later."
             ),
         }
 
@@ -151,18 +151,18 @@ def _classify_thread(thread, follow_up, waiting_seconds):
         reasons = []
 
         if has_risk:
-            reasons.append("risicosignaal")
+            reasons.append("risk signal")
         if follow_up_value == ThreadFollowUpStatus.Status.REVIEW_NODIG:
-            reasons.append("reviewstatus")
+            reasons.append("review status")
         if missing:
-            reasons.append(f"ontbreekt: {', '.join(missing)}")
+            reasons.append(f"missing: {', '.join(missing)}")
 
         return {
             "group": GROUP_REVIEW,
             "priority_rank": 10,
             "priority_label": "Review",
             "why_now": (
-                "Eerst controleren voordat de operator veilig verdergaat "
+                "Review first before the operator can continue safely "
                 f"({'; '.join(reasons)})."
             ),
         }
@@ -173,7 +173,7 @@ def _classify_thread(thread, follow_up, waiting_seconds):
             "priority_rank": 0,
             "priority_label": "P1",
             "why_now": (
-                "Een handoff is vereist voordat de conversatie verder kan."
+                "A handoff is required before the conversation can continue."
             ),
         }
 
@@ -190,18 +190,18 @@ def _classify_thread(thread, follow_up, waiting_seconds):
             "priority_rank": 1,
             "priority_label": "P1",
             "why_now": (
-                "De klant wacht en de warme of open lijn vraagt continuïteit."
+                "The customer is waiting and the warm or open line requires continuity."
             ),
         }
 
     if thread.status == ConversationThread.Status.WAITING_ON_OPERATOR:
         if waiting_seconds >= 30 * 60:
             reason = (
-                "De klant wacht langer dan 30 minuten; "
-                "de reactiedrempel is overschreden."
+                "The customer has been waiting for more than 30 minutes; "
+                "the response threshold has been exceeded."
             )
         else:
-            reason = "De klant wacht op een operatorreactie."
+            reason = "The customer is waiting for an operator reply."
 
         return {
             "group": GROUP_NOW,
@@ -215,14 +215,14 @@ def _classify_thread(thread, follow_up, waiting_seconds):
             "group": GROUP_NOW,
             "priority_rank": 25,
             "priority_label": "P2",
-            "why_now": "De conversatie is actief en vraagt operatorbewaking.",
+            "why_now": "The conversation is active and requires operator monitoring.",
         }
 
     return {
         "group": GROUP_LATER,
         "priority_rank": 45,
         "priority_label": "Later",
-        "why_now": "Geen directe operatoractie nodig.",
+        "why_now": "No immediate operator action required.",
     }
 
 
@@ -232,15 +232,15 @@ def _build_next_action(thread, group):
         return open_loop
 
     if group == GROUP_REVIEW:
-        return "Controleer bron, context en guardrails voordat je antwoordt."
+        return "Check source, context and guardrails before replying."
 
     if group == GROUP_WAITING:
-        return "Wacht op een nieuw klantsignaal."
+        return "Wait for a new customer signal."
 
     if group == GROUP_LATER:
-        return "Plan een handmatig opvolgmoment."
+        return "Schedule a manual follow-up."
 
-    return "Open de thread en bepaal de eerstvolgende veilige actie."
+    return "Open the thread and determine the next safe action."
 
 
 def build_operator_queue(threads, *, now=None):
@@ -271,14 +271,14 @@ def build_operator_queue(threads, *, now=None):
         source_account = (
             thread.channel.handle
             if thread.channel
-            else (thread.source_site_id or "").strip() or "Niet gekoppeld"
+            else (thread.source_site_id or "").strip() or "Not linked"
         )
 
-        reliability = "Hoog"
+        reliability = "High"
         if group == GROUP_REVIEW:
-            reliability = "Laag"
+            reliability = "Low"
         elif not (thread.last_approved_reply_style or "").strip():
-            reliability = "Middel"
+            reliability = "Medium"
 
         item = {
             "thread": thread,

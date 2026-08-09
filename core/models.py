@@ -264,11 +264,11 @@ class CreatorChannel(models.Model):
         what_done = (self.session_what_done or "").strip()
         next_action = (self.session_next_action or "").strip()
         blockers = (self.session_blockers or "").strip() or "-"
-        reviewed = "Ja" if self.session_policy_context_reviewed else "Nee"
+        reviewed = "Yes" if self.session_policy_context_reviewed else "No"
 
         return "\n\n".join(
             [
-                f"Wat gedaan:\n{what_done}",
+                f"Work completed:\n{what_done}",
                 f"Next action:\n{next_action}",
                 f"Blockers / open issues:\n{blockers}",
                 f"Policy/disclosure context reviewed: {reviewed}",
@@ -451,9 +451,9 @@ class ThreadFollowUpStatus(models.Model):
     class Status(models.TextChoices):
         WARM = "warm", "Warm"
         OPEN_LOOP = "open_loop", "Open loop"
-        LATER_TRIGGEREN = "later_triggeren", "Later triggeren"
-        AFGEKOELD = "afgekoeld", "Afgekoeld"
-        REVIEW_NODIG = "review_nodig", "Review nodig"
+        LATER_TRIGGEREN = "later_triggeren", "Trigger later"
+        AFGEKOELD = "afgekoeld", "Cooled off"
+        REVIEW_NODIG = "review_nodig", "Review required"
 
     thread = models.OneToOneField(
         ConversationThread,
